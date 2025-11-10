@@ -37,6 +37,12 @@ fi
 # Install dependencies
 echo "Installing dependencies with Poetry..."
 cd "$WORKING_DIRECTORY"
+EXPECTED_POETRY_PATH="/root/.local/bin/poetry"
+ACTUAL_POETRY_PATH="$(which poetry)"
+if [ "$ACTUAL_POETRY_PATH" != "$EXPECTED_POETRY_PATH" ]; then
+    echo "Warning: Poetry path mismatch. Expected: $EXPECTED_POETRY_PATH, Found: $ACTUAL_POETRY_PATH"
+    echo "Using: $ACTUAL_POETRY_PATH"
+fi
 poetry install
 echo "Dependencies installed."
 
