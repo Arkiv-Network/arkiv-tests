@@ -49,3 +49,6 @@ sudo systemctl enable locust
 sudo systemctl start locust
 echo "Locust service started."
 
+echo "Checking status of locust master service..."
+sudo systemctl status locust-arkiv.service
+
