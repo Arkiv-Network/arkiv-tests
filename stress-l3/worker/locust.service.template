@@ -2,6 +2,7 @@
 Description=Locust Worker Service
 After=network.target
 
+
 [Service]
 User=root
 Group=root
@@ -11,6 +12,7 @@ EnvironmentFile=/home/ubuntu/mnemonic.env
 ExecStartPre=/bin/sleep 30
 ExecStart=/root/.local/bin/poetry run locust -f LOCUST_FILE_PLACEHOLDER --worker --master-host MASTER_HOST_PLACEHOLDER --master-port MASTER_PORT_PLACEHOLDER
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
