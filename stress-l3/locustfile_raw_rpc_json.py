@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import time
+import itertools
 
 from eth_account.signers.local import LocalAccount
 from locust import FastHttpUser, task, between, events
@@ -59,7 +60,7 @@ gb_container = None
 def on_test_start(environment, **kwargs):
     logging.info(f"A new test is starting with nr of users {environment.runner.target_user_count}")
     global id_iterator
-    id_iterator = (i+1 for i in range(environment.runner.target_user_count))
+    id_iterator = itertools.count(0)
 
     if config.chain_env == "local" and config.image_to_run and not config.fresh_container_for_each_test:
         global gb_container
@@ -106,6 +107,7 @@ class GolemBaseUser(FastHttpUser):
         
     def on_start(self):
         self.id = next(id_iterator)
+        logging.info(f"User started with id: {self.id}")
 
     @task
     def store_offer(self):
@@ -114,7 +116,7 @@ class GolemBaseUser(FastHttpUser):
             if config.chain_env == "local" and config.image_to_run and config.fresh_container_for_each_test:
                 gb_container = launch_image(config.image_to_run)
             
-            account_path = build_account_path(self.id - 1)
+            account_path = build_account_path(self.id)
             account: LocalAccount = Account.from_mnemonic(config.mnemonic, account_path=account_path)
             logging.info(f"Account: {account.address}")
             
