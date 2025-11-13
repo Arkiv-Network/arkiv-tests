@@ -99,27 +99,27 @@ class ArkivL3User(JsonRpcUser):
             
             account_path = build_account_path(self.id)
             account: LocalAccount = Account.from_mnemonic(config.mnemonic, account_path=account_path)
-            logging.info(f"Account: {account.address}")
+            logging.info(f"Account: {account.address} (user: {self.id})")
             
-            logging.info(f"Connecting to Arkiv L3")
-            logging.info(f"Base URL: {self.client.base_url}")
+            logging.info(f"Connecting to Arkiv L3 (user: {self.id})")
+            logging.info(f"Base URL: {self.client.base_url} (user: {self.id})")
             w3 = Arkiv(web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client), NamedAccount(name=f"LocalSigner", account=account))
             
             if w3.is_connected():
-                logging.info("Connected to Arkiv L3")
+                logging.info(f"Connected to Arkiv L3 (user: {self.id})")
             else:
-                logging.error("Not connected to Arkiv L3")
-                raise Exception("Not connected to Arkiv L3")
+                logging.error(f"Not connected to Arkiv L3 (user: {self.id})")
+                raise Exception(f"Not connected to Arkiv L3 (user: {self.id})")
 
             balance = w3.eth.get_balance(account.address)
             logging.info(f"Balance: {balance}")
             if balance == 0:
                 if config.chain_env == "local":
                     topup_local_account(account, w3)
-                    logging.error("Not enough balance to send transaction")
+                    logging.error("Not enough balance to send transaction (user: {self.id})")
                     time.sleep(0.5)
                 else:
-                    logging.error("Not enough balance to send transaction")
+                    logging.error("Not enough balance to send transaction (user: {self.id})")
                     raise Exception("Not enough balance to send transaction")
                     
             nonce = w3.eth.get_transaction_count(account.address)
@@ -144,7 +144,7 @@ class ArkivL3User(JsonRpcUser):
         w3 = Arkiv(web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client))
         result = w3.arkiv.query_entities(query='GolemBaseMarketplace="Offer" && projectId="ArkivStressTest"', options=QueryOptions(fields=KEY, max_results_per_page=0))
 
-        logging.debug(f"Result: {result}")
+        logging.debug(f"Result: {result} (user: {self.id})")
         #logging.info(f"Keys: {len(result.entities)}")
 
     
