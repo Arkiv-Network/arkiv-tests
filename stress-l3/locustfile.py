@@ -181,7 +181,7 @@ class ArkivL3User(JsonRpcUser):
         w3 = self._initialize_account_and_w3()
         
         # Query entities with queryPercentage below threshold
-        query = f'GolemBaseMarketplace="Offer" && projectId="ArkivStressTest" && queryPercentage<{percent}'
+        query = f'ArkivEntityType="StressedEntity" && queryPercentage<{percent}'
         result = w3.arkiv.query_entities(query=query, options=QueryOptions(fields=KEY, max_results_per_page=0))
         
         logging.info(f"Found {len(result.entities)} entities with queryPercentage < {percent} (user: {self.id})")
