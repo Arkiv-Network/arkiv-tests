@@ -144,7 +144,8 @@ class ArkivL3User(JsonRpcUser):
         w3 = Arkiv(web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client))
         result = w3.arkiv.query_entities(query='GolemBaseMarketplace="Offer" && projectId="ArkivStressTest"', options=QueryOptions(fields=KEY, max_results_per_page=0))
 
-        logging.info(f"Keys: {len(result.entities)}")
+        logging.debug(f"Result: {result}")
+        #logging.info(f"Keys: {len(result.entities)}")
 
     
             
