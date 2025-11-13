@@ -24,8 +24,6 @@ id_iterator = None
 
 founder_account: LocalAccount | None = None
 
-logging.info(f"Using mnemonic: {config.mnemonic}, users: {config.users}")
-
 
 def topup_local_account(account: LocalAccount, w3: Web3):
     accounts = w3.eth.accounts
