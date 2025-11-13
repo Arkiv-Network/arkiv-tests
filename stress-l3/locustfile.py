@@ -88,6 +88,7 @@ class ArkivL3User(JsonRpcUser):
         
     def on_start(self):
         self.id = next(id_iterator)
+        logging.info(f"User started with id: {self.id}")
 
     @task(2)
     def store_bigger_payload(self):
