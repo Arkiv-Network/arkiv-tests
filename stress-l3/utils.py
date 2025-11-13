@@ -1,3 +1,4 @@
+import logging
 import socket
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
@@ -20,13 +21,25 @@ def build_account_path(user_index: int) -> str:
         ValueError: If instance index cannot be extracted from instance name
     """
     instance_name = socket.gethostname()
-    # Extract instance index from instance name (last part after last hyphen)
-    try:
-        parts = instance_name.split('-')
-        instance_index = int(parts[-1])
-        return f"m/44'/60'/{instance_index}'/0/{user_index}"
-    except ValueError:
-        raise ValueError(f"Cannot extract index from instance name: {instance_name}")
+
+    if not instance_name.startswith("arkiv-loadtest"):
+        logging.warning(
+            "Hostname '%s' does not match expected 'arkiv-loadtest' pattern. "
+            "Defaulting instance index to 0.",
+            instance_name,
+        )
+        instance_index = 0
+    else:
+        try:
+            parts = instance_name.split('-')
+            instance_index = int(parts[-1])
+        except (ValueError, IndexError):
+            logging.error(
+                "Cannot extract index from instance name '%s'.", instance_name
+            )
+            raise ValueError(f"Cannot extract index from instance name: {instance_name}") from None
+
+    return f"m/44'/60'/{instance_index}'/0/{user_index}"
 
 
 def launch_image(image_to_run: str):
