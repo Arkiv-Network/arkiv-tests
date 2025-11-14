@@ -22,9 +22,9 @@ class JsonRpcUser(FastHttpUser):
             response = original_request_method(*args, name=call_name, **kwargs)
             
             if response.ok:
-                logging.debug(f"{call_name} response: Status {response.reason} {response.json()}")
+                logging.debug(f"{call_name} response: {response.json()}")
             else:
-                logging.error(f"{call_name} response: Status {response.reason} {response.json()}")
+                logging.error(f"{call_name} Error response: {response.json()}")
             return response
 
         self.client.request = wrapped_request
