@@ -170,51 +170,59 @@ class ArkivL3User(JsonRpcUser):
 
     @task(2)
     def store_small_payload(self):
-        # Generate unique ID and store it in the set for use in other tasks
-        unique_id = str(uuid.uuid4())
-        self.unique_ids.add(unique_id)
-        
-        # Random query percentage between 1 and 100
-        query_percentage = random.randint(1, 100)
-        
-        w3 = self._initialize_account_and_w3()
-        
-        nonce = w3.eth.get_transaction_count(self.account.address)
-        logging.info(f"Nonce: {nonce}")
+        try:
+            # Generate unique ID and store it in the set for use in other tasks
+            unique_id = str(uuid.uuid4())
+            self.unique_ids.add(unique_id)
+            
+            # Random query percentage between 1 and 100
+            query_percentage = random.randint(1, 100)
+            
+            w3 = self._initialize_account_and_w3()
+            
+            nonce = w3.eth.get_transaction_count(self.account.address)
+            logging.info(f"Sending transaction with nonce: {nonce}, user: {self.id}")
 
-        start_time = time.time()
-        w3.arkiv.create_entity(
-            payload=simple_payload, 
-            content_type="text/plain", 
-            attributes={
-                "ArkivEntityType": "StressedEntity",
-                "queryPercentage": query_percentage,  # Random percentage 1-100 for querying
-                "uniqueId": unique_id  # Unique attribute for single entity query
-            },
-            btl=2592000, # 20 minutes
-        )
-        duration = time.time() - start_time
-        
-        get_metrics().record_transaction(len(simple_payload), duration)
+            start_time = time.time()
+            w3.arkiv.create_entity(
+                payload=simple_payload, 
+                content_type="text/plain", 
+                attributes={
+                    "ArkivEntityType": "StressedEntity",
+                    "queryPercentage": query_percentage,  # Random percentage 1-100 for querying
+                    "uniqueId": unique_id  # Unique attribute for single entity query
+                },
+                btl=2592000, # 20 minutes
+            )
+            duration = time.time() - start_time
+            
+            get_metrics().record_transaction(len(simple_payload), duration)
+        except Exception as e:
+            logging.error(f"Error in store_small_payload (user: {self.id}): {e}", exc_info=True)
+            raise
 
     def selective_query(self, percent: int = 50):
         """
         Stress test query that chooses only a selected percent of Entities
         """
-        logging.info(f"Selective query with threshold: {percent} (user: {self.id})")
-        w3 = self._initialize_account_and_w3()
-        
-        # Query entities with queryPercentage below threshold
-        start_time = time.time()
-        
-        query = f'ArkivEntityType="StressedEntity" && queryPercentage<{percent}'
-        result = w3.arkiv.query_entities(query=query, options=QueryOptions(fields=KEY, max_results_per_page=0))
-        
-        duration = time.time() - start_time
-        get_metrics().record_query(percent, duration)
+        try:
+            logging.info(f"Selective query with threshold: {percent} (user: {self.id})")
+            w3 = self._initialize_account_and_w3()
+            
+            # Query entities with queryPercentage below threshold
+            start_time = time.time()
+            
+            query = f'ArkivEntityType="StressedEntity" && queryPercentage<{percent}'
+            result = w3.arkiv.query_entities(query=query, options=QueryOptions(fields=KEY, max_results_per_page=0))
+            
+            duration = time.time() - start_time
+            get_metrics().record_query(percent, duration)
 
-        logging.info(f"Found {len(result.entities)} entities with queryPercentage < {percent} (user: {self.id})")
-        logging.debug(f"Result: {result} (user: {self.id})")
+            logging.info(f"Found {len(result.entities)} entities with queryPercentage < {percent} (user: {self.id})")
+            logging.debug(f"Result: {result} (user: {self.id})")
+        except Exception as e:
+            logging.error(f"Error in selective_query (user: {self.id}, percent: {percent}): {e}", exc_info=True)
+            raise
 
     @task(1)
     def selective_query_20Percent(self):
@@ -238,12 +246,16 @@ class ArkivL3User(JsonRpcUser):
 
     @task(4)
     def retrieve_keys_to_count(self):
-        logging.info(f"Retrieving offers")
-        w3 = Arkiv(web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client))
-        result = w3.arkiv.query_entities(query='ArkivEntityType="StressedEntity"', options=QueryOptions(fields=KEY, max_results_per_page=0))
+        try:
+            logging.info(f"Retrieving offers")
+            w3 = Arkiv(web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client))
+            result = w3.arkiv.query_entities(query='ArkivEntityType="StressedEntity"', options=QueryOptions(fields=KEY, max_results_per_page=0))
 
-        logging.debug(f"Result: {result} (user: {self.id})")
-        #logging.info(f"Keys: {len(result.entities)}")
+            logging.debug(f"Result: {result} (user: {self.id})")
+            #logging.info(f"Keys: {len(result.entities)}")
+        except Exception as e:
+            logging.error(f"Error in retrieve_keys_to_count (user: {self.id}): {e}", exc_info=True)
+            raise
 
     
             
