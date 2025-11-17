@@ -96,13 +96,20 @@ class Metrics:
             registry=self.registry
         )
         
-        # Time histogram buckets incremented by 5% each (0.05s increments)
-        time_buckets = [i * 0.05 for i in range(21)]  # 0, 0.05, 0.10, ..., 1.0 seconds
+        # Shared time histogram buckets (in milliseconds)
+        # Buckets: first bucket 50ms, second bucket 100ms, then 100ms increments
+        time_buckets = [
+            50,   # First bucket: 0-50ms
+            100,  # Second bucket: 50-100ms
+            # Then 100ms increments: 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, ...
+            200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000,
+            2100, 2200, 2300, 2400, 2500, 3000, 4000, 5000, 7000, 10000  # Continue with larger range
+        ]
         
-        # Query time histogram
+        # Query time histogram (in milliseconds)
         self.query_time = Histogram(
-            'loadtest_query_time_seconds',
-            'Time taken to execute queries in seconds',
+            'loadtest_query_time_milliseconds',
+            'Time taken to execute queries in milliseconds',
             ['percentile'],
             buckets=time_buckets,
             registry=self.registry
@@ -121,10 +128,10 @@ class Metrics:
             registry=self.registry
         )
         
-        # Transaction time histogram
+        # Transaction time histogram (in milliseconds)
         self.transaction_time = Histogram(
-            'loadtest_transaction_time_seconds',
-            'Time taken to execute transactions in seconds',
+            'loadtest_transaction_time_milliseconds',
+            'Time taken to execute transactions in milliseconds',
             buckets=time_buckets,
             registry=self.registry
         )
@@ -213,13 +220,17 @@ class Metrics:
         return self.registry
     
     # Simple one-liner functions for recording metrics
-    def record_query(self, percentile: int, duration: float):
-        """Record a query execution with percentile and duration"""
-        self.queries_by_percentile.labels(percentile=str(percentile)).inc()
-        self.query_time.labels(percentile=str(percentile)).observe(duration)
+    def record_query(self, selectivness: int, duration: float):
+        """Record a query execution with percentile and duration (duration in seconds, converted to milliseconds)"""
+        self.queries_by_percentile.labels(percentile=str(selectivness)).inc()
+        # Convert duration from seconds to milliseconds
+        duration_ms = duration * 1000
+        self.query_time.labels(percentile=str(selectivness)).observe(duration_ms)
     
     def record_transaction(self, payload_bytes: int, duration: float):
-        """Record a transaction with payload size and duration"""
+        """Record a transaction with payload size and duration (duration in seconds, converted to milliseconds)"""
         self.transactions_count.inc()
         self.transaction_payload_bytes.inc(payload_bytes)
-        self.transaction_time.observe(duration)
+        # Convert duration from seconds to milliseconds
+        duration_ms = duration * 1000
+        self.transaction_time.observe(duration_ms)
