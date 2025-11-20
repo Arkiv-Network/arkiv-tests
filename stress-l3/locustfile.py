@@ -5,6 +5,7 @@ import time
 import uuid
 import random
 import socket
+import os
 
 from arkiv import Arkiv
 from arkiv.account import NamedAccount
@@ -130,28 +131,10 @@ class ArkivL3User(JsonRpcUser):
     
     def _generate_payload(self, size_bytes: int) -> bytes:
         """
-        Generate a payload of the specified size in bytes.
-        
-        Args:
-            size_bytes: Desired payload size in bytes
-            
-        Returns:
-            bytes: Payload of the specified size
+        Generate a payload of the specified size in bytes using
+        high-entropy random data to avoid compression.
         """
-        # Use a repeating pattern to fill the payload
-        base_pattern = b"Hello Arkiv Stress Test! "
-        pattern_length = len(base_pattern)
-        
-        # Calculate how many full patterns we need and any remainder
-        full_patterns = size_bytes // pattern_length
-        remainder = size_bytes % pattern_length
-        
-        # Generate the payload
-        payload = base_pattern * full_patterns
-        if remainder > 0:
-            payload += base_pattern[:remainder]
-        
-        return payload
+        return os.urandom(size_bytes)
 
     @task(2)
     def store_bigger_payload(self):
