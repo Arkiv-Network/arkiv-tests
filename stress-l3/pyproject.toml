@@ -20,7 +20,7 @@ poethepoet = { version = "~0.37.0", extras = ["poetry_plugin"]}
 [tool.poetry.dependencies]
 python = ">=3.12,<4"
 
-arkiv-sdk = "==1.0.0a5"
+arkiv-sdk = "==1.0.0a9"
 environs = ">=14.2.0,<15.0.0"
 golem-base-sdk = ">=0.0.7,<0.0.8"
 locust = ">=2.37.14,<3.0.0"
