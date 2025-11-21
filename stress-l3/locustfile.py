@@ -11,8 +11,8 @@ from typing import Optional
 
 from arkiv import Arkiv
 from arkiv.account import NamedAccount
-from arkiv.types import QueryOptions, KEY
-from arkiv.operations import to_create_op, Operations
+from arkiv.types import QueryOptions, KEY, Operations
+from arkiv.utils import to_create_op
 from eth_account.signers.local import LocalAccount
 from json_rpc_user import JsonRpcUser
 from locust import task, between, events
