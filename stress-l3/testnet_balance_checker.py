@@ -20,12 +20,3 @@ if w3.is_connected():
 else:
     logging.error("Not connected to Golem Base")
     raise Exception("Not connected to Golem Base")
-
-
-
-
-
-
-
-
-
