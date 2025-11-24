@@ -199,7 +199,7 @@ class ArkivL3User(JsonRpcUser):
         """
         return os.urandom(size_bytes)
 
-    @task(2)
+    @task(1)
     def store_bigger_payload(self):
         gb_container = None
         try:
@@ -477,7 +477,7 @@ class ArkivL3User(JsonRpcUser):
     def selective_query_100Percent(self):
         self.selective_query(100)
 
-    @task(4)
+    @task(1)
     def retrieve_keys_to_count(self):
         try:
             logging.info(f"Retrieving offers")
@@ -496,5 +496,27 @@ class ArkivL3User(JsonRpcUser):
         except Exception as e:
             logging.error(
                 f"Error in retrieve_keys_to_count (user: {self.id}): {e}", exc_info=True
+            )
+            raise
+
+    @task(1)
+    def query_total_entity_count(self):
+        """
+        Query the total number of all entities stored on Arkiv at the current moment
+        and report this as a metric.
+        """
+        try:
+            w3 = self._initialize_account_and_w3()
+            
+            entity_count = w3.arkiv.get_entity_count()
+            Metrics.get_metrics().total_entity_count.set(entity_count)
+
+            logging.info(
+                f"Total entity count: {entity_count} (user: {self.id})"
+            )
+                
+        except Exception as e:
+            logging.error(
+                f"Error in query_total_entity_count (user: {self.id}): {e}", exc_info=True
             )
             raise

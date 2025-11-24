@@ -188,6 +188,14 @@ class Metrics:
         )
         self.loadtest_running.state("stopped")  # Start as stopped
 
+        # Total entity count metric
+        self.total_entity_count = Gauge(
+            "arkiv_total_entity_count",
+            "Total number of all entities stored on Arkiv at current moment",
+            registry=self.registry,
+        )
+        self.total_entity_count.set(0)
+
     def _start_push_task(self):
         """Start the background task for periodic metric pushing"""
         self._push_thread = threading.Thread(
