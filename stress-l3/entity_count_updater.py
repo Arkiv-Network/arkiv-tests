@@ -40,7 +40,7 @@ class EntityCountUpdater:
         
         while not self._stop_event.is_set():
             try:
-                entity_count = self._w3.arkiv.eth.get_entity_count()
+                entity_count = self._w3.eth.get_entity_count()
                 Metrics.get_metrics().total_entity_count.set(entity_count)
                 logging.info(f"EntityCountUpdater: Updated entity count to {entity_count}")
             except Exception as e:
