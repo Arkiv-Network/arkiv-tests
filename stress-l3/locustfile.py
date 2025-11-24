@@ -450,7 +450,7 @@ class ArkivL3User(JsonRpcUser):
 
             query = f'ArkivEntityType="StressedEntity" && queryPercentage<{percent}'
             result = w3.arkiv.query_entities(
-                query=query, options=to_query_options(fields=KEY, max_results_per_page=0)
+                query=query, options=to_query_options(fields=KEY, max_results_per_page=1)
             )
 
             duration = time.time() - start_time
