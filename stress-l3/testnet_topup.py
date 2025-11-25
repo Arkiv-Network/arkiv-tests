@@ -604,7 +604,7 @@ if w3.is_connected():
         account_path = build_account_path(i)
         account = Account.from_mnemonic(config.mnemonic, account_path=account_path)
         logging.error(
-            f"Topping up account {i+1}: {account.address} {account.key.hex()}"
+            f"Topping up account {i + 1}: {account.address} {account.key.hex()}"
         )
         nonce = w3.eth.get_transaction_count(founder_account.address)
 

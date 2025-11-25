@@ -16,7 +16,7 @@ if w3.is_connected():
         account_path = build_account_path(i)
         account = Account.from_mnemonic(config.mnemonic, account_path=account_path)
         balance = w3.eth.get_balance(account.address)
-        logging.info(f"Account {i+1}: {account.address} balance: {balance}")
+        logging.info(f"Account {i + 1}: {account.address} balance: {balance}")
 else:
     logging.error("Not connected to Golem Base")
     raise Exception("Not connected to Golem Base")

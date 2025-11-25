@@ -307,7 +307,7 @@ class Metrics:
     def record_query(self, selectivness: int, duration: float, result_size: int = 0):
         """
         Record a query execution with percentile, duration, and result size.
-        
+
         Args:
             selectivness: Selectiveness percentile threshold
             duration: Duration in seconds (converted to milliseconds)

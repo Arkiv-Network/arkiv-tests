@@ -14,9 +14,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 package-mode = false
 
-[tool.poetry.requires-plugins]
-poethepoet = { version = "~0.37.0", extras = ["poetry_plugin"]}
-
 [tool.poetry.dependencies]
 python = ">=3.12,<4"
 
@@ -28,14 +25,9 @@ prometheus-client = "^0.22.1"
 testcontainers = ">=4.12.0,<5.0.0"
 
 [tool.poetry.group.dev.dependencies]
-black = {version = "^25.11"}
+ruff = {version = "^0.14.6"}
 
 [tool.locust]
 host = "http://localhost:8545"
 users = 5
 
-[tool.poe.tasks]
-format = "black ."
-
-[tool.poe.env]
-python = "poetry"
