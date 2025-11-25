@@ -1,10 +1,13 @@
 from typing import Any
-from locust import FastHttpUser
 import json
 import logging
 
+from stress.tools.base_user import BaseUser
 
-class JsonRpcUser(FastHttpUser):
+
+class JsonRpcUser(BaseUser):
+    """JSON-RPC user that wraps requests to extract RPC method names."""
+
     abstract = True
 
     def __init__(self, *args, **kwargs):
