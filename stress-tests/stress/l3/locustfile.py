@@ -58,9 +58,8 @@ def on_locust_init(environment, **kwargs):
     runner = getattr(environment, "runner", None)
     # only run on the master node or local runner
     if isinstance(runner, (MasterRunner, LocalRunner)):
-        logging.info("Running on master/local runner - starting EntityCountUpdater")
-        EntityCountUpdater.instance = EntityCountUpdater()
-        EntityCountUpdater.instance.start()
+        logging.info("Running on master/local runner - creating EntityCountUpdater")
+        EntityCountUpdater.instance = EntityCountUpdater(environment)
 
 
 @events.test_start.add_listener
@@ -73,6 +72,12 @@ def on_test_start(environment, **kwargs):
     logging.info(
         f"A new test is starting with nr of users {environment.runner.target_user_count}"
     )
+
+    # Start/restart EntityCountUpdater (host may have changed)
+    runner = getattr(environment, "runner", None)
+    if isinstance(runner, (MasterRunner, LocalRunner)):
+        if EntityCountUpdater.instance:
+            EntityCountUpdater.instance.restart()
 
     if (
         config.chain_env == "local"

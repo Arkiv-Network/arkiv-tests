@@ -5,8 +5,6 @@ from arkiv import Arkiv
 from web3 import Web3
 import web3
 
-
-import stress.tools.config as config
 from stress.tools.metrics import Metrics
 
 
@@ -15,14 +13,16 @@ class EntityCountUpdater:
 
     instance = None
 
-    def __init__(self, update_interval: int = 3):
+    def __init__(self, environment, update_interval: int = 3):
         """
         Initialize the entity count updater.
 
         Args:
+            environment: Locust environment object
             update_interval: Interval in seconds between updates (default: 3)
         """
         self.update_interval = update_interval
+        self._environment = environment
         self._stop_event = threading.Event()
         self._thread = None
         self._w3 = None
@@ -30,13 +30,14 @@ class EntityCountUpdater:
     def _update_loop(self):
         """Internal method that runs in the background thread."""
         # Create a connection to Arkiv for the background thread
-        self._w3 = Arkiv(web3.HTTPProvider(endpoint_uri=config.host))
+        host = self._environment.host
+        self._w3 = Arkiv(web3.HTTPProvider(endpoint_uri=host))
 
         if not self._w3.is_connected():
-            logging.error("EntityCountUpdater: Not connected to Arkiv L3")
+            logging.error(f"EntityCountUpdater: Not connected to Arkiv L3 at {host}")
             return
 
-        logging.info("EntityCountUpdater: Started")
+        logging.info(f"EntityCountUpdater: Started with host {host}")
 
         while not self._stop_event.is_set():
             try:
@@ -79,4 +80,14 @@ class EntityCountUpdater:
 
         self._stop_event.set()
         self._thread.join(timeout=timeout)
+        self._thread = None
         logging.info("EntityCountUpdater: Stopped background thread")
+
+    def restart(self):
+        """
+        Restart the background thread (will pick up new host from environment).
+        """
+        self.stop()
+        self._stop_event.clear()
+        self.start()
+        logging.info(f"EntityCountUpdater: Restarted with host {self._environment.host}")
