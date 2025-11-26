@@ -216,7 +216,7 @@ class ArkivL3User(JsonRpcUser):
             nonce = w3.eth.get_transaction_count(self.account.address)
             logging.info(f"Nonce: {nonce}")
 
-            start_time = time.time()
+            start_time = time.perf_counter()
             expiration_seconds = self._calculate_expiration(timedelta(minutes=20))
             w3.arkiv.create_entity(
                 payload=bigger_payload,
@@ -224,7 +224,7 @@ class ArkivL3User(JsonRpcUser):
                 attributes={"ArkivEntityType": "StressedEntity"},
                 expires_in=expiration_seconds,  # 20 minutes
             )
-            duration = time.time() - start_time
+            duration = timedelta(seconds=time.perf_counter() - start_time)
 
             Metrics.get_metrics().record_transaction(len(bigger_payload), duration)
         except Exception as e:
@@ -288,11 +288,11 @@ class ArkivL3User(JsonRpcUser):
                 f"count: {count}, user: {self.id}"
             )
 
-            start_time = time.time()
+            start_time = time.perf_counter()
             # Execute all create operations in a single transaction
             operations = Operations(creates=operations)
             receipt = w3.arkiv.execute(operations)
-            duration = time.time() - start_time
+            duration = timedelta(seconds=time.perf_counter() - start_time)
 
             # Verify receipt
             if len(receipt.creates) != count:
@@ -395,14 +395,14 @@ class ArkivL3User(JsonRpcUser):
 
         try:
             w3 = self._initialize_account_and_w3()
-            start_time = time.time()
+            start_time = time.perf_counter()
             query = f'UniqueId="{unique_id}" && ArkivEntityType="StressedEntity"'
             result = w3.arkiv.query_entities(
                 query=query,
                 options=to_query_options(fields=KEY, max_results_per_page=MAX_RESULTS_PER_PAGE),
             )
             entities = [entity for entity in result]
-            duration = time.time() - start_time
+            duration = timedelta(seconds=time.perf_counter() - start_time)
 
             Metrics.get_metrics().record_query(0, duration, len(entities))
 
@@ -425,7 +425,7 @@ class ArkivL3User(JsonRpcUser):
             w3 = self._initialize_account_and_w3()
 
             # Query entities with queryPercentage below threshold
-            start_time = time.time()
+            start_time = time.perf_counter()
 
             query = f'ArkivEntityType="StressedEntity" && queryPercentage<{percent}'
             result = w3.arkiv.query_entities(
@@ -433,7 +433,7 @@ class ArkivL3User(JsonRpcUser):
                 options=to_query_options(fields=KEY, max_results_per_page=MAX_RESULTS_PER_PAGE),
             )
             entities = [entity for entity in result]
-            duration = time.time() - start_time
+            duration = timedelta(seconds=time.perf_counter() - start_time)
 
             Metrics.get_metrics().record_query(percent, duration, len(entities))
 

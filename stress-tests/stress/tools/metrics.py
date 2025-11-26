@@ -1,6 +1,7 @@
 import os
 import logging
 import threading
+from datetime import timedelta
 from prometheus_client import (
     CollectorRegistry,
     push_to_gateway,
@@ -304,28 +305,28 @@ class Metrics:
         return self.registry
 
     # Simple one-liner functions for recording metrics
-    def record_query(self, selectivness: int, duration: float, result_size: int = 0):
+    def record_query(self, selectivness: int, duration: timedelta, result_size: int = 0):
         """
         Record a query execution with percentile, duration, and result size.
 
         Args:
             selectivness: Selectiveness percentile threshold
-            duration: Duration in seconds (converted to milliseconds)
+            duration: Duration as timedelta (converted to milliseconds)
             result_size: Number of entities returned by the query
         """
         self.queries_by_percentile.labels(percentile=str(selectivness)).inc()
-        # Convert duration from seconds to milliseconds
-        duration_ms = duration * 1000
+        # Convert duration to milliseconds
+        duration_ms = duration.total_seconds() * 1000
         self.query_time.labels(percentile=str(selectivness)).observe(duration_ms)
         self.query_result_size.labels(percentile=str(selectivness)).observe(result_size)
 
     def record_transaction(
-        self, payload_bytes: int, duration: float, entity_count: int = 1
+        self, payload_bytes: int, duration: timedelta, entity_count: int = 1
     ):
-        """Record a transaction with payload size, duration, and entity count (duration in seconds, converted to milliseconds)"""
+        """Record a transaction with payload size, duration, and entity count (duration as timedelta, converted to milliseconds)"""
         self.transactions_count.inc()
         self.transaction_payload_bytes.inc(payload_bytes)
         self.entities_created.inc(entity_count)
-        # Convert duration from seconds to milliseconds
-        duration_ms = duration * 1000
+        # Convert duration to milliseconds
+        duration_ms = duration.total_seconds() * 1000
         self.transaction_time.observe(duration_ms)
