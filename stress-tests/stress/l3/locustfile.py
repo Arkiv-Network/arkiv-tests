@@ -140,14 +140,22 @@ class ArkivL3User(JsonRpcUser):
     def _topup_local_account(self):
         """Top up local account with ETH from the first account."""
         accounts = self.w3.eth.accounts
-        tx_hash = self.w3.eth.send_transaction(
-            {
-                "from": accounts[0],
-                "to": self.account.address,
-                "value": Web3.to_wei(10, "ether"),
-            }
-        )
-        logging.info(f"Transaction hash: {tx_hash}")
+
+        balance = Web3.from_wei(self.w3.eth.get_balance(self.account.address), "ether")
+        logging.info(f"Balance: {balance} ETH (user: {self.id})")
+        
+        # Top up if balance is below 0.1 ETH
+        if balance < 0.1:
+            tx_hash = self.w3.eth.send_transaction(
+                {
+                    "from": accounts[0],
+                    "to": self.account.address,
+                    "value": Web3.to_wei(10, "ether"),
+                }
+            )
+            logging.info(f"Transaction hash: {tx_hash} (user: {self.id})")
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            logging.info(f"Transaction confirmed in block: {receipt.blockNumber} (user: {self.id})")
 
     def _query_block_duration(self) -> int:
         """Get block duration from block timing."""
@@ -200,21 +208,6 @@ class ArkivL3User(JsonRpcUser):
                 gb_container = launch_image(config.image_to_run)
 
             w3 = self._initialize_account_and_w3()
-
-            balance = w3.eth.get_balance(self.account.address)
-            logging.info(f"Balance: {balance}")
-            if balance == 0:
-                if config.chain_env == "local":
-                    self._topup_local_account()
-                    logging.error(
-                        f"Not enough balance to send transaction (user: {self.id})"
-                    )
-                    time.sleep(0.5)
-                else:
-                    logging.error(
-                        f"Not enough balance to send transaction (user: {self.id})"
-                    )
-                    raise Exception("Not enough balance to send transaction")
 
             nonce = w3.eth.get_transaction_count(self.account.address)
             logging.info(f"Nonce: {nonce}")
