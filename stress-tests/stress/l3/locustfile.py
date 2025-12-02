@@ -95,8 +95,6 @@ def on_test_stop(environment, **kwargs):
 
 
 class ArkivL3User(JsonRpcUser):
-    wait_time = constant_pacing(10)
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.unique_ids = set()
@@ -443,6 +441,14 @@ class ArkivL3User(JsonRpcUser):
                 exc_info=True,
             )
             raise
+
+    @task(1)
+    def selective_query_1Percent(self):
+        self.selective_query(1)
+
+    @task(1)
+    def selective_query_5Percent(self):
+        self.selective_query(5)
 
     @task(1)
     def selective_query_20Percent(self):

@@ -13,7 +13,7 @@ class EntityCountUpdater:
 
     instance = None
 
-    def __init__(self, environment, update_interval: int = 3):
+    def __init__(self, environment, update_interval: int = 10):
         """
         Initialize the entity count updater.
 
