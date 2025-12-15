@@ -4,9 +4,19 @@ import uuid
 import random
 import socket
 import os
+import sys
+from pathlib import Path
 from datetime import timedelta
 from typing import Optional
 from itertools import combinations
+
+# Add the parent directory to Python path so we can import stress module
+# This file is at: stress-tests/stress/l3/locustfile.py
+# We need to add stress-tests/ to the path
+file_dir = Path(__file__).resolve().parent
+project_root = file_dir.parent.parent  # Go up from l3/ to stress/ to stress-tests/
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from arkiv import Arkiv
 from arkiv.account import NamedAccount
@@ -96,6 +106,7 @@ def on_test_stop(environment, **kwargs):
 
 
 class ArkivL3User(JsonRpcUser):
+    wait_time = between(1, 2)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.unique_ids = set()
@@ -667,7 +678,8 @@ class ArkivL3User(JsonRpcUser):
             )
 
             logging.debug(f"Result: {result} (user: {self.id})")
-            # logging.info(f"Keys: {len(result.entities)}")
+            entities = [entity for entity in result]
+            logging.info(f"Keys: {len(entities)}")
         except Exception as e:
             logging.error(
                 f"Error in retrieve_keys_to_count (user: {self.id}): {e}", exc_info=True

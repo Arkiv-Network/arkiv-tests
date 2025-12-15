@@ -1,4 +1,11 @@
 import logging
+import sys
+from pathlib import Path
+
+file_dir = Path(__file__).resolve().parent
+project_root = file_dir.parent.parent  # Go up from tools/ to stress/ to stress-tests/
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from web3 import Account, Web3
 from eth_account.signers.local import LocalAccount

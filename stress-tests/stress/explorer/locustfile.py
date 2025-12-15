@@ -1,4 +1,14 @@
 import logging
+import sys
+from pathlib import Path
+
+# Add the parent directory to Python path so we can import stress module
+# This file is at: stress-tests/stress/explorer/locustfile.py
+# We need to add stress-tests/ to the path
+file_dir = Path(__file__).resolve().parent
+project_root = file_dir.parent.parent  # Go up from explorer/ to stress/ to stress-tests/
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from eth_account.signers.local import LocalAccount
 from locust import task, between
