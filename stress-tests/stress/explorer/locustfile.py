@@ -23,10 +23,6 @@ Account.enable_unaudited_hdwallet_features()
 logging.info(f"Using mnemonic: {config.mnemonic}, users: {config.users}")
 
 
-    
-@events.test_stop.add_listener
-def on_test_stop(environment, **kwargs):
-    pass
 
 class L3ExplorerUser(FastHttpUser):
     wait_time = between(2, 6)
