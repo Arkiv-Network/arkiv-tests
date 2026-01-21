@@ -16,9 +16,9 @@ jobs:
 
       - name: Get Op Geth
         run: |
-          wget -q https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/geth
-          chmod +x geth
+          curl -L https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/binaries.tar.xz | tar -xJ
           ./geth version
+          ./golembase version
 
       - name: Run geth node
         run: |
