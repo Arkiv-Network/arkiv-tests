@@ -45,6 +45,11 @@ jobs:
         run: |
           python show-account-values.py
 
+      - name: Build and run integration tests
+        run: |
+          bun install 
+          bun write_example.ts
+
       - name: Stop Arkiv node
         if: always()
         run: |
