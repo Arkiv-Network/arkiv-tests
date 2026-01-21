@@ -2,8 +2,10 @@
 
 set -x
 
+DATA_DIR = "${GETH_SQLITE_DATA_DIRECTORY:-data}"
+
 ./geth \
-    --datadir "${GETH_SQLITE_DATA_DIRECTORY:-data}" \
+    --datadir "${DATA_DIR}" \
     --http \
     --http.api 'eth,web3,net,debug,arkiv' \
     --verbosity 3 \
@@ -34,6 +36,8 @@ while [ $counter -lt $MAX_RETRIES ]; do
     sleep 1
     counter=$((counter+1))
 done
+
+cp genesis.json ./"${DATA_DIR}"/keystore/genesis.json
 
 # Check if we timed out
 if [ $counter -eq $MAX_RETRIES ]; then
