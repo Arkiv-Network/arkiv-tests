@@ -1,82 +1,100 @@
-import { createPublicClient, createWalletClient, http } from "@arkiv-network/sdk"
-import { privateKeyToAccount } from "@arkiv-network/sdk/accounts"
-import { mendoza } from "@arkiv-network/sdk/chains"
-import { ExpirationTime, jsonToPayload } from "@arkiv-network/sdk/utils"
-import * as viem17 from "viem";
+import { createPublicClient, createWalletClient, http } from "@arkiv-network/sdk";
+import { privateKeyToAccount } from "@arkiv-network/sdk/accounts";
+import { ExpirationTime, jsonToPayload } from "@arkiv-network/sdk/utils";
+import * as viem from "viem";
+import * as fs from "fs";
+import * as path from "path";
 
-declare const dev: {
-  blockTime?: number | undefined | undefined;
-  contracts?: {
-    [x: string]: viem17.ChainContract | {
-      [sourceId: number]: viem17.ChainContract | undefined;
-    } | undefined;
-    ensRegistry?: viem17.ChainContract | undefined;
-    ensUniversalResolver?: viem17.ChainContract | undefined;
-    multicall3?: viem17.ChainContract | undefined;
-    erc6492Verifier?: viem17.ChainContract | undefined;
-  } | undefined;
-  ensTlds?: readonly string[] | undefined;
-  id: 60138453056;
-  name: "Mendoza";
+// Define the custom Dev chain
+const dev = {
+  id: 12345,
+  name: "Arkiv Dev",
   nativeCurrency: {
-    readonly name: "Ethereum";
-    readonly symbol: "ETH";
-    readonly decimals: 18;
-  };
-  experimental_preconfirmationTime?: number | undefined | undefined;
+    name: "Ethereum",
+    symbol: "ETH",
+    decimals: 18,
+  },
   rpcUrls: {
-    readonly default: {
-      readonly http: readonly ["http://127.0.0.1:8545"];
-      readonly webSocket: readonly ["wss://127.0.0.1:8545"];
-    };
-  };
-  sourceId?: number | undefined | undefined;
-  testnet: true;
-  custom?: Record<string, unknown> | undefined;
-  fees?: viem17.ChainFees<undefined> | undefined;
-  formatters?: undefined;
-  serializers?: viem17.ChainSerializers<undefined, viem17.TransactionSerializable> | undefined;
-  readonly network: "dev";
-};
+    default: {
+      http: ["http://127.0.0.1:8545"],
+      webSocket: ["wss://127.0.0.1:8545"],
+    },
+  },
+  testnet: true,
+  network: "dev",
+} as const;
+
+// Define interface for the JSON structure
+interface AccountData {
+  address: string;
+  privateKey: string;
+}
 
 async function main() {
-// Create a public client
+  // 1. Load accounts from keys.json
+  const keysFilePath = path.join(__dirname, "keys.json");
+  console.log(`Loading accounts from ${keysFilePath}...`);
+
+  const rawData = fs.readFileSync(keysFilePath, "utf-8");
+  const accounts: AccountData[] = JSON.parse(rawData);
+
+  // 2. Initialize the Public Client (shared for reading state)
   const publicClient = createPublicClient({
-    chain: dev, // mendoza is the Arkiv testnet for the purposes of hackathons organized in Buenos Aires during devconnect 2025
-    transport: http(),
-  })
-// Create a wallet client with an account
-  const client = createWalletClient({
     chain: dev,
     transport: http(),
-    account: privateKeyToAccount('0x...'), // Replace with your private key
   });
 
-// Create an entity
-  const {entityKey, txHash} = await client.createEntity({
-    payload: jsonToPayload({
-      entity: {
-        entityType: 'document',
-        entityId: 'doc-123',
-        entityContent: "Hello from DevConnect Hackathon 2025! Arkiv Mendoza chain wishes you all the best!"
-      },
-    }),
-    contentType: 'application/json',
-    attributes: [
-      {key: 'category', value: 'documentation'},
-      {key: 'version', value: '1.0'},
-    ],
-    expiresIn: ExpirationTime.fromDays(30), // Entity expires in 30 days
-  });
+  console.log(`Found ${accounts.length} accounts. Starting transactions...\n`);
 
-  console.log('Created entity:', entityKey);
-  console.log('Transaction hash:', txHash);
+  // 3. Iterate through each account and perform a transaction
+  for (const [index, acc] of accounts.entries()) {
+    try {
+      console.log(`--- Processing Account ${index + 1}: ${acc.address} ---`);
 
-  const newEntity = await publicClient.getEntity(entityKey);
-  console.log('Entity:', newEntity);
+      // Create Wallet Client for specific account
+      const account = privateKeyToAccount(acc.privateKey as `0x${string}`);
+      const client = createWalletClient({
+        chain: dev,
+        transport: http(),
+        account: account,
+      });
+
+      // Create a unique entity for this user
+      // We append the index to the ID to ensure uniqueness
+      const uniqueId = `doc-hackathon-${index + 1}`;
+
+      const { entityKey, txHash } = await client.createEntity({
+        payload: jsonToPayload({
+          entity: {
+            entityType: "document",
+            entityId: uniqueId,
+            entityContent: `Hello from DevConnect Hackathon! Account ${acc.address} says hi.`,
+          },
+        }),
+        contentType: "application/json",
+        attributes: [
+          { key: "category", value: "documentation" },
+          { key: "author", value: acc.address },
+          { key: "batch", value: "1.0" },
+        ],
+        expiresIn: ExpirationTime.fromDays(30),
+      });
+
+      console.log(`✅ Transaction sent!`);
+      console.log(`   Tx Hash: ${txHash}`);
+      console.log(`   Entity Key: ${entityKey}`);
+
+      // Optional: Verify creation
+      const newEntity = await publicClient.getEntity(entityKey);
+      console.log(`   Verified On-Chain: ID matches '${newEntity?.payload?.entity?.entityId}'\n`);
+
+    } catch (error) {
+      console.error(`❌ Error processing account ${acc.address}:`, error);
+    }
+  }
 }
 
 main().catch((error) => {
-  console.error('Error executing main function:', error);
+  console.error("Error executing main function:", error);
   process.exit(1);
 });
