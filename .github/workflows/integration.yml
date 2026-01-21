@@ -41,7 +41,7 @@ jobs:
         env:
           ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
 
-      - name: Show balance of main account
+      - name: Show balances of main accounts
         run: |
           python show-account-values.py
 
