@@ -42,7 +42,7 @@ jobs:
 
       - name: Show balance of main account
         run: |
-          ./show_balance.sh
+          python show-account-values.py
 
       - name: Stop geth node
         if: always()
