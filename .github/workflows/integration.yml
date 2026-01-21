@@ -14,13 +14,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Get foundry cli
+      - name: Prepare
         run: |
-          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-          ./forge --version
-          ./chisel --version
-          ./cast --version
-          ./anvil --version
+          pip install eth_account
+
+      # - name: Get foundry cli
+      #   run: |
+      #     curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
+      #     ./forge --version
+      #     ./chisel --version
+      #     ./cast --version
+      #     ./anvil --version
 
       - name: Get Op Geth
         run: |
@@ -30,10 +34,10 @@ jobs:
 
       - name: Run geth node
         run: |
-          ./init_geth.sh
+          python -u keys.py
           ./start_geth.sh
         env:
-          GETH_SQLITE_DATA_DIRECTORY: ./gethdata
+          GETH_SQLITE_DATA_DIRECTORY: ./geth_data
 
       - name: Show balance of main account
         run: |
@@ -53,7 +57,7 @@ jobs:
       - name: Compress geth logs
         if: always()
         run: |
-          tar -cf geth-logs.tar.gz gethdata
+          tar -cf geth-logs.tar.gz geth_data
 
       - uses: actions/upload-artifact@v5
         with:
