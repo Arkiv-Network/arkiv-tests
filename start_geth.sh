@@ -37,8 +37,6 @@ while [ $counter -lt $MAX_RETRIES ]; do
     counter=$((counter+1))
 done
 
-cp genesis.json ./"${DATA_DIR}"/keystore/genesis.json
-
 # Check if we timed out
 if [ $counter -eq $MAX_RETRIES ]; then
     echo "Error: Geth HTTP API did not become available within 20 seconds."

@@ -7,3 +7,5 @@ DATA_DIR="${GETH_SQLITE_DATA_DIRECTORY:-data}"
 
 # Initialize Geth
 ./geth --datadir "$DATA_DIR" init ./genesis.json
+
+cp genesis.json ./"${DATA_DIR}"/keystore/genesis.json
