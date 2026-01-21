@@ -23,3 +23,20 @@ jobs:
       - name: Run geth node
         run: |
           ./start_geth.sh
+        env:
+          GETH_SQLITE_DATA_DIRECTORY: ./gethdata
+
+      - name: Stop geth node
+        if: always()
+        run: |
+          pkill geth
+
+      - name: Compress geth logs
+        if: always()
+        run: |
+          tar -cf geth-logs.tar.gz gethdata
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: geth-data
+          path: geth-logs.tar.gz
