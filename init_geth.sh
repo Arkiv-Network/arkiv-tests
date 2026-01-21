@@ -9,6 +9,7 @@ DATA_DIR="${GETH_SQLITE_DATA_DIRECTORY:-data}"
 
 # Use | as a delimiter to avoid confusion with address characters
 # This replaces the string "MAIN_ACCOUNT" with the actual address
+cp ./genesis_template.json ./genesis.json
 sed -i "s|MAIN_ACCOUNT|$ADDR|g" ./genesis.json
 
 # Initialize Geth
