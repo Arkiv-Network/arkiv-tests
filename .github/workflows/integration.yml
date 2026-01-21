@@ -22,11 +22,4 @@ jobs:
 
       - name: Run geth node
         run: |
-          ./geth --dev --http --http.api 'eth,web3,net,debug,arkiv' \
-            --verbosity 3 \
-            --http.addr '0.0.0.0' \
-            --http.port 8545 \
-            --http.corsdomain '*' \
-            --http.vhosts '*' \
-            --ws --ws.addr '0.0.0.0' --ws.port 8545 \
-            --datadir ./golembase_sqlite
+          ./start_geth.sh
