@@ -1,0 +1,21 @@
+name: Internal test
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  integration:
+    name: Integration internal test
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile geth
+        run: |
+          git clone https://github.com/Arkiv-Network/arkiv-op-geth.git
+          cd arkiv-op-geth
+          make
