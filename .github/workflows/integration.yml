@@ -16,7 +16,7 @@ jobs:
 
       - name: Prepare
         run: |
-          pip install eth_account web3
+          pip install eth_account
 
       # - name: Get foundry cli
       #   run: |
