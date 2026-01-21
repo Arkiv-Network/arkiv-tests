@@ -14,8 +14,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Compile geth
+      - name: Get Op Geth
         run: |
-          git clone https://github.com/Arkiv-Network/arkiv-op-geth.git
-          cd arkiv-op-geth
-          make
+          wget https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/geth
+          chmod +x geth
+          ./geth version
