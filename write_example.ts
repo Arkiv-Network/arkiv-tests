@@ -1,7 +1,6 @@
 import { createPublicClient, createWalletClient, http } from "@arkiv-network/sdk";
 import { privateKeyToAccount } from "@arkiv-network/sdk/accounts";
 import { ExpirationTime, jsonToPayload } from "@arkiv-network/sdk/utils";
-import * as viem from "viem";
 import * as fs from "fs";
 import * as path from "path";
 
