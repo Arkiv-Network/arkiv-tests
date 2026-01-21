@@ -26,40 +26,41 @@ jobs:
       #     ./cast --version
       #     ./anvil --version
 
-      - name: Get Op Geth
+      - name: Get Arkiv
         run: |
           curl -sL https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/binaries.tar.xz | tar -xJ
-          ./geth version
+          mv geth arkiv
+          ./arkiv version
           ./golembase --help
 
-      - name: Run geth node
+      - name: Run Arkiv node
         run: |
           python -u generate-genesis.py 5
-          ./init_geth.sh
-          ./start_geth.sh
+          ./init_arkiv.sh
+          ./start_arkiv.sh
         env:
-          GETH_SQLITE_DATA_DIRECTORY: ./geth_data
+          ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
 
       - name: Show balance of main account
         run: |
           python show-account-values.py
 
-      - name: Stop geth node
+      - name: Stop Arkiv node
         if: always()
         run: |
-          pkill geth
+          pkill arkiv
 
       - name: Check sqlite file
         if: always()
         run: |
-          sqlite3 geth_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
+          sqlite3 arkiv_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
 
-      - name: Compress geth logs
+      - name: Compress Arkiv logs
         if: always()
         run: |
-          tar -cf geth-logs.tar.gz geth_data
+          tar -cf arkiv-logs.tar.gz arkiv_data
 
       - uses: actions/upload-artifact@v5
         with:
-          name: geth-data
-          path: geth-logs.tar.gz
+          name: arkiv-data
+          path: arkiv-logs.tar.gz

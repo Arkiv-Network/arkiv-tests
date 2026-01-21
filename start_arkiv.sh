@@ -2,9 +2,9 @@
 
 set -x
 
-DATA_DIR="${GETH_SQLITE_DATA_DIRECTORY:-data}"
+DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
 
-./geth \
+./arkiv \
     --datadir "${DATA_DIR}" \
     --http \
     --http.api 'eth,web3,net,debug,arkiv' \
@@ -15,8 +15,8 @@ DATA_DIR="${GETH_SQLITE_DATA_DIRECTORY:-data}"
     --http.corsdomain '*' \
     --http.vhosts '*'&
 
-# Wait for geth to start
-echo "Waiting for Geth HTTP API to be ready..."
+# Wait for arkiv to start
+echo "Waiting for Arkiv HTTP API to be ready..."
 
 # Set timeout variables
 MAX_RETRIES=20
@@ -28,17 +28,17 @@ while [ $counter -lt $MAX_RETRIES ]; do
     if curl -s -X POST -H "Content-Type: application/json" \
         --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
         http://127.0.0.1:8545 > /dev/null; then
-        echo "Geth is up and running!"
+        echo "Arkiv is up and running!"
         break
     fi
 
-    echo "Waiting for Geth... $((counter+1))/$MAX_RETRIES"
+    echo "Waiting for Arkiv... $((counter+1))/$MAX_RETRIES"
     sleep 1
     counter=$((counter+1))
 done
 
 # Check if we timed out
 if [ $counter -eq $MAX_RETRIES ]; then
-    echo "Error: Geth HTTP API did not become available within 20 seconds."
+    echo "Error: Arkiv HTTP API did not become available within 20 seconds."
     exit 1
 fi
