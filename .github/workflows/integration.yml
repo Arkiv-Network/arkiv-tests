@@ -16,12 +16,13 @@ jobs:
 
       - name: Get Op Geth
         run: |
-          curl -L https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/binaries.tar.xz | tar -xJ
+          curl -sL https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/binaries.tar.xz | tar -xJ
           ./geth version
           ./golembase --help
 
       - name: Run geth node
         run: |
+          ./init_geth.sh
           ./start_geth.sh
         env:
           GETH_SQLITE_DATA_DIRECTORY: ./gethdata
