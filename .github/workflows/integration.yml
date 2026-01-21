@@ -35,6 +35,10 @@ jobs:
         env:
           GETH_SQLITE_DATA_DIRECTORY: ./gethdata
 
+      - name: Show balance of main account
+        run: |
+          ./show_balance.sh
+
       - name: Stop geth node
         if: always()
         run: |
