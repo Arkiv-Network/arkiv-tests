@@ -13,7 +13,8 @@ DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
     --http.addr '0.0.0.0' \
     --http.port 8545 \
     --http.corsdomain '*' \
-    --http.vhosts '*' | tee "${DATA_DIR}"/arkiv.log &
+    --http.vhosts '*' \
+    2>&1 | tee "${DATA_DIR}/arkiv.log" &
 
 # Wait for arkiv to start
 echo "Waiting for Arkiv HTTP API to be ready..."
