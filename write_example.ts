@@ -52,7 +52,7 @@ async function main() {
       console.log(`--- Processing Account ${index + 1}: ${acc.address} ---`);
 
       // Create Wallet Client for specific account
-      const account = privateKeyToAccount(acc.privateKey as `0x${string}`);
+      const account = privateKeyToAccount(("0x" + acc.privateKey) as `0x${string}`);
       const client = createWalletClient({
         chain: dev,
         transport: http(),
