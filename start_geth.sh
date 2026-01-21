@@ -2,7 +2,7 @@
 
 set -x
 
-DATA_DIR = "${GETH_SQLITE_DATA_DIRECTORY:-data}"
+DATA_DIR="${GETH_SQLITE_DATA_DIRECTORY:-data}"
 
 ./geth \
     --datadir "${DATA_DIR}" \
