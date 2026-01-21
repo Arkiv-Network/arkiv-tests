@@ -79,4 +79,4 @@ async function main() {
 main().catch((error) => {
   console.error('Error executing main function:', error);
   process.exit(1);
-}
+});
