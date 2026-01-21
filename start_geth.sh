@@ -4,7 +4,6 @@ set -x
 
 ./geth \
     --datadir "${GETH_SQLITE_DATA_DIRECTORY:-data}" \
-    --dev \
     --http \
     --http.api 'eth,web3,net,debug,arkiv' \
     --verbosity 3 \
