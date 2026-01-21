@@ -31,6 +31,12 @@ jobs:
         run: |
           pkill geth
 
+      - name: Check sqlite file
+        if: always()
+        run: |
+          cd gethdata
+          sqlite3 golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
+
       - name: Compress geth logs
         if: always()
         run: |
