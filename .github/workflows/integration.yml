@@ -16,7 +16,7 @@ jobs:
 
       - name: Get foundry cli
         run: |
-          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -x
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
           ./forge --version
           ./chisel --version
           ./cast --version
