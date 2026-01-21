@@ -34,7 +34,7 @@ jobs:
 
       - name: Run geth node
         run: |
-          python -u keys.py
+          python -u keys.py 5
           ./start_geth.sh
         env:
           GETH_SQLITE_DATA_DIRECTORY: ./geth_data
