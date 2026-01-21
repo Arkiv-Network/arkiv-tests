@@ -27,7 +27,7 @@
   "difficulty": "0x1",
   "gasLimit": "30000000",
   "alloc": {
-    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+    "MAIN_ACCOUNT": {
       "balance": "1000000000000000000000"
     }
   }

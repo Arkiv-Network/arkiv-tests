@@ -14,6 +14,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get foundry cli
+        run: |
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -x
+          ./forge --version
+          ./chisel --version
+          ./cast --version
+          ./anvil --version
+
       - name: Get Op Geth
         run: |
           curl -sL https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/binaries.tar.xz | tar -xJ
