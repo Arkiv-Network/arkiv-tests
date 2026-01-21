@@ -34,7 +34,8 @@ jobs:
 
       - name: Run geth node
         run: |
-          python -u keys.py 5
+          python -u generate-genesis.py 5
+          ./init_geth.sh
           ./start_geth.sh
         env:
           GETH_SQLITE_DATA_DIRECTORY: ./geth_data
