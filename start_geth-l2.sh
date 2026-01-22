@@ -3,6 +3,7 @@
 set -x
 
 DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
+SIGNER_ADDRESS="${ARKIV_SIGNER_ADDRESS:-0xYOUR_SIGNER_ADDRESS}"
 
 ./geth-l2 \
     --datadir "${DATA_DIR}" \
@@ -14,6 +15,10 @@ DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
     --http.port 8545 \
     --http.corsdomain '*' \
     --http.vhosts '*' \
+    --unlock "${SIGNER_ADDRESS}" \
+    --allow-insecure-unlock \
+    --mine \
+    --miner.etherbase "${SIGNER_ADDRESS}"
     2>&1 | tee "${DATA_DIR}/arkiv.log" &
 
 # Wait for arkiv to start
