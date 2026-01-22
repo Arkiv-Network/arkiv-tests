@@ -20,8 +20,7 @@ GENESIS_TEMPLATE = {
         "londonBlock": 0,
         "shanghaiTime": 0,
         "cancunTime": 0,
-        "terminalTotalDifficulty": 0,
-        "terminalTotalDifficultyPassed": True,
+        # terminalTotalDifficulty fields removed for pure Clique
         "blobSchedule": {
             "cancun": {
                 "target": 3,
@@ -29,7 +28,11 @@ GENESIS_TEMPLATE = {
                 "baseFeeUpdateFraction": 3338477
             }
         },
-        "ethash": {}
+        # Ethash removed, Clique added
+        "clique": {
+            "period": 1,    # Block time in seconds
+            "epoch": 30000  # Number of blocks before a checkpoint
+        }
     },
     "difficulty": "0x1",
     "gasLimit": "30000000",
