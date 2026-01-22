@@ -4,7 +4,7 @@ set -x
 
 DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
 
-./arkiv \
+./geth-l2 \
     --datadir "${DATA_DIR}" \
     --http \
     --http.api 'eth,web3,net,debug,arkiv' \

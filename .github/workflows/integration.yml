@@ -17,10 +17,6 @@ jobs:
       - name: Install bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Prepare
-        run: |
-          pip install eth_account
-
       # - name: Get foundry cli
       #   run: |
       #     curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
@@ -29,10 +25,15 @@ jobs:
       #     ./cast --version
       #     ./anvil --version
 
-      - name: Install geth
+      - name: Install geth-l2
         run: |
           curl -sL https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.16.8-abeb78c6.tar.gz | tar -xz
-          ./geth version
+          mv geth-linux-amd64-1.16.8-abeb78c6/geth ./geth-l2
+          ./geth-l2 version
+
+      - name: Prepare python environment
+        run: |
+          pip install eth_account
 
       - name: Run L2 node
         run: |
