@@ -55,7 +55,7 @@ def generate_keys(count):
 
     print(f"Generating {count} accounts...")
 
-    for _ in range(count):
+    for i in range(count):
         acct = Account.create()
         addr = acct.address.lower()
         priv = acct.key.hex()
@@ -70,6 +70,10 @@ def generate_keys(count):
         genesis_data["alloc"][addr] = {
             "balance": DEFAULT_BALANCE_WEI
         }
+        if i == 0:
+            with open(os.path.join("l2", ".env"), 'a') as f:
+                f.write(f"\nPRIVATE_KEY={priv}\n")
+                f.write(f"MAIN_ACCOUNT={addr}\n")
 
     # Sort accounts list by address
     accounts_list.sort(key=lambda x: x['address'])
