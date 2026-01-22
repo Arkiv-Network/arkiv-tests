@@ -28,7 +28,7 @@ jobs:
 
       - name: Install geth-l2
         run: |
-          curl -sL https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.16.8-abeb78c6.tar.gz | tar -xz
+          curl -sL https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.16.8-abeb78c6.tar.gz | tar -xJ
           mv op-geth /usr/local/bin
           mv op-node /usr/local/bin
           op-geth version
