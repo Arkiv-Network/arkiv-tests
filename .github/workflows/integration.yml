@@ -36,9 +36,12 @@ jobs:
           op-geth version
           op-node --version
 
-      - name: Prepare python environment
+      - name: Prepare L2 node
         run: |
-          pip install eth_account
+          openssl rand -hex 32 > jwt.txt
+          op-geth --datadir ./l2-data init genesis.json
+          
+          ./start_both.sh
 
       - name: Run L2 node
         run: |
