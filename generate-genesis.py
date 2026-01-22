@@ -3,10 +3,10 @@ import sys
 import json
 from eth_account import Account
 
-# This template matches the specific configuration you requested.
+# --- OP STACK CONFIGURATION ---
 GENESIS_TEMPLATE = {
     "config": {
-        "chainId": 12345,
+        "chainId": 42069, # Standard Devnet ID
         "homesteadBlock": 0,
         "eip150Block": 0,
         "eip155Block": 0,
@@ -17,118 +17,99 @@ GENESIS_TEMPLATE = {
         "istanbulBlock": 0,
         "berlinBlock": 0,
         "londonBlock": 0,
-        "blobSchedule": {
-            "cancun": {
-                "target": 3,
-                "max": 6,
-                "baseFeeUpdateFraction": 3338477
-            }
-        },
-        # Ethash removed, Clique added
-        "clique": {
-            "period": 1,    # Block time in seconds
-            "epoch": 30000  # Number of blocks before a checkpoint
+        "arrowGlacierBlock": 0,
+        "grayGlacierBlock": 0,
+        "mergeNetsplitBlock": 0,
+
+        # OP Stack Specific Hardforks (Set to 0 for instant activation)
+        "bedrockBlock": 0,
+        "regolithBlock": 0,
+        "canyonBlock": 0,
+        "deltaBlock": 0,
+        "ecotoneBlock": 0,
+
+        "terminalTotalDifficulty": 0,
+        "terminalTotalDifficultyPassed": True,
+
+        # Critical for op-geth to behave as L2
+        "optimism": {
+            "eip1559Elasticity": 6,
+            "eip1559Denominator": 50
         }
     },
-    "difficulty": "0x1",
-    "gasLimit": "30000000",
+    "nonce": "0x0",
+    "timestamp": "0x0",
+    "extraData": "0x",
+    "gasLimit": "0x1C9C380", # 30,000,000 in Hex
+    "difficulty": "0x0",      # Must be 0 for PoS/OP Stack
+    "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "coinbase": "0x0000000000000000000000000000000000000000",
     "alloc": {}
-    # extraData will be dynamically populated in generate_keys
 }
 
 def generate_keys(count):
-    """
-    Generate keys and populate a full genesis.json based on the template.
-    Automatically configures the first account as the Clique Signer.
-    """
     out_dir = '.'
     os.makedirs(out_dir, exist_ok=True)
-    os.makedirs("l2", exist_ok=True) # Ensure l2 dir exists for .env
+    os.makedirs("l2-data", exist_ok=True)
 
-    keys_outfile = os.path.join(out_dir, 'keys.json')
+    keys_outfile = os.path.join(out_dir, 'dev_keys.json')
     genesis_outfile = os.path.join(out_dir, 'genesis.json')
+    jwt_outfile = os.path.join(out_dir, 'jwt.txt')
 
-    # Balance: 1000 ETH in Wei
-    DEFAULT_BALANCE_WEI = "1000000000000000000000"
+    # Balance: 1000 ETH
+    DEFAULT_BALANCE_WEI = "0x3635C9ADC5DEA00000"
 
     accounts_list = []
-    # Create a deep copy of the template to avoid modifying the global variable
     genesis_data = json.loads(json.dumps(GENESIS_TEMPLATE))
 
-    signer_address = None
-
     print(f"Generating {count} accounts...")
+
+    # 1. Generate JWT Secret (Needed for Engine API)
+    with open(jwt_outfile, 'w') as f:
+        # Just a random hex string for dev
+        f.write("0000000000000000000000000000000000000000000000000000000000000000")
+    print(f"Created dummy JWT at {jwt_outfile}")
 
     for i in range(count):
         acct = Account.create()
         addr = acct.address.lower()
-        # Remove '0x' from private key for clean usage, or keep it if preferred.
-        # Usually tools prefer raw hex without prefix for keys.json, but with 0x for .env
-        priv_hex = acct.key.hex()
+        priv_hex = acct.key.hex() # Keeps 0x
 
-        # Capture the first address to be the Clique Signer
+        # Save first account as the "Sequencer"
         if i == 0:
-            signer_address = addr
-            # Overwrite/Create .env file
-            with open(os.path.join("l2", ".env"), 'w') as f:
-                f.write(f"PRIVATE_KEY={priv_hex}\n")
-                f.write(f"MAIN_ACCOUNT={addr}\n")
+            with open(os.path.join("l2-data", ".env"), 'w') as f:
+                f.write(f"SEQUENCER_PRIVATE_KEY={priv_hex}\n")
+                f.write(f"SEQUENCER_ADDRESS={addr}\n")
 
-        # 1. Entry for keys.json
         accounts_list.append({
             "address": addr,
             "privateKey": priv_hex
         })
 
-        # 2. Entry for genesis.json alloc
         genesis_data["alloc"][addr] = {
             "balance": DEFAULT_BALANCE_WEI
         }
 
-    # --- CRITICAL FIX: Generate Clique extraData ---
-    if signer_address:
-        # Clique extraData format:
-        # 1. Vanity (32 bytes / 64 hex chars)
-        # 2. Signer Address (20 bytes / 40 hex chars)
-        # 3. Seal (65 bytes / 130 hex chars) - Must be 0s for genesis
+    # IMPORTANT:
+    # In a real OP Stack chain, we would need to inject the
+    # 'Predeploy' contracts here (Key addresses starting with 0x4200...)
+    # Without them, op-node will likely panic.
 
-        vanity = "0" * 64
-        signer = signer_address.replace("0x", "")
-        seal = "0" * 130
-
-        genesis_data["extraData"] = f"0x{vanity}{signer}{seal}"
-        print(f"Set Clique Signer to: {signer_address}")
-    else:
-        print("Error: No signer address generated.")
-        return
-
-    # Sort accounts list by address
-    accounts_list.sort(key=lambda x: x['address'])
-
-    # Sort the alloc keys in genesis for neatness
-    sorted_alloc = {k: genesis_data["alloc"][k] for k in sorted(genesis_data["alloc"])}
-    genesis_data["alloc"] = sorted_alloc
-
-    # --- Write keys.json ---
+    # Write files
     with open(keys_outfile, 'w') as f:
         json.dump(accounts_list, f, indent=4)
-    print(f"Saved private keys to: {keys_outfile}")
 
-    # --- Write genesis.json ---
     with open(genesis_outfile, 'w') as f:
         json.dump(genesis_data, f, indent=4)
-    print(f"Saved genesis file to: {genesis_outfile}")
+
+    print(f"Success. Genesis saved to {genesis_outfile}")
+    print(f"WARNING: This genesis lacks OP Stack system contracts (Predeploys).")
+    print(f"op-geth will start, but op-node will likely fail to derive blocks.")
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Usage: python keys.py <number_of_keys>')
-        sys.exit(1)
-
     try:
-        count = int(sys.argv[1])
-        if count <= 0:
-            raise ValueError('Number must be positive')
+        # Default to 10 keys if no arg
+        count = int(sys.argv[1]) if len(sys.argv) > 1 else 5
         generate_keys(count)
-    except ValueError as e:
-        print(f'Error: Invalid number - {e}')
-        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")

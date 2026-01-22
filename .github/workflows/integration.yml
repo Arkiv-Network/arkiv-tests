@@ -27,6 +27,11 @@ jobs:
           cast --version
           anvil --version
 
+      - name: Generate genesis files
+        run: |
+          pip install eth-account
+          python -u generate-genesis.py 5
+
       - name: Get op-geth and op-node
         run: |
           set -x
@@ -38,13 +43,11 @@ jobs:
 
       - name: Prepare L2 node
         run: |
-          openssl rand -hex 32 > jwt.txt
-          op-geth --datadir ./l2-data init genesis.json
-          
           ./start_both.sh
 
       - name: Run L2 node
         run: |
+          pip install eth-account
           python -u generate-genesis.py 5
           ./init_geth-l2.sh
           ./start_geth-l2.sh
