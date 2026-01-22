@@ -20,10 +20,11 @@ jobs:
       - name: Get foundry cli
         run: |
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-          ./forge --version
-          ./chisel --version
-          ./cast --version
-          ./anvil --version
+          sudo mv forge cast anvil chisel /usr/local/bin/
+          forge --version
+          chisel --version
+          cast --version
+          anvil --version
 
       - name: Install geth-l2
         run: |
@@ -51,7 +52,7 @@ jobs:
         run: |
           cd l2
           ./build.sh
-          ../forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
+          forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
         env:
           ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
 
