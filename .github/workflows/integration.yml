@@ -17,13 +17,13 @@ jobs:
       - name: Install bun
         uses: oven-sh/setup-bun@v2
 
-      # - name: Get foundry cli
-      #   run: |
-      #     curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-      #     ./forge --version
-      #     ./chisel --version
-      #     ./cast --version
-      #     ./anvil --version
+      - name: Get foundry cli
+        run: |
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
+          ./forge --version
+          ./chisel --version
+          ./cast --version
+          ./anvil --version
 
       - name: Install geth-l2
         run: |
@@ -50,7 +50,7 @@ jobs:
       - name: Deploy GLM contract
         run: |
           cd l2
-          forge script script/DeployTestToken.s.sol --broadcast --private-key ${{ secrets.DEV_PRIVATE_KEY }} --rpc-url http://localhost:8545
+          ./forge script script/DeployTestToken.s.sol --broadcast --private-key ${{ secrets.DEV_PRIVATE_KEY }} --rpc-url http://localhost:8545
         env:
           ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
 
