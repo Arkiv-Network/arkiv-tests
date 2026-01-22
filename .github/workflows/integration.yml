@@ -29,18 +29,20 @@ jobs:
       #     ./cast --version
       #     ./anvil --version
 
-      - name: Get Arkiv
+      - name: Install geth
         run: |
-          curl -sL https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/binaries.tar.xz | tar -xJ
-          mv geth arkiv
-          ./arkiv version
-          ./golembase --help
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install -y ethereum
+          geth version
 
-      - name: Run Arkiv node
+      - name: Run L2 node
         run: |
           python -u generate-genesis.py 5
-          ./init_arkiv.sh
-          ./start_arkiv.sh
+          ./init_geth-l2.sh
+          ./start_geth-l2.sh
         env:
           ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
 
