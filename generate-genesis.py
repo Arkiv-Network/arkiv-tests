@@ -4,7 +4,6 @@ import json
 from eth_account import Account
 
 # This template matches the specific configuration you requested.
-# Using 'True' (Python boolean) for JSON 'true'.
 GENESIS_TEMPLATE = {
     "config": {
         "chainId": 12345,
@@ -37,14 +36,17 @@ GENESIS_TEMPLATE = {
     "difficulty": "0x1",
     "gasLimit": "30000000",
     "alloc": {}
+    # extraData will be dynamically populated in generate_keys
 }
 
 def generate_keys(count):
     """
     Generate keys and populate a full genesis.json based on the template.
+    Automatically configures the first account as the Clique Signer.
     """
     out_dir = '.'
     os.makedirs(out_dir, exist_ok=True)
+    os.makedirs("l2", exist_ok=True) # Ensure l2 dir exists for .env
 
     keys_outfile = os.path.join(out_dir, 'keys.json')
     genesis_outfile = os.path.join(out_dir, 'genesis.json')
@@ -56,27 +58,52 @@ def generate_keys(count):
     # Create a deep copy of the template to avoid modifying the global variable
     genesis_data = json.loads(json.dumps(GENESIS_TEMPLATE))
 
+    signer_address = None
+
     print(f"Generating {count} accounts...")
 
     for i in range(count):
         acct = Account.create()
         addr = acct.address.lower()
-        priv = acct.key.hex()
+        # Remove '0x' from private key for clean usage, or keep it if preferred.
+        # Usually tools prefer raw hex without prefix for keys.json, but with 0x for .env
+        priv_hex = acct.key.hex()
+
+        # Capture the first address to be the Clique Signer
+        if i == 0:
+            signer_address = addr
+            # Overwrite/Create .env file
+            with open(os.path.join("l2", ".env"), 'w') as f:
+                f.write(f"PRIVATE_KEY={priv_hex}\n")
+                f.write(f"MAIN_ACCOUNT={addr}\n")
 
         # 1. Entry for keys.json
         accounts_list.append({
             "address": addr,
-            "privateKey": priv
+            "privateKey": priv_hex
         })
 
         # 2. Entry for genesis.json alloc
         genesis_data["alloc"][addr] = {
             "balance": DEFAULT_BALANCE_WEI
         }
-        if i == 0:
-            with open(os.path.join("l2", ".env"), 'a') as f:
-                f.write(f"\nPRIVATE_KEY=0x{priv}\n")
-                f.write(f"MAIN_ACCOUNT={addr}\n")
+
+    # --- CRITICAL FIX: Generate Clique extraData ---
+    if signer_address:
+        # Clique extraData format:
+        # 1. Vanity (32 bytes / 64 hex chars)
+        # 2. Signer Address (20 bytes / 40 hex chars)
+        # 3. Seal (65 bytes / 130 hex chars) - Must be 0s for genesis
+
+        vanity = "0" * 64
+        signer = signer_address.replace("0x", "")
+        seal = "0" * 130
+
+        genesis_data["extraData"] = f"0x{vanity}{signer}{seal}"
+        print(f"Set Clique Signer to: {signer_address}")
+    else:
+        print("Error: No signer address generated.")
+        return
 
     # Sort accounts list by address
     accounts_list.sort(key=lambda x: x['address'])
