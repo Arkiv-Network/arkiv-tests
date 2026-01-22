@@ -32,7 +32,7 @@ jobs:
           mv op-geth /usr/local/bin
           mv op-node /usr/local/bin
           op-geth version
-          op-node version
+          op-node --version
 
       - name: Prepare python environment
         run: |
