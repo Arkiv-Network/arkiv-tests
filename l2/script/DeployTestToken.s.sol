@@ -7,8 +7,12 @@ import "../src/TestToken.sol"; // Import your token here
 // Make sure this matches the name in your command (:DeployTestToken)
 contract DeployTestToken is Script {
     function run() external {
-        vm.startBroadcast();
+        uint256 deployerKey = vm.envUint("PRIVATE_KEY");
+
+        vm.startBroadcast(deployerKey);
+
         new TestToken(); // This deploys the token
+
         vm.stopBroadcast();
     }
 }
