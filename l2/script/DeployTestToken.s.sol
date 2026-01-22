@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Script.sol";
-import "../src/TestToken.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract DeployTestToken is Script {
-    function run() external {
-        vm.startBroadcast();
-        new TestToken();
-        vm.stopBroadcast();
+contract TestToken is ERC20 {
+    constructor() ERC20("Test Token", "TEST") {
+        // Mint 1,000,000 tokens to the msg.sender (the deployer)
+        _mint(msg.sender, 1000000 * 10 ** decimals());
     }
 }
