@@ -47,6 +47,13 @@ jobs:
         run: |
           python show-account-values.py
 
+      - name: Deploy GLM contract
+        run: |
+          cd l2
+          forge script script/DeployTestToken.s.sol --broadcast --private-key ${{ secrets.DEV_PRIVATE_KEY }} --rpc-url http://localhost:8545
+        env:
+          ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
+
       - name: Build and run integration tests
         run: |
           bun install 
