@@ -1,15 +1,16 @@
 set -x
 
-anvil -p 25555 &
 
 op-geth --datadir ./l2-data init genesis.json
 
-op-geth --datadir ./l2-data console --exec "eth.getBlock(0).hash" | tee hash2.txt
+op-geth --datadir ./l2-data console --exec "eth.getBlock(0).hash" | tee l2-hash.txt
+
+anvil -p 25555 &
 
 sleep 2
 
 # In a new terminal, while anvil is running
-cast block 0 --rpc-url http://localhost:25555 | grep hash | tee hash.txt
+cast block 0 --rpc-url http://localhost:25555 | grep hash | tee l1-hash.txt
 
 # 3. Start op-geth
 op-geth \
