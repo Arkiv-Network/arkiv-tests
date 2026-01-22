@@ -52,6 +52,8 @@ jobs:
         run: |
           cd l2
           ./build.sh
+          # Load private key from .env file
+          source .env
           forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
         env:
           ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
