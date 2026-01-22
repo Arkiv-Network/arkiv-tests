@@ -19,6 +19,7 @@ jobs:
 
       - name: Get foundry cli
         run: |
+          set -x
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
           sudo mv forge cast anvil chisel /usr/local/bin/
           forge --version
@@ -26,8 +27,9 @@ jobs:
           cast --version
           anvil --version
 
-      - name: Install geth-l2
+      - name: Get op-geth and op-node
         run: |
+          set -x
           curl -sL https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/optimism-binaries-2026-01-22.tar.xz | tar -xJ
           mv op-geth /usr/local/bin
           mv op-node /usr/local/bin
