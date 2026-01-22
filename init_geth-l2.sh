@@ -14,5 +14,5 @@ echo "mysecretpassword" > data/password.txt
 
 # 4. Import the key
 grep "PRIVATE_KEY" l2/.env | cut -d'=' -f2 | sed 's/0x//' > signer.key
-./geth-l2 account import --datadir data --password data/password.txt signer.key
+./geth-l2 account import --datadir data --password password.txt signer.key
 rm signer.key
