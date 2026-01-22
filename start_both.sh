@@ -1,14 +1,10 @@
-# 1. Start L1 (Anvil)
-# Note: If your rollup.json expects specific L1 contracts, Anvil must have
-# the state from when those configs were generated.
-# If this is a fresh run, you might need to redeploy L1 contracts or load a state dump.
+
 anvil -p 25555 &
-# 2. Initialize op-geth Database (CRITICAL MISSING STEP)
-# You must write the genesis block to the data directory first.
-./op-geth --datadir ./l2-data init genesis.json
+
+op-geth --datadir ./l2-data init genesis.json
 
 # 3. Start op-geth
-./op-geth \
+op-geth \
   --datadir ./l2-data \
   --http \
   --http.port 8545 \
@@ -25,7 +21,7 @@ anvil -p 25555 &
 sleep 2
 # 4. Start op-node
 # Added: --p2p.sequencer.key (Required to sign blocks)
-./op-node \
+op-node \
   --l2=http://localhost:8551 \
   --l2.jwt-secret=./jwt.txt \
   --sequencer.enabled \
