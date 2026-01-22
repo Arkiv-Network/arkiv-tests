@@ -72,7 +72,7 @@ def generate_keys(count):
         }
         if i == 0:
             with open(os.path.join("l2", ".env"), 'a') as f:
-                f.write(f"\nPRIVATE_KEY={priv}\n")
+                f.write(f"\nPRIVATE_KEY=0x{priv}\n")
                 f.write(f"MAIN_ACCOUNT={addr}\n")
 
     # Sort accounts list by address
