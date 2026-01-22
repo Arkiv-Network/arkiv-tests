@@ -4,6 +4,15 @@ set -x
 
 DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
 SIGNER_ADDRESS="${ARKIV_SIGNER_ADDRESS:-0xYOUR_SIGNER_ADDRESS}"
+PASSWORD_FILE="${DATA_DIR}/password.txt"
+
+# Ensure password file exists to prevent startup failure
+if [ ! -f "$PASSWORD_FILE" ]; then
+    echo "Error: $PASSWORD_FILE not found. Please create it with your account password."
+    exit 1
+fi
+
+echo "Starting Geth with signer: $SIGNER_ADDRESS"
 
 ./geth-l2 \
     --datadir "${DATA_DIR}" \
@@ -17,8 +26,9 @@ SIGNER_ADDRESS="${ARKIV_SIGNER_ADDRESS:-0xYOUR_SIGNER_ADDRESS}"
     --http.vhosts '*' \
     --unlock "${SIGNER_ADDRESS}" \
     --allow-insecure-unlock \
+    --password "${PASSWORD_FILE}" \
     --mine \
-    --miner.etherbase "${SIGNER_ADDRESS}"
+    --miner.etherbase "${SIGNER_ADDRESS}" \
     2>&1 | tee "${DATA_DIR}/arkiv.log" &
 
 # Wait for arkiv to start
