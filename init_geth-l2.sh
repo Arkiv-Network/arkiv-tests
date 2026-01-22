@@ -10,9 +10,9 @@ DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
 
 cp genesis.json ./"${DATA_DIR}"/keystore/genesis.json
 
-echo "mysecretpassword" > data/password.txt
+echo "mysecretpassword" > ./"${DATA_DIR}"/password.txt
 
 # 4. Import the key
 grep "PRIVATE_KEY" l2/.env | cut -d'=' -f2 | sed 's/0x//' > signer.key
-./geth-l2 account import --datadir data --password password.txt signer.key
+./geth-l2 account import --datadir data --password ./"${DATA_DIR}"/password.txt signer.key
 rm signer.key
