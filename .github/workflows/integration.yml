@@ -50,6 +50,7 @@ jobs:
       - name: Deploy GLM contract
         run: |
           cd l2
+          ./build.sh
           ../forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
         env:
           ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
