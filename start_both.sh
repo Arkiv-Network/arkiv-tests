@@ -4,6 +4,13 @@ anvil -p 25555 &
 
 op-geth --datadir ./l2-data init genesis.json
 
+op-geth --datadir ./l2-data console --exec "eth.getBlock(0).hash" | tee hash2.txt
+
+sleep 2
+
+# In a new terminal, while anvil is running
+cast block 0 --rpc-url http://localhost:25555 | grep hash | tee hash.txt
+
 # 3. Start op-geth
 op-geth \
   --datadir ./l2-data \
@@ -18,13 +25,6 @@ op-geth \
   --gcmode=archive \
   --nodiscover \
   --networkid=42069 & # ensure this matches chainId in genesis.json
-
-sleep 2
-
-# In a new terminal, while anvil is running
-cast block 0 --rpc-url http://localhost:25555 | grep hash | tee hash.txt
-
-op-geth --datadir ./l2-data console --exec "eth.getBlock(0).hash" | tee hash2.txt
 
 
 # 4. Start op-node

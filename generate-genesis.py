@@ -1,7 +1,7 @@
 import os
+import subprocess
 import sys
 import json
-from eth_account import Account
 
 # --- OP STACK CONFIGURATION ---
 GENESIS_TEMPLATE = {
@@ -71,9 +71,19 @@ def generate_keys(count):
     print(f"Created dummy JWT at {jwt_outfile}")
 
     for i in range(count):
-        acct = Account.create()
-        addr = acct.address.lower()
-        priv_hex = acct.key.hex() # Keeps 0x
+        result = subprocess.run(
+            ["cast", "wallet", "new", "--json"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # Parse the JSON output (cast returns a list of wallets)
+        wallet_data = json.loads(result.stdout)[0]
+
+        # Extract variables matching your original format
+        addr = wallet_data["address"].lower()
+        priv_hex = wallet_data["private_key"] # cast output already includes '0x'
 
         # Save first account as the "Sequencer"
         if i == 0:

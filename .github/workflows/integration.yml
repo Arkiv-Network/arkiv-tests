@@ -29,7 +29,6 @@ jobs:
 
       - name: Generate genesis files
         run: |
-          pip install eth-account
           python -u generate-genesis.py 5
 
       - name: Get op-geth and op-node
