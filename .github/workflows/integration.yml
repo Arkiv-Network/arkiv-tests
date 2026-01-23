@@ -85,7 +85,7 @@ jobs:
       - name: Compress Arkiv logs
         if: always()
         run: |
-          tar -cf arkiv-logs.tar.gz *.log
+          tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json
 
       - uses: actions/upload-artifact@v5
         if: always()
