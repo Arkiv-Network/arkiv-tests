@@ -99,6 +99,7 @@ jobs:
           # Wait up to 60 seconds for L2 to produce a block
           echo "Waiting for L2 to start producing blocks..."
           end=$((SECONDS+60))
+          number-of-blocks=0
          
           while [ $SECONDS -lt $end ]; do
             # Try to get the block number, suppress error output
@@ -111,11 +112,22 @@ jobs:
               # Print L1 status as well for confirmation
               L1_BLOCK=$(cast block-number --rpc-url http://localhost:15900)
               echo "✅ L1 Current block: $L1_BLOCK"
+          
+              number-of-blocks=$number-of-blocks+1
+              if [ $number-of-blocks -ge 5 ]; then
+                echo "L2 has produced $number-of-blocks blocks. Proceeding with the workflow."
+                break
+              fi
             fi
             
             echo "Waiting for L2... (Current block: $L2_BLOCK)"
             sleep 1
           done
+          
+          if [ $number-of-blocks -lt 5 ]; then
+            echo "❌ L2 did not start producing blocks in time."
+            exit 1
+          fi
 
       #- name: Run L2 node
       #  run: |
