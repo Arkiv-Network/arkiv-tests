@@ -1,5 +1,12 @@
 {
   "chainId": 31337,
+
   "shanghaiTime": 0,
-  "cancunTime": 0
+  "cancunTime": 0,
+
+  "blobSchedule": {
+    "target": 3,
+    "max": 6,
+    "updateFraction": 333333333
+  }
 }
