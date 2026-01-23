@@ -46,7 +46,7 @@ jobs:
           jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
           echo "Updated Genesis timestamp to: $NOW_HEX"
           
-          anvil --init anvil-chain.json -p 15900 --block-time 1 2>&1 > anvil.log &
+          anvil --init anvil-chain.json -p 15900 --block-time 1 > anvil.log 2>&1 &
 
       - name: Setup and initialize L2 node
         run: |
@@ -75,7 +75,7 @@ jobs:
             --gcmode=archive \
             --nodiscover \
             --networkid=42069 \
-            2>&1 > op-geth.log &
+            > op-geth.log 2>&1
 
           op-node \
             --l2=http://localhost:8551 \
@@ -92,7 +92,7 @@ jobs:
             --rollup.l1-chain-config anvil-chain.json \
             --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
             --l1.beacon.ignore \
-            2>&1 > op-node.log &
+            > op-node.log 2>&1
           
           # Wait up to 60 seconds for L2 to produce a block
           echo "Waiting for L2 to start producing blocks..."
