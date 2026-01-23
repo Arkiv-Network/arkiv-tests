@@ -1,39 +1,6 @@
 set -x
 set -e
 
-op-geth --datadir ./l2-data init genesis.json
-
-op-geth --datadir ./l2-data console --exec "eth.getBlock(0).hash" | tee l2-hash.txt
-
-echo "L2 Genesis Hash:"
-cat l2-hash.txt
-
-anvil -p 25555 &
-
-sleep 2
-
-# In a new terminal, while anvil is running
-cast block 0 --rpc-url http://localhost:25555 | grep hash | tee l1-hash.txt
-
-#!/bin/bash
-
-# 1. Define the hashes (Cleaned from your text files)
-L1_HASH=$(awk '{print $2}' l1-hash.txt | sed "s/['\"]//g")
-L2_HASH=$(awk '{print $1}' l2-hash.txt | sed "s/['\"]//g")
-
-echo "Extracted L1 Genesis Hash: $L1_HASH"
-echo "Extracted L2 Genesis Hash: $L2_HASH"
-
-# 2. Use sed to replace the placeholders in place
-cp rollup.json.template rollup.json
-sed -i "s/REPLACE_WITH_YOUR_ANVIL_GENESIS_HASH/$L1_HASH/g" ./rollup.json
-sed -i "s/REPLACE_WITH_YOUR_OP_GETH_GENESIS_HASH/$L2_HASH/g" ./rollup.json
-
-echo "✅ rollup.json updated successfully!"
-grep -E "hash" ./rollup.json
-
-openssl rand -hex 32 > jwt.txt
-
 # 3. Start op-geth
 op-geth \
   --datadir ./l2-data \
@@ -49,7 +16,6 @@ op-geth \
   --nodiscover \
   --networkid=42069 \
   2>&1 | tee "op-geth.log" &
-
 
 # 4. Start op-node
 # Added: --p2p.sequencer.key (Required to sign blocks)
