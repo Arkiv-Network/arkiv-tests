@@ -91,7 +91,7 @@ jobs:
             --l1.beacon.ignore \
             2>&1 | tee "op-node.log" &
           
-          sleep 10
+          sleep 60
 
       #- name: Run L2 node
       #  run: |
