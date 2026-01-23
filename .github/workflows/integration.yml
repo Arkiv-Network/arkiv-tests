@@ -75,7 +75,7 @@ jobs:
             --gcmode=archive \
             --nodiscover \
             --networkid=42069 \
-            > op-geth.log 2>&1
+            > op-geth.log 2>&1 &
 
           op-node \
             --l2=http://localhost:8551 \
