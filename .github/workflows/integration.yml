@@ -46,7 +46,7 @@ jobs:
           jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
           echo "Updated Genesis timestamp to: $NOW_HEX"
           
-          anvil --init anvil-chain.json -p 15900 --block-time 1 &
+          anvil --init anvil-chain.json -p 15900 --block-time 1 2>&1 > anvil.log &
 
       - name: Setup and initialize L2 node
         run: |
@@ -75,7 +75,7 @@ jobs:
             --gcmode=archive \
             --nodiscover \
             --networkid=42069 \
-            2>&1 > "op-geth.log" &
+            2>&1 > op-geth.log &
 
           op-node \
             --l2=http://localhost:8551 \
@@ -92,7 +92,7 @@ jobs:
             --rollup.l1-chain-config anvil-chain.json \
             --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
             --l1.beacon.ignore \
-            2>&1 > "op-node.log" &
+            2>&1 > op-node.log &
           
           # Wait up to 60 seconds for L2 to produce a block
           echo "Waiting for L2 to start producing blocks..."
@@ -152,10 +152,17 @@ jobs:
       #   run: |
       #     sqlite3 arkiv_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
 #
+      - name: Stop services
+        if: always()
+        run: |
+          pkill op-node
+          pkill op-geth
+          pkill anvil
+
       - name: Compress Arkiv logs
         if: always()
         run: |
-          tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json deploy-config
+          tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json deploy-config anvil-chain.json
 
       - uses: actions/upload-artifact@v5
         if: always()
