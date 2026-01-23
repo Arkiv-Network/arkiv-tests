@@ -45,7 +45,8 @@ op-geth \
   --syncmode=full \
   --gcmode=archive \
   --nodiscover \
-  --networkid=42069 & # ensure this matches chainId in genesis.json
+  --networkid=42069 \
+  2>&1 | tee "op-geth.log" &
 
 
 # 4. Start op-node
@@ -62,4 +63,5 @@ op-node \
   --p2p.disable \
   --l1=http://localhost:25555 \
   --l1.rpckind=basic \
-  --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+  --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  2>&1 | tee "op-node.log" &

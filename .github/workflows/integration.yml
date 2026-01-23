@@ -85,7 +85,7 @@ jobs:
       - name: Compress Arkiv logs
         if: always()
         run: |
-          tar -cf arkiv-logs.tar.gz arkiv_data
+          tar -cf arkiv-logs.tar.gz *.log
 
       - uses: actions/upload-artifact@v5
         with:
