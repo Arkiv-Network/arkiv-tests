@@ -46,7 +46,6 @@ jobs:
 
       - name: Run L2 node
         run: |
-          pip install eth-account
           python -u generate-genesis.py 5
           ./init_geth-l2.sh
           ./start_geth-l2.sh
