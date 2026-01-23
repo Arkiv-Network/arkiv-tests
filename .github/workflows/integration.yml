@@ -113,7 +113,7 @@ jobs:
               L1_BLOCK=$(cast block-number --rpc-url http://localhost:15900)
               echo "✅ L1 Current block: $L1_BLOCK"
           
-              NUM_BLOCKS=$NUM_BLOCKS+1
+              NUM_BLOCKS=$((NUM_BLOCKS+1))
               if [ $NUM_BLOCKS -ge 5 ]; then
                 echo "L2 has produced $NUM_BLOCKS blocks. Proceeding with the workflow."
                 break
