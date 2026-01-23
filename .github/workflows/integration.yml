@@ -31,7 +31,7 @@ jobs:
         run: |
           python -u generate-genesis.py 5
 
-      - name: Get op-geth and op-node
+      - name: Get op-geth, op-node and op-deployer binaries
         run: |
           set -x
           curl -sL https://github.com/salad-x-golem/arkiv-setup/releases/download/v0.0.0/optimism-binaries-2026-01-22.tar.xz | tar -xJ
@@ -41,6 +41,21 @@ jobs:
           op-geth version
           op-node --version
           op-deployer --version
+
+      - name: Run anvil
+        run: |
+          anvil --chain-id 31337 &
+
+      - name: Experiment
+        run: |
+          # Create a workspace
+          mkdir my-rollup && cd my-rollup
+  
+          # Initialize the deployment intent
+          op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
+          pip install eth-account
+          python generate-intent.py
+          op-deployer apply --l1-rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
 
       - name: Prepare L2 node
         run: |
