@@ -44,7 +44,7 @@ jobs:
 
       - name: Run anvil
         run: |
-          anvil --init anvil-chain.json -p 15900 &
+          anvil --init anvil-chain.json -p 15900 --block-time 1 &
 
       - name: Experiment
         run: |
