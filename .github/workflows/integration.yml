@@ -88,6 +88,7 @@ jobs:
           tar -cf arkiv-logs.tar.gz *.log
 
       - uses: actions/upload-artifact@v5
+        if: always()
         with:
           name: arkiv-data
           path: arkiv-logs.tar.gz
