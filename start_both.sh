@@ -29,7 +29,7 @@ op-node \
   --rpc.addr=0.0.0.0 \
   --rpc.port=8547 \
   --p2p.disable \
-  --l1=http://localhost:25555 \
+  --l1=http://localhost:15900 \
   --l1.rpckind=basic \
   --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
   2>&1 | tee "op-node.log" &
