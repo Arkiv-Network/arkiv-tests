@@ -62,7 +62,7 @@ jobs:
 
       - name: Run op-geth and op-node
         run: |
-          set -x
+          echo "Starting L2 node op-geth..."
           op-geth \
             --datadir ./l2-data \
             --http \
@@ -78,6 +78,7 @@ jobs:
             --networkid=42069 \
             > op-geth.log 2>&1 &
 
+          echo "Starting L2 node op-node..."
           op-node \
             --l2=http://localhost:8551 \
             --l2.jwt-secret=jwt.txt \
@@ -93,7 +94,7 @@ jobs:
             --rollup.l1-chain-config anvil-chain.json \
             --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
             --l1.beacon.ignore \
-            > op-node.log 2>&1
+            > op-node.log 2>&1 &
           
           # Wait up to 60 seconds for L2 to produce a block
           echo "Waiting for L2 to start producing blocks..."
