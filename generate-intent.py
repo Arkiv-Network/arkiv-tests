@@ -1,9 +1,6 @@
 import json
 import os
-import secrets
 import subprocess
-
-from eth_account import Account
 
 # 1. Setup Configuration
 OUTPUT_DIR = "deploy-config"
