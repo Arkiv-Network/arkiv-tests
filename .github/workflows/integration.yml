@@ -78,11 +78,9 @@ jobs:
           op-node \
             --l2=http://localhost:8551 \
             --l2.jwt-secret=jwt.txt \
-            --l2.genesis=genesis.json
             --sequencer.enabled \
             --sequencer.l1-confs=0 \
             --verifier.l1-confs=0 \
-            --rollup.config=./rollup.json \
             --rpc.addr=0.0.0.0 \
             --rpc.port=8547 \
             --p2p.disable \
