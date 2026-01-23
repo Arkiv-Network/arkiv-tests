@@ -25,7 +25,7 @@ echo "Extracted L1 Genesis Hash: $L1_HASH"
 echo "Extracted L2 Genesis Hash: $L2_HASH"
 
 # 2. Use sed to replace the placeholders in place
-co rollup.json.template rollup.json
+cp rollup.json.template rollup.json
 sed -i "s/REPLACE_WITH_YOUR_ANVIL_GENESIS_HASH/$L1_HASH/g" ./rollup.json
 sed -i "s/REPLACE_WITH_YOUR_OP_GETH_GENESIS_HASH/$L2_HASH/g" ./rollup.json
 
