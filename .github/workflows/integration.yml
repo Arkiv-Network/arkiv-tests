@@ -27,10 +27,6 @@ jobs:
           cast --version
           anvil --version
 
-      - name: Generate genesis files
-        run: |
-          python -u generate-genesis.py 5
-
       - name: Get op-geth, op-node and op-deployer binaries
         run: |
           set -x
