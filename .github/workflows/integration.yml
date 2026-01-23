@@ -91,7 +91,26 @@ jobs:
             --l1.beacon.ignore \
             2>&1 | tee "op-node.log" &
           
-          sleep 60
+          # Wait up to 60 seconds for L2 to produce a block
+          echo "Waiting for L2 to start producing blocks..."
+          end=$((SECONDS+60))
+         
+          while [ $SECONDS -lt $end ]; do
+            # Try to get the block number, suppress error output
+            L2_BLOCK=$(cast block-number --rpc-url http://localhost:8545 2>/dev/null || echo "0")
+          
+            # Check if block number is a valid integer and greater than 0
+            if [[ "$L2_BLOCK" =~ ^[0-9]+$ ]] && [ "$L2_BLOCK" -gt 0 ]; then
+              echo "✅ L2 is live! Current block: $L2_BLOCK"
+              
+              # Print L1 status as well for confirmation
+              L1_BLOCK=$(cast block-number --rpc-url http://localhost:15900)
+              echo "✅ L1 Current block: $L1_BLOCK"
+            fi
+            
+            echo "Waiting for L2... (Current block: $L2_BLOCK)"
+            sleep 1
+          done
 
       #- name: Run L2 node
       #  run: |
