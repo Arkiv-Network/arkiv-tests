@@ -18,8 +18,8 @@ cast block 0 --rpc-url http://localhost:25555 | grep hash | tee l1-hash.txt
 #!/bin/bash
 
 # 1. Define the hashes (Cleaned from your text files)
-L1_HASH=$(awk '{print $2}' l1-hash.txt)
-L2_HASH=$(awk '{print $1}' l2-hash.txt)
+L1_HASH=$(awk '{print $2}' l1-hash.txt | sed "s/['\"]//g")
+L2_HASH=$(awk '{print $1}' l2-hash.txt | sed "s/['\"]//g")
 
 echo "Extracted L1 Genesis Hash: $L1_HASH"
 echo "Extracted L2 Genesis Hash: $L2_HASH"
