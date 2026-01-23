@@ -42,8 +42,8 @@ jobs:
         run: |
           # Get current timestamp in hex
           NOW_HEX=$(printf "0x%x" $(date +%s))
-          # Replace timestamp in anvil_genesis.json (requires jq)
-          jq --arg t "$NOW_HEX" '.timestamp = $t' anvil_genesis.json > anvil_genesis.tmp && mv anvil_genesis.tmp anvil_genesis.json
+          # Replace timestamp in anvil-chain.json (requires jq)
+          jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
           echo "Updated Genesis timestamp to: $NOW_HEX"
           
           anvil --init anvil-chain.json -p 15900 --block-time 1 &
