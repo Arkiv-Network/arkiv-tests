@@ -14,9 +14,16 @@
     "shanghaiTime": 0,
     "cancunTime": 0,
     "blobSchedule": {
-      "targetBlobsPerBlock": 3,
-      "maxBlobsPerBlock": 6,
-      "baseFeeUpdateFraction": 333333333
+      "cancun": {
+        "target": 3,
+        "max": 6,
+        "baseFeeUpdateFraction": 3338477
+      },
+      "prague": {
+        "target": 6,
+        "max": 9,
+        "baseFeeUpdateFraction": 5007716
+      }
     }
   },
   "nonce": "0x0",
