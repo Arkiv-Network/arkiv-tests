@@ -32,6 +32,8 @@ sed -i "s/REPLACE_WITH_YOUR_OP_GETH_GENESIS_HASH/$L2_HASH/g" ./rollup.json
 echo "✅ rollup.json updated successfully!"
 grep -E "hash" ./rollup.json
 
+openssl rand -hex 32 > jwt.txt
+
 # 3. Start op-geth
 op-geth \
   --datadir ./l2-data \

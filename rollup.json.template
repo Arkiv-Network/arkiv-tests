@@ -22,8 +22,7 @@
   "channel_timeout": 300,
   "l1_chain_id": 31337,
   "l2_chain_id": 42069,
-  "batch_inbox_address": "0xff00000000000000000000000000000000000010",
-  "deposit_contract_address": "0xDEADDEADDEADDEADDEADDEADDEADDEADDEAD0001",
-  "l1_system_config_address": "0xDEADDEADDEADDEADDEADDEADDEADDEADDEAD0002",
-  "protocol_versions_address": "0xDEADDEADDEADDEADDEADDEADDEADDEADDEAD0003"
+  "batch_inbox_address": "0xff00000000000000000000000000000000042069",
+  "deposit_contract_address": "0xdeadbeef00000000000000000000000000000000",
+  "l1_system_config_address": "0x1234567890abcdef1234567890abcdef12345678"
 }
