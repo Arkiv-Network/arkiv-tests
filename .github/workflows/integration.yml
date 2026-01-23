@@ -60,49 +60,77 @@ jobs:
 
       - name: Prepare L2 node
         run: |
-          ./start_both.sh
+          op-geth \
+            --datadir ./l2-data \
+            --http \
+            --http.port 8545 \
+            --http.api "eth,net,engine,web3,debug" \
+            --authrpc.addr "localhost" \
+            --authrpc.port 8551 \
+            --authrpc.vhosts "*" \
+            --authrpc.jwtsecret jwt.txt \
+            --syncmode=full \
+            --gcmode=archive \
+            --nodiscover \
+            --networkid=42069 \
+            2>&1 | tee "op-geth.log" &
 
-      - name: Run L2 node
-        run: |
-          python -u generate-genesis.py 5
-          ./init_geth-l2.sh
-          ./start_geth-l2.sh
-        env:
-          ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
+          op-node \
+            --l2=http://localhost:8551 \
+            --l2.jwt-secret=./jwt.txt \
+            --sequencer.enabled \
+            --sequencer.l1-confs=0 \
+            --verifier.l1-confs=0 \
+            --rollup.config=./rollup.json \
+            --rpc.addr=0.0.0.0 \
+            --rpc.port=8547 \
+            --p2p.disable \
+            --l1=http://localhost:15900 \
+            --l1.rpckind=basic \
+            --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            2>&1 | tee "op-node.log" &
 
-      - name: Show balances of main accounts
-        run: |
-          python show-account-values.py
+      #- name: Run L2 node
+      #  run: |
+      #    python -u generate-genesis.py 5
+      #    ./init_geth-l2.sh
+      #    ./start_geth-l2.sh
+      #  env:
+      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
 
-      - name: Deploy GLM contract
-        run: |
-          cd l2
-          ./build.sh
-          # Load private key from .env file
-          source .env
-          forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
-        env:
-          ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
+      #- name: Show balances of main accounts
+      #  run: |
+      #    python show-account-values.py
 
-      - name: Build and run integration tests
-        run: |
-          bun install 
-          bun write_example.ts
+      #- name: Deploy GLM contract
+      #  run: |
+      #    cd l2
+      #    ./build.sh
+      #    # Load private key from .env file
+      #    source .env
+      #    forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
+      #  env:
+      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
 
-      - name: Stop Arkiv node
-        if: always()
-        run: |
-          pkill arkiv
-
-      - name: Check sqlite file
-        if: always()
-        run: |
-          sqlite3 arkiv_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
-
+      # - name: Build and run integration tests
+      #   run: |
+      #     bun install
+      #     bun write_example.ts
+#
+      # - name: Stop Arkiv node
+      #   if: always()
+      #   run: |
+      #     pkill arkiv
+#
+      # - name: Check sqlite file
+      #   if: always()
+      #   run: |
+      #     sqlite3 arkiv_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
+#
       - name: Compress Arkiv logs
         if: always()
         run: |
-          tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json
+          tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json deploy-config
 
       - uses: actions/upload-artifact@v5
         if: always()

@@ -1,5 +1,8 @@
+import json
 import os
 import secrets
+import subprocess
+
 from eth_account import Account
 
 # 1. Setup Configuration
@@ -11,8 +14,18 @@ if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 
 def create_keypair():
-    priv = "0x" + secrets.token_hex(32)
-    addr = Account.from_key(priv).address
+    result = subprocess.run(
+        ["cast", "wallet", "new", "--json"],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    # Parse the JSON output (cast returns a list of wallets)
+    wallet_data = json.loads(result.stdout)[0]
+
+    # Extract variables matching your original format
+    addr = wallet_data["address"].lower()
+    priv = wallet_data["private_key"]
     return addr, priv
 
 # 2. Generate unique addresses for specific roles
