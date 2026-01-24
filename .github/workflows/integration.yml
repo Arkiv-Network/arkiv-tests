@@ -14,18 +14,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install bun
-        uses: oven-sh/setup-bun@v2
+      # Already installed on custom runners
+      #- name: Install bun
+      #  uses: oven-sh/setup-bun@v2
 
-      - name: Get foundry cli
-        run: |
-          set -x
-          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-          sudo mv forge cast anvil chisel /usr/local/bin/
-          forge --version
-          chisel --version
-          cast --version
-          anvil --version
+      # Already installed on custom runners
+      #- name: Get foundry cli
+      #  run: |
+      #    set -x
+      #    curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
+      #    sudo mv forge cast anvil chisel /usr/local/bin/
+      #    forge --version
+      #    chisel --version
+      #    cast --version
+      #    anvil --version
 
       - name: Get op-geth, op-node and op-deployer binaries
         run: |
