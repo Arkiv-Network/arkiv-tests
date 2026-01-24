@@ -83,6 +83,7 @@ jobs:
             --http \
             --http.port 8545 \
             --http.addr "0.0.0.0" \
+            --http.vhosts "*" \
             --http.api "eth,net,engine,web3,debug,trace" \
             --authrpc.addr "localhost" \
             --authrpc.port 8551 \
@@ -91,7 +92,7 @@ jobs:
             --syncmode=full \
             --gcmode=archive \
             --nodiscover \
-            --networkid=42069 \
+            --networkid=42069 \ 
             > op-geth.log 2>&1 &
 
           echo "Starting L2 node op-node..."
