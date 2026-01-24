@@ -31,7 +31,7 @@ jobs:
 
       - name: Get op-geth, op-node and op-deployer binaries
         env:
-          GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -x
           gh release download v0.0.0 \
