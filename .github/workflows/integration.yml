@@ -8,7 +8,7 @@ jobs:
   integration:
     name: Integration internal test
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: luna
 
     steps:
       - name: Checkout
