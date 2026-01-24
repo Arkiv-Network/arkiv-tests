@@ -22,7 +22,7 @@ op-geth \
   --http \
   --http.port 8545 \
   --http.addr "0.0.0.0" \
-  --http.api "eth,net,engine,web3,debug" \
+  --http.api "eth,net,engine,web3,debug,trace" \
   --authrpc.addr "localhost" \
   --authrpc.port 8551 \
   --authrpc.vhosts "*" \

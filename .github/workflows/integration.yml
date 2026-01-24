@@ -82,7 +82,8 @@ jobs:
             --datadir ./l2-data \
             --http \
             --http.port 8545 \
-            --http.api "eth,net,engine,web3,debug" \
+            --http.addr "0.0.0.0" \
+            --http.api "eth,net,engine,web3,debug,trace" \
             --authrpc.addr "localhost" \
             --authrpc.port 8551 \
             --authrpc.vhosts "*" \
@@ -143,6 +144,7 @@ jobs:
             echo "❌ L2 did not start producing blocks in time."
             exit 1
           fi
+          sleep 600
 
       #- name: Run L2 node
       #  run: |
