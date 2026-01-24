@@ -8,7 +8,14 @@ jobs:
   integration:
     name: Integration internal test
     timeout-minutes: 10
-    runs-on: luna
+    # Use the matrix variable here
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      # If one runner fails, the others will still finish their tests
+      fail-fast: false
+      matrix:
+        runner: [luna, flux, pulse, apex, zeus]
 
     steps:
       - name: Checkout
