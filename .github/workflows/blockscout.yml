@@ -33,6 +33,7 @@ jobs:
       - name: Checkout and patch blockscout
         run: |
           git clone https://github.com/blockscout/blockscout.git blockscout2
+          (cd blockscout2 && git checkout v9.3.2)
 
 
       # Already installed on custom runners
@@ -74,10 +75,6 @@ jobs:
 
       - name: Start Blockscout
         run: |
-          # patch blockscout docker-compose to use our config
-          cp -r blockscout/* blockscout2/docker-compose          
-          (cd blockscout2 && git diff) 
-
           cd blockscout2/docker-compose
           docker compose up -d
           sleep infinity
