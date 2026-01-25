@@ -33,7 +33,8 @@ jobs:
       - name: Checkout blockscout
         run: |
           git clone https://github.com/blockscout/blockscout.git blockscout2
-          cp -r blockscout blockscout2/docker-compose 
+          cp -r blockscout/* blockscout2/docker-compose
+          (cd blockscout2 && git diff) 
 
       # Already installed on custom runners
       #- name: Install bun
