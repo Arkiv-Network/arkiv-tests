@@ -10,7 +10,7 @@ on:
       workers:
         description: "Workers"
         required: false
-        default: "[\"luna\", \"flux\"]"
+        default: "[\"flux\"]"
 
 jobs:
   integration:
