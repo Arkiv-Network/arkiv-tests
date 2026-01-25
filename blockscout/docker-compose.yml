@@ -48,10 +48,10 @@ services:
   #     args:
   #       RELEASE_VERSION: 9.0.2
 
-  # visualizer:
-  #   extends:
-  #     file: ./services/visualizer.yml
-  #     service: visualizer
+  visualizer:
+    extends:
+      file: ./services/visualizer.yml
+      service: visualizer
 
   # sig-provider:
   #   extends:
