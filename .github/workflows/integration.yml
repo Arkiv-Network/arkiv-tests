@@ -1,7 +1,6 @@
 name: Internal test
 
 on:
-  push:
   workflow_dispatch:
 
 jobs:
