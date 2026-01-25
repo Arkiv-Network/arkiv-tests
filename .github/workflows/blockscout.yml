@@ -30,11 +30,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout blockscout
+      - name: Checkout and patch blockscout
         run: |
           git clone https://github.com/blockscout/blockscout.git blockscout2
-          cp -r blockscout/* blockscout2/docker-compose
-          (cd blockscout2 && git diff) 
+
 
       # Already installed on custom runners
       #- name: Install bun
@@ -68,11 +67,19 @@ jobs:
       #    op-node --version
       #    op-deployer --version
 
+      - name: Build Blockscout Docker images
+        run: |
+          cd blockscout2/docker-compose
+          docker compose build
 
       - name: Start Blockscout
         run: |
+          # patch blockscout docker-compose to use our config
+          cp -r blockscout/* blockscout2/docker-compose          
+          (cd blockscout2 && git diff) 
+
           cd blockscout2/docker-compose
-          docker compose up --build -d
+          docker compose up -d
           sleep infinity
 
       - name: Stop services
