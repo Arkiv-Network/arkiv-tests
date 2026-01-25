@@ -30,6 +30,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout blockscout
+        run: |
+          git clone https://github.com/blockscout/blockscout.git blockscout2
+          cp -r blockscout blockscout2/docker-compose 
+
       # Already installed on custom runners
       #- name: Install bun
       #  uses: oven-sh/setup-bun@v2
@@ -62,15 +67,16 @@ jobs:
       #    op-node --version
       #    op-deployer --version
 
+
       - name: Start Blockscout
         run: |
-          cd blockscout
+          cd blockscout2/docker-compose
           docker compose up --build -d
           sleep infinity
 
       - name: Stop services
         if: always()
         run: |
-          cd blockscout
+          cd blockscout2/docker-compose
           docker compose down
           docker volume prune -f
