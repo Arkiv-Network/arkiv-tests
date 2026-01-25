@@ -65,7 +65,7 @@ jobs:
       - name: Start Blockscout
         run: |
           cd blockscout
-          docker compose up -d
+          docker compose up --build -d
           sleep infinity
 
       - name: Stop services
