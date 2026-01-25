@@ -1,13 +1,21 @@
-name: Internal test
+name: Spawn L2
 
 on:
-  push:
   workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: "Timeout for jobs"
+        required: true
+        default: "5"
+      workers:
+        description: "Workers"
+        required: false
+        default: "[luna, flux]"
 
 jobs:
   integration:
     name: Integration internal test
-    timeout-minutes: 10
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     # Use the matrix variable here
     runs-on: ${{ matrix.runner }}
 
@@ -15,8 +23,7 @@ jobs:
       # If one runner fails, the others will still finish their tests
       fail-fast: false
       matrix:
-        #runner: [luna, flux, pulse, apex, zeus]
-        runner: [pulse]
+        runner: ${{ fromJSON(inputs.workers) }}
 
     steps:
       - name: Checkout
