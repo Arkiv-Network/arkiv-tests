@@ -53,10 +53,10 @@ services:
       file: ./services/visualizer.yml
       service: visualizer
 
-  # sig-provider:
-  #   extends:
-  #     file: ./services/sig-provider.yml
-  #     service: sig-provider
+  sig-provider:
+    extends:
+      file: ./services/sig-provider.yml
+      service: sig-provider
 
   frontend:
     depends_on:
@@ -86,13 +86,13 @@ services:
       file: ./services/stats.yml
       service: stats
 
-  # user-ops-indexer:
-  #   depends_on:
-  #     - db
-  #     - backend
-  #   extends:
-  #     file: ./services/user-ops-indexer.yml
-  #     service: user-ops-indexer
+  user-ops-indexer:
+    depends_on:
+      - db
+      - backend
+    extends:
+      file: ./services/user-ops-indexer.yml
+      service: user-ops-indexer
 
   proxy:
     depends_on:
