@@ -15,8 +15,6 @@ on:
 jobs:
   integration:
     name: Integration internal test
-    permissions:
-      packages: read
 
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     # Use the matrix variable here
@@ -29,7 +27,7 @@ jobs:
         runner: ${{ fromJSON(inputs.workers) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Log into registry ghcr.io
         if: github.event_name != 'pull_request'
