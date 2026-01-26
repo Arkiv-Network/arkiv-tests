@@ -76,7 +76,7 @@ jobs:
       - name: Start Blockscout
         run: |
           cd blockscout2/docker-compose
-          docker compose up -d
+          docker compose up -f geth.yml -d
           sleep infinity
 
       - name: Stop services
