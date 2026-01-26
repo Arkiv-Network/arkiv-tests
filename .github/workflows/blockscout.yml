@@ -83,6 +83,9 @@ jobs:
         run: |
           cd blockscout
           docker compose -f geth.yml up -d
+
+      - name: Wait indefinitely
+        run: |
           sleep infinity
 
       - name: Stop services
