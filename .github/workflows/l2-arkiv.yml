@@ -1,0 +1,219 @@
+name: Spawn L2
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: "Timeout for jobs"
+        required: true
+        default: "5"
+      workers:
+        description: "Workers"
+        required: false
+        default: "[\"zeus\"]"
+
+jobs:
+  integration:
+    name: Integration internal test
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    # Use the matrix variable here
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      # If one runner fails, the others will still finish their tests
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(inputs.workers) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Already installed on custom runners
+      #- name: Install bun
+      #  uses: oven-sh/setup-bun@v2
+
+      # Already installed on custom runners
+      #- name: Get foundry cli
+      #  run: |
+      #    set -x
+      #    curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
+      #    sudo mv forge cast anvil chisel /usr/local/bin/
+      #    forge --version
+      #    chisel --version
+      #    cast --version
+      #    anvil --version
+
+      - name: Get op-geth, op-node and op-deployer binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          gh release download v0.0.0 \
+            --repo salad-x-golem/yagna-arkiv-market-matcher \
+            --pattern "optimism-binaries-2026-01-22.tar.xz"
+          gh release download v0.0.0 \
+            --repo salad-x-golem/yagna-arkiv-market-matcher \
+            --pattern "op-geth-2026-01-27.tar.xz"
+          
+          tar -xJf optimism-binaries-2026-01-22.tar.xz
+          # use arkiv op-geth build
+          rm op-geth
+          tar -xJf op-geth-2026-01-27.tar.xz
+          mv op-deployer /usr/local/bin
+          mv op-geth /usr/local/bin
+          mv op-node /usr/local/bin
+          op-geth version
+          op-node --version
+          op-deployer --version
+
+      - name: Run anvil
+        run: |
+          # Get current timestamp in hex
+          NOW_HEX=$(printf "0x%x" $(date +%s))
+          # Replace timestamp in anvil-chain.json (requires jq)
+          jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
+          echo "Updated Genesis timestamp to: $NOW_HEX"
+          
+          anvil --init anvil-chain.json -p 15900 --block-time 1 > anvil.log 2>&1 &
+
+      - name: Setup and initialize L2 node
+        run: |
+          # Initialize the deployment intent
+          op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
+          python generate-intent.py
+          op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
+          op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
+          op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
+          
+          op-geth --datadir ./l2-data init genesis.json
+          openssl rand -hex 32 > jwt.txt
+
+      - name: Run op-geth and op-node
+        run: |
+          echo "Starting L2 node op-geth..."
+          op-geth \
+            --datadir ./l2-data \
+            --http \
+            --http.port 8545 \
+            --http.addr "0.0.0.0" \
+            --http.vhosts "*" \
+            --http.api "eth,net,engine,web3,debug,trace" \
+            --authrpc.addr "localhost" \
+            --authrpc.port 8551 \
+            --authrpc.vhosts "*" \
+            --authrpc.jwtsecret jwt.txt \
+            --syncmode=full \
+            --gcmode=archive \
+            --nodiscover \
+            --networkid=42069 \
+            > op-geth.log 2>&1 &
+
+          echo "Starting L2 node op-node..."
+          op-node \
+            --l2=http://localhost:8551 \
+            --l2.jwt-secret=jwt.txt \
+            --sequencer.enabled \
+            --sequencer.l1-confs=0 \
+            --verifier.l1-confs=0 \
+            --rpc.addr=0.0.0.0 \
+            --rpc.port=8547 \
+            --p2p.disable \
+            --l1=http://localhost:15900 \
+            --l1.rpckind=basic \
+            --rollup.config=rollup.json \
+            --rollup.l1-chain-config anvil-chain.json \
+            --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            --l1.beacon.ignore \
+            > op-node.log 2>&1 &
+          
+          # Wait up to 60 seconds for L2 to produce a block
+          echo "Waiting for L2 to start producing blocks..."
+          end=$((SECONDS+60))
+          NUM_BLOCKS=0
+         
+          while [ $SECONDS -lt $end ]; do
+            # Try to get the block number, suppress error output
+            L2_BLOCK=$(cast block-number --rpc-url http://localhost:8545 2>/dev/null || echo "0")
+          
+            # Check if block number is a valid integer and greater than 0
+            if [[ "$L2_BLOCK" =~ ^[0-9]+$ ]] && [ "$L2_BLOCK" -gt 0 ]; then
+              echo "✅ L2 is live! Current block: $L2_BLOCK"
+              
+              # Print L1 status as well for confirmation
+              L1_BLOCK=$(cast block-number --rpc-url http://localhost:15900)
+              echo "✅ L1 Current block: $L1_BLOCK"
+          
+              NUM_BLOCKS=$((NUM_BLOCKS+1))
+              if [ $NUM_BLOCKS -ge 5 ]; then
+                echo "L2 has produced $NUM_BLOCKS blocks. Proceeding with the workflow."
+                break
+              fi
+            fi
+            
+            echo "Waiting for L2... (Current block: $L2_BLOCK)"
+            sleep 1
+          done
+          
+          if [ $NUM_BLOCKS -lt 5 ]; then
+            echo "❌ L2 did not start producing blocks in time."
+            exit 1
+          fi
+          # Sleep forever to keep the services running for inspection
+          sleep infinity
+          
+
+      #- name: Run L2 node
+      #  run: |
+      #    python -u generate-genesis.py 5
+      #    ./init_geth-l2.sh
+      #    ./start_geth-l2.sh
+      #  env:
+      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
+
+      #- name: Show balances of main accounts
+      #  run: |
+      #    python show-account-values.py
+
+      #- name: Deploy GLM contract
+      #  run: |
+      #    cd l2
+      #    ./build.sh
+      #    # Load private key from .env file
+      #    source .env
+      #    forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
+      #  env:
+      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
+
+      # - name: Build and run integration tests
+      #   run: |
+      #     bun install
+      #     bun write_example.ts
+#
+      # - name: Stop Arkiv node
+      #   if: always()
+      #   run: |
+      #     pkill arkiv
+#
+      # - name: Check sqlite file
+      #   if: always()
+      #   run: |
+      #     sqlite3 arkiv_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
+#
+      - name: Stop services
+        if: always()
+        run: |
+          pkill op-node
+          pkill op-geth
+          pkill anvil
+
+      - name: Compress Arkiv logs
+        if: always()
+        run: |
+          tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json deploy-config anvil-chain.json
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: arkiv-data-${{ matrix.runner }}
+          path: arkiv-logs.tar.gz
