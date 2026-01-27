@@ -60,6 +60,12 @@ jobs:
           # use arkiv op-geth build
           rm op-geth
           tar -xJf op-geth-2026-01-27.tar.xz
+          rm op-deployer
+          
+          wget https://github.com/ethereum-optimism/optimism/releases/download/op-deployer%2Fv0.6.0%2Brc.3/op-deployer-0.6.0+rc.3-linux-amd64.tar.gz
+          tar -xzf op-deployer-0.6.0+rc.3-linux-amd64.tar.gz
+          mv op-deployer-0.6.0+rc.3-linux-amd64/op-deployer ./op-deployer
+          
           mv op-deployer /usr/local/bin
           mv op-geth /usr/local/bin
           mv op-node /usr/local/bin
