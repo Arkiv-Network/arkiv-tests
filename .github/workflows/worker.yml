@@ -1,0 +1,40 @@
+name: Spawn workers
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: "Timeout for jobs"
+        required: true
+        default: "5"
+      workers:
+        description: "Workers"
+        required: false
+        default: "[\"luna\"]"
+
+jobs:
+  integration:
+    name: Integration internal test
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    # Use the matrix variable here
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      # If one runner fails, the others will still finish their tests
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(inputs.workers) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clone tests
+        run: |
+          git clone https://github.com/Arkiv-Network/tests.git
+
+      - name: Prepare poetry
+        run: |
+          cd tests/stress-tests
+          poetry install
+          
