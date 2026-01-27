@@ -35,7 +35,7 @@ jobs:
 
       - name: Prepare poetry
         run: |
-          apt-get install python3-poetry
+          apt-get install python3-poetry -y
           cd tests/stress-tests
           poetry install
           
