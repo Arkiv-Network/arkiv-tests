@@ -1,4 +1,4 @@
-name: Spawn L2
+name: Spawn Arkiv L2
 
 on:
   workflow_dispatch:
