@@ -38,4 +38,7 @@ jobs:
           apt-get install python3-poetry -y
           cd tests/stress-tests
           poetry install
-          
+
+      - name: Run worker
+        run: |
+          poetry run locust -f tests/stress-tests/stress/l3/locustfile.py,tests/stress-tests/stress/explorer/locustfile.py --worker --master-host 49.13.209.55 --master-port 5557 --class-picker
