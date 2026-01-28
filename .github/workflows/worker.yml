@@ -17,13 +17,13 @@ jobs:
     name: Integration internal test
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     # Use the matrix variable here
-    runs-on: ${{ matrix.runner }}
+    runs-on: salad-prov
 
     strategy:
       # If one runner fails, the others will still finish their tests
       fail-fast: false
       matrix:
-        runner: ${{ fromJSON(inputs.workers) }}
+        no: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     steps:
       - name: Checkout
@@ -46,5 +46,5 @@ jobs:
           poetry run locust -f stress/l3/locustfile.py,stress/explorer/locustfile.py --worker --master-host 49.13.209.55 --master-port 5557 --class-picker
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-          INSTANCE_INDEX: 0
+          INSTANCE_INDEX: ${{ matrix.no }}
 
