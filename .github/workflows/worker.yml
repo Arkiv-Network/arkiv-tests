@@ -46,5 +46,6 @@ jobs:
           poetry run locust -f stress/l3/locustfile.py,stress/explorer/locustfile.py --worker --master-host 49.13.209.55 --master-port 5557 --class-picker
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-          
+          INSTANCE_INDEX: 0
+          USER_INDEX: 0
           
