@@ -32,6 +32,7 @@ jobs:
       - name: Clone tests
         run: |
           git clone https://github.com/Arkiv-Network/tests.git
+          git checkout scx1332/new-deploy
 
       - name: Prepare poetry
         run: |
@@ -42,5 +43,8 @@ jobs:
       - name: Run worker
         run: |
           cd tests/stress-tests
-          MNEMONIC="parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
           poetry run locust -f stress/l3/locustfile.py,stress/explorer/locustfile.py --worker --master-host 49.13.209.55 --master-port 5557 --class-picker
+        env:
+          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+          
+          
