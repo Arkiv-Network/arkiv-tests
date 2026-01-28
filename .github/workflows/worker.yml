@@ -37,13 +37,13 @@ jobs:
       - name: Prepare poetry
         run: |
           apt-get install python3-poetry -y
-          cd tests/stress-tests
+          cd tests
           poetry install
 
       - name: Run worker
         run: |
           cd tests/stress-tests
-          poetry run locust -f stress/l3/locustfile.py,stress/explorer/locustfile.py --worker --master-host 49.13.209.55 --master-port 5557 --class-picker
+          poetry run locust -f stress/l3/locustfile.py --worker --master-host 49.13.209.55 --master-port 5557 --class-picker
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
           INSTANCE_INDEX: ${{ matrix.no }}
