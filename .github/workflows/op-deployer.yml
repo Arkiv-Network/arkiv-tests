@@ -34,6 +34,12 @@ jobs:
           cd op-deployer/op-deployer
           go build -o bin/op-deployer cmd/op-deployer/main.go
 
+      - name: Upload op-deployer binary as artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: op-deployer-binary
+          path: op-deployer/op-deployer/op-deployer
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
