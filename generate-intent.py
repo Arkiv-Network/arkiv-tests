@@ -36,8 +36,12 @@ challenger_addr, challenger_key = create_keypair() # New Challenger Role
 intent_content = f'''configType = "custom"
 l1ChainID = 31337
 fundDevAccounts = true
-l1ContractsLocator = "embedded"
-l2ContractsLocator = "embedded"
+
+[l1ContractsLocator]
+url = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
+
+[l2ContractsLocator]
+url = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
 
 [superchainRoles]
   SuperchainProxyAdminOwner = "{admin_addr}"
@@ -57,8 +61,9 @@ l2ContractsLocator = "embedded"
   eip1559Denominator = 50
   eip1559DenominatorCanyon = 250
   eip1559Elasticity = 6
+  l1FeeVaultRecipient = "{admin_addr}"
+  sequencerFeeVaultRecipient = "{admin_addr}"
   gasLimit = 30000000
-  minBaseFee = 1000000
   
   [chains.roles]
     l1ProxyAdminOwner = "{admin_addr}"
