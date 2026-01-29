@@ -34,6 +34,7 @@ jobs:
         run: |
           cd op-deployer/op-deployer
           go build -o bin/op-deployer cmd/op-deployer/main.go
+          tree .
 
       - name: Upload op-deployer binary as artifact
         uses: actions/upload-artifact@v5
@@ -60,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: op-deployer/op-deployer
-          file: op-deployer/op-deployer/Dockerfile
+          file: op-deployer/op-deployer/Dockerfile.minimal
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
