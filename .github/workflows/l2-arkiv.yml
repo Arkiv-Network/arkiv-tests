@@ -90,7 +90,7 @@ jobs:
           # Initialize the deployment intent
           op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
           python generate-intent.py
-          echo "Contents of intent.json:\n" && cat intent.json
+          echo "Contents of intent.json:\n" && cat deploy-config/intent.json
           op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
           op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
           op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
