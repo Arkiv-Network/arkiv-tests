@@ -64,7 +64,7 @@ jobs:
           
           gh release download v0.0.0 \
             --repo salad-x-golem/yagna-arkiv-market-matcher \
-            --pattern "arkiv-op-deployer-2026-01-29.tar.xz"
+            --pattern "arkiv-op-deployer-0.4.4-1.tar.xz"
 
           tar -xJf arkiv-op-deployer-2026-01-29.tar.xz
           
