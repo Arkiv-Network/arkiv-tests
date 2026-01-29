@@ -37,11 +37,9 @@ intent_content = f'''configType = "custom"
 l1ChainID = 31337
 fundDevAccounts = true
 
-[l1ContractsLocator]
-url = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
+l1ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
 
-[l2ContractsLocator]
-url = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
+l2ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
 
 [superchainRoles]
   SuperchainProxyAdminOwner = "{admin_addr}"
