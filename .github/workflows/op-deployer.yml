@@ -47,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/salad-x-golem/op-deployer
+          images: ghcr.io/salad-x-golem/arkiv-setup
           tags: |
             # Tags the image with the short commit SHA (e.g., sha-5f3a2b)
             type=sha
