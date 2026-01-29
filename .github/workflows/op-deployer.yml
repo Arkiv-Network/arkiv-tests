@@ -17,7 +17,7 @@ jobs:
     name: Integration internal test
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     # Use the matrix variable here
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
 
     strategy:
       # If one runner fails, the others will still finish their tests
