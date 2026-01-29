@@ -54,15 +54,11 @@ url = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579
   baseFeeVaultRecipient = "{admin_addr}"
   l1FeeVaultRecipient = "{admin_addr}"
   sequencerFeeVaultRecipient = "{admin_addr}"
-  operatorFeeVaultRecipient = "{admin_addr}"
-  chainFeesRecipient = "{admin_addr}"
   
   # Standard OP Stack Fee Params
   eip1559Denominator = 50
   eip1559DenominatorCanyon = 250
   eip1559Elasticity = 6
-  l1FeeVaultRecipient = "{admin_addr}"
-  sequencerFeeVaultRecipient = "{admin_addr}"
   gasLimit = 30000000
   
   [chains.roles]
