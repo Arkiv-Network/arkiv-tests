@@ -1,0 +1,67 @@
+name: Build op-deployer
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: "Timeout for jobs"
+        required: true
+        default: "5"
+      workers:
+        description: "Workers"
+        required: false
+        default: "[\"luna\"]"
+
+jobs:
+  integration:
+    name: Integration internal test
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    # Use the matrix variable here
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      # If one runner fails, the others will still finish their tests
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(inputs.workers) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clone op-deployer repo
+        run: |
+          git clone https://github.com/Arkiv-Network/op-deployer
+
+      - name: Build op-deployer
+        run: |
+          cd op-deployer/op-deployer
+          make build
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/salad-x-golem/op-deployer
+          tags: |
+            # Tags the image with the short commit SHA (e.g., sha-5f3a2b)
+            type=sha
+            # Sets 'latest' tag if this is the default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Optional: Keeps semver support if you push tags
+            type=semver,pattern={{version}}
+
+      # Build and push Docker image
+      # Uses the action instead of raw shell command for better stability
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: op-deployer/op-deployer
+          file: op-deployer/op-deployer/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          # RELEASE_VERSION has to be the same as version of Blockscout to work
+          build-args: |
+            RELEASE_VERSION=10.0.0
