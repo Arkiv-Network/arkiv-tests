@@ -33,6 +33,9 @@ jobs:
         run: |
           git clone https://github.com/Arkiv-Network/op-deployer
 
+      - name: Set up Go
+        uses: actions/setup-go@v4
+
       - name: Build op-deployer
         run: |
           cd op-deployer/op-deployer
