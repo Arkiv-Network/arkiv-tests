@@ -103,7 +103,7 @@ jobs:
           # 3. Use 'console' mode to query the database for the exact block hash
           # We use --exec to run a distinct JavaScript command
           echo "Querying database for full hash..."
-          FULL_HASH=$(op-geth --datadir deploy-config --verbosity 0 console --exec "eth.getBlock(0).hash")
+          FULL_HASH=$(op-geth --datadir l2-data --verbosity 0 console --exec "eth.getBlock(0).hash")
           
           # Clean up quotes from the output (e.g., "0x..." -> 0x...)
           FULL_HASH=$(echo "$FULL_HASH" | tr -d '"')
