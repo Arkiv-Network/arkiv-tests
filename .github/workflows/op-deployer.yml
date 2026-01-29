@@ -34,7 +34,8 @@ jobs:
         run: |
           cd op-deployer/op-deployer
           go build -o bin/op-deployer cmd/op-deployer/main.go
-          tree .
+          mv bin/op-deployer ./op-deployer
+          ./op-deployer --version
 
       - name: Upload op-deployer binary as artifact
         uses: actions/upload-artifact@v5
