@@ -15,12 +15,6 @@ jobs:
     # Use the matrix variable here
     runs-on: ubuntu-latest
 
-    strategy:
-      # If one runner fails, the others will still finish their tests
-      fail-fast: false
-      matrix:
-        runner: ${{ fromJSON(inputs.workers) }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
