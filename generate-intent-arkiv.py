@@ -29,18 +29,22 @@ def create_keypair():
 admin_addr, admin_key = create_keypair()
 batcher_addr, batcher_key = create_keypair()
 proposer_addr, proposer_key = create_keypair()
-signer_addr, signer_key = create_keypair()
+sequencer_addr, sequencer_key = create_keypair()
 challenger_addr, challenger_key = create_keypair() # New Challenger Role
 
 # 3. Define the Intent Content
 intent_content = f'''configType = "custom"
 l1ChainID = 31337
 fundDevAccounts = true
-l1ContractsLocator = "embedded"
-l2ContractsLocator = "embedded"
+
+l1ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
+
+l2ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
 
 [superchainRoles]
+  ProxyAdminOwner = "{admin_addr}"
   SuperchainProxyAdminOwner = "{admin_addr}"
+  Guardian = "{admin_addr}"
   SuperchainGuardian = "{admin_addr}"
   ProtocolVersionsOwner = "{admin_addr}"
   Challenger = "{challenger_addr}"
@@ -50,21 +54,18 @@ l2ContractsLocator = "embedded"
   baseFeeVaultRecipient = "{admin_addr}"
   l1FeeVaultRecipient = "{admin_addr}"
   sequencerFeeVaultRecipient = "{admin_addr}"
-  operatorFeeVaultRecipient = "{admin_addr}"
-  chainFeesRecipient = "{admin_addr}"
   
   # Standard OP Stack Fee Params
   eip1559Denominator = 50
   eip1559DenominatorCanyon = 250
   eip1559Elasticity = 6
   gasLimit = 30000000
-  minBaseFee = 1000000
   
   [chains.roles]
     l1ProxyAdminOwner = "{admin_addr}"
     l2ProxyAdminOwner = "{admin_addr}"
     systemConfigOwner = "{admin_addr}"
-    unsafeBlockSigner = "{signer_addr}"
+    unsafeBlockSigner = "{sequencer_addr}"
     batcher = "{batcher_addr}"
     proposer = "{proposer_addr}"
     challenger = "{challenger_addr}"
@@ -78,7 +79,7 @@ with open(KEYS_FILE, "w") as f:
     f.write(f"ADMIN_PRIVATE_KEY={admin_key}\n")
     f.write(f"BATCHER_PRIVATE_KEY={batcher_key}\n")
     f.write(f"PROPOSER_PRIVATE_KEY={proposer_key}\n")
-    f.write(f"SIGNER_PRIVATE_KEY={signer_key}\n")
+    f.write(f"SEQUENCER_PRIVATE_KEY={sequencer_key}\n")
     f.write(f"CHALLENGER_PRIVATE_KEY={challenger_key}\n")
 
 print(f"✅ Intent and Keys generated with Challenger role.")
