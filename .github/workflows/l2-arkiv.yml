@@ -62,9 +62,11 @@ jobs:
           tar -xJf op-geth-2026-01-27.tar.xz
           rm op-deployer
           
-          wget https://github.com/ethereum-optimism/optimism/releases/download/op-deployer%2Fv0.6.0%2Brc.3/op-deployer-0.6.0+rc.3-linux-amd64.tar.gz
-          tar -xzf op-deployer-0.6.0+rc.3-linux-amd64.tar.gz
-          mv op-deployer-0.6.0+rc.3-linux-amd64/op-deployer ./op-deployer
+          gh release download v0.0.0 \
+            --repo salad-x-golem/yagna-arkiv-market-matcher \
+            --pattern "arkiv-op-deployer-2026-01-29.tar.xz"
+
+          tar -xJf arkiv-op-deployer-2026-01-29.tar.xz
           
           mv op-deployer /usr/local/bin
           mv op-geth /usr/local/bin
@@ -104,7 +106,7 @@ jobs:
             --http.port 8545 \
             --http.addr "0.0.0.0" \
             --http.vhosts "*" \
-            --http.api "eth,net,engine,web3,debug,trace,arkiv" \
+            --http.api "web3,debug,eth,txpool,net,admin,miner,arkiv" \
             --authrpc.addr "localhost" \
             --authrpc.port 8551 \
             --authrpc.vhosts "*" \
