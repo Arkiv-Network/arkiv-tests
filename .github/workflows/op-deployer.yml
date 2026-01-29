@@ -6,11 +6,7 @@ on:
       timeout_minutes:
         description: "Timeout for jobs"
         required: true
-        default: "5"
-      workers:
-        description: "Workers"
-        required: false
-        default: "[\"luna\"]"
+        default: "10"
 
 jobs:
   integration:
