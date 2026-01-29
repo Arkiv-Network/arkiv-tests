@@ -30,16 +30,6 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
 
-      - name: Get foundry cli
-        run: |
-          set -x
-          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-          sudo mv forge cast anvil chisel /usr/local/bin/
-          forge --version
-          chisel --version
-          cast --version
-          anvil --version
-
       - name: Build op-deployer
         run: |
           cd op-deployer/op-deployer

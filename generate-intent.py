@@ -29,7 +29,7 @@ def create_keypair():
 admin_addr, admin_key = create_keypair()
 batcher_addr, batcher_key = create_keypair()
 proposer_addr, proposer_key = create_keypair()
-signer_addr, signer_key = create_keypair()
+sequencer_addr, sequencer_key = create_keypair()
 challenger_addr, challenger_key = create_keypair() # New Challenger Role
 
 # 3. Define the Intent Content
@@ -63,7 +63,7 @@ l2ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/a
     l1ProxyAdminOwner = "{admin_addr}"
     l2ProxyAdminOwner = "{admin_addr}"
     systemConfigOwner = "{admin_addr}"
-    unsafeBlockSigner = "{signer_addr}"
+    unsafeBlockSigner = "{sequencer_addr}"
     batcher = "{batcher_addr}"
     proposer = "{proposer_addr}"
     challenger = "{challenger_addr}"
@@ -77,7 +77,7 @@ with open(KEYS_FILE, "w") as f:
     f.write(f"ADMIN_PRIVATE_KEY={admin_key}\n")
     f.write(f"BATCHER_PRIVATE_KEY={batcher_key}\n")
     f.write(f"PROPOSER_PRIVATE_KEY={proposer_key}\n")
-    f.write(f"SIGNER_PRIVATE_KEY={signer_key}\n")
+    f.write(f"SEQUENCER_PRIVATE_KEY={sequencer_key}\n")
     f.write(f"CHALLENGER_PRIVATE_KEY={challenger_key}\n")
 
 print(f"✅ Intent and Keys generated with Challenger role.")
