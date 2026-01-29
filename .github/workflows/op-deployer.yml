@@ -7,6 +7,10 @@ on:
         description: "Timeout for jobs"
         required: true
         default: "10"
+      tag:
+        description: "Tag to build"
+        required: false
+        default: "v0.4.4-1"
 
 jobs:
   integration:
@@ -26,6 +30,8 @@ jobs:
       - name: Clone op-deployer repo
         run: |
           git clone https://github.com/Arkiv-Network/op-deployer
+          cd op-deployer
+          git checkout ${{ inputs.tag }}
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -64,7 +70,7 @@ jobs:
           context: op-deployer/op-deployer
           file: op-deployer/op-deployer/Dockerfile.minimal
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ inputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           # RELEASE_VERSION has to be the same as version of Blockscout to work
