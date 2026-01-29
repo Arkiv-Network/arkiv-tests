@@ -44,6 +44,7 @@ l2ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/a
 [superchainRoles]
   ProxyAdminOwner = "{admin_addr}"
   SuperchainProxyAdminOwner = "{admin_addr}"
+  Guardian = "{admin_addr}"
   SuperchainGuardian = "{admin_addr}"
   ProtocolVersionsOwner = "{admin_addr}"
   Challenger = "{challenger_addr}"
