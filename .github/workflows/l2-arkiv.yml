@@ -112,12 +112,8 @@ jobs:
           echo "New Genesis Hash: $NEW_HASH"
           
           # 3. Update rollup.json using jq
-          if command -v jq > /dev/null; then
-            jq ".l2_genesis.hash = \"$NEW_HASH\"" $ROLLUP_FILE > rollup.json.tmp && mv rollup.json.tmp $ROLLUP_FILE
-            echo "Successfully updated $ROLLUP_FILE"
-          else
-            echo "Error: jq not found. Please update the hash in $ROLLUP_FILE manually to: $NEW_HASH"
-          fi
+          jq ".l2_genesis.hash = \"$NEW_HASH\"" rollup.json > rollup.json.tmp && mv rollup.json.tmp rollup.json
+          echo "Successfully updated rollup.json"
             
           # 4. Cleanup
           rm -rf $TEMP_DIR init_output.txt
