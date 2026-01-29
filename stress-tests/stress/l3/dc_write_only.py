@@ -13,13 +13,15 @@ import random
 import sys
 import time
 from pathlib import Path
+import logging
 from typing import Any, Dict, Optional
 
 import web3
+from web3.types import TxParams
 from arkiv import Arkiv
 from arkiv.account import NamedAccount
-from arkiv.types import Operations
-from arkiv.utils import to_create_op
+from arkiv.types import Operations, TxHash, HexStr
+from arkiv.utils import to_create_op, to_tx_params
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from locust import constant, events, task
@@ -300,5 +302,20 @@ class DataCenterUser(JsonRpcUser):
 
         w3 = self._initialize_account_and_w3()
         operations = Operations(creates=create_ops)
-        self._fire_locust_request("write_node_with_workloads", lambda: w3.arkiv.execute(operations))
+        nonce = w3.eth.get_transaction_count(self.account.address)
+        logging.info(f"Sending tx by user {self.id} with nonce: {nonce}, address: {self.account.address}")
+        self._fire_locust_request("write_node_with_workloads", lambda: custom_execute(w3, operations, TxParams(nonce=nonce)))
+        logging.info(f"Tx sent by user {self.id} with nonce: {nonce}, address: {self.account.address}")
 
+
+def custom_execute(w3: Arkiv, operations: Operations, tx_params: TxParams) -> Any:
+    tx_params = to_tx_params(operations, tx_params)
+
+    # Send transaction and get tx hash
+    tx_hash_bytes = w3.eth.send_transaction(tx_params)
+    tx_hash = TxHash(HexStr(tx_hash_bytes.to_0x_hex()))
+
+    # Wait for transaction to complete and return receipt
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=0.5)
+
+    return tx_receipt
