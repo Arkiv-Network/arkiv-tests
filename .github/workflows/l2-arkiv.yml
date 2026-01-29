@@ -96,9 +96,32 @@ jobs:
           op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
           op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
           
-          python patch-genesis.py
+          python patch-genesis.py 
           
-          op-geth --datadir ./l2-data init --state.scheme=hash genesis.json
+          op-geth --datadir ./l2-data init --state.scheme=hash genesis.json > init_output.txt 2>&1
+
+          # 2. Extract the hash from the log output or the saved chain data
+          # op-geth prints the successfully committed genesis hash in the logs
+          NEW_HASH=$(grep "Successfully wrote genesis state" init_output.txt | awk -F'hash=' '{print $2}' | cut -d' ' -f1)
+            
+          if [ -z "$NEW_HASH" ]; then
+            echo "Error: Could not extract hash from op-geth init."
+            exit 1
+          fi
+        
+          echo "New Genesis Hash: $NEW_HASH"
+          
+          # 3. Update rollup.json using jq
+          if command -v jq > /dev/null; then
+            jq ".l2_genesis.hash = \"$NEW_HASH\"" $ROLLUP_FILE > rollup.json.tmp && mv rollup.json.tmp $ROLLUP_FILE
+            echo "Successfully updated $ROLLUP_FILE"
+          else
+            echo "Error: jq not found. Please update the hash in $ROLLUP_FILE manually to: $NEW_HASH"
+          fi
+            
+          # 4. Cleanup
+          rm -rf $TEMP_DIR init_output.txt
+          
           openssl rand -hex 32 > jwt.txt
 
       - name: Run op-geth and op-node
