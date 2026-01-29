@@ -44,22 +44,21 @@ jobs:
       #    cast --version
       #    anvil --version
 
-      # Also already installed, uncomment if update needed
-      #- name: Get op-geth, op-node and op-deployer binaries
-      #  env:
-      #    GH_TOKEN: ${{ github.token }}
-      #  run: |
-      #    set -x
-      #    gh release download v0.0.0 \
-      #      --repo salad-x-golem/arkiv-setup \
-      #      --pattern "optimism-binaries-2026-01-22.tar.xz"
-      #    tar -xJf optimism-binaries-2026-01-22.tar.xz
-      #    mv op-deployer /usr/local/bin
-      #    mv op-geth /usr/local/bin
-      #    mv op-node /usr/local/bin
-      #    op-geth version
-      #    op-node --version
-      #    op-deployer --version
+      - name: Get op-geth, op-node and op-deployer binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          gh release download v0.0.0 \
+            --repo salad-x-golem/arkiv-setup \
+            --pattern "optimism-binaries-2026-01-22.tar.xz"
+          tar -xJf optimism-binaries-2026-01-22.tar.xz
+          mv op-deployer /usr/local/bin
+          mv op-geth /usr/local/bin
+          mv op-node /usr/local/bin
+          op-geth version
+          op-node --version
+          op-deployer --version
 
       - name: Run anvil
         run: |
