@@ -56,7 +56,7 @@ jobs:
             --repo salad-x-golem/yagna-arkiv-market-matcher \
             --pattern "arkiv-op-geth-1.101605.0-1.1.tar.xz"
           
-          tar -xJf optimism-binaries-2026-01-22.tar.xz
+          tar -xJf arkiv-op-geth-1.101605.0-1.1.tar.xz
           # use arkiv op-geth build
           rm op-geth
           tar -xJf op-geth-2026-01-27.tar.xz
