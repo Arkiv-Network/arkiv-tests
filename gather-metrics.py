@@ -9,9 +9,23 @@ registry = CollectorRegistry()
 current_head_gauge = Gauge(
     'chain_head_block_number',
     'The current chain head block number from Geth',
-    ['instance_name'],
+    [],
     registry=registry
 )
+
+sqlite_wal_size = Gauge(
+    'sqlite_wal_file_size_bytes',
+    'The size of the SQLite WAL file in bytes',
+    [],
+    registry=registry
+)
+sqlite_db_size = Gauge(
+    'sqlite_db_file_size_bytes',
+    'The size of the SQLite DB file in bytes',
+    [],
+    registry=registry
+)
+
 
 JOB_NAME = os.getenv('PROMETHEUS_JOB_NAME', 'geth-metrics-job')
 
@@ -36,6 +50,12 @@ def get_all_geth_metrics(host="127.0.0.1", port=6060):
         print(f"Error connecting to Geth metrics: {e}")
         print("Ensure Geth is running with: --metrics --metrics.addr 127.0.0.1")
 
+def get_file_size(file_path):
+    try:
+        return os.path.getsize(file_path)
+    except OSError as e:
+        print(f"Error getting file size for {file_path}: {e}")
+        return -1
 
 def run_infinite_loop():
     # 1. Create a registry
@@ -45,7 +65,7 @@ def run_infinite_loop():
     iteration_gauge = Gauge(
         'batch_job_iteration_number',
         'The current loop index of the script',
-        ['instance_name'], # Example label
+        [], # Example label
         registry=registry
     )
 
@@ -59,7 +79,10 @@ def run_infinite_loop():
             loop_count += 1
 
             # 3. Update the metric value
-            iteration_gauge.labels(instance_name='worker-01').set(loop_count)
+            iteration_gauge.set(loop_count)
+
+            sqlite_db_size.set(get_file_size('l2-data/golem-base.db'))
+            sqlite_wal_size.set(get_file_size('l2-data/golem-base.db-wal'))
 
             get_all_geth_metrics()
             # 4. Push to the Gateway
