@@ -65,7 +65,7 @@ op-geth \
   --nodiscover \
   --networkid=42069 \
   --metrics \
-  --metrics.addr 127.0.0.1 \
+  --metrics.addr 0.0.0.0 \
   --metrics.port 6060 \
   > op-geth.log 2>&1 &
 
@@ -113,3 +113,4 @@ while [ $SECONDS -lt $end ]; do
   sleep 1
 done
 
+tail -f /dev/null
