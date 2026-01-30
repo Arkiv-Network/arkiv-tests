@@ -207,6 +207,11 @@ jobs:
             echo "❌ L2 did not start producing blocks in time."
             exit 1
           fi
+          
+          # Start gathering metrics in the background
+          export PROMETHEUS_JOB_NAME="arkiv-l2-${{ matrix.runner }}"
+          python -u gather-metrics.py > gather-metrics.log 2>&1 &
+          
           # Sleep forever to keep the services running for inspection
           sleep infinity
           

@@ -1,3 +1,5 @@
+import os
+
 import requests
 import time
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
@@ -11,6 +13,7 @@ current_head_gauge = Gauge(
     registry=registry
 )
 
+JOB_NAME = os.getenv('PROMETHEUS_JOB_NAME', 'geth-metrics-job')
 
 def get_all_geth_metrics(host="127.0.0.1", port=6060):
     url = f"http://{host}:{port}/debug/metrics/prometheus"
@@ -61,7 +64,7 @@ def run_infinite_loop():
             get_all_geth_metrics()
             # 4. Push to the Gateway
             # We use the same job name so the metric is overwritten/updated each time
-            push_to_gateway(gateway_url, job='loop_test_job', registry=registry)
+            push_to_gateway(gateway_url, job=JOB_NAME, registry=registry)
 
             print(f"Pushed iteration: {loop_count}")
 
