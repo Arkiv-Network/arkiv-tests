@@ -44,7 +44,7 @@ def get_all_geth_metrics(host="127.0.0.1", port=6060):
             if m.startswith("chain_head_block"):
                 chain_head_block = m.split(' ')[1]
                 print(f"Chain Head Block: {chain_head_block}")
-                current_head_gauge.labels(instance_name='geth-node-01').set(int(chain_head_block))
+                current_head_gauge.set(int(chain_head_block))
 
     except requests.exceptions.RequestException as e:
         print(f"Error connecting to Geth metrics: {e}")
