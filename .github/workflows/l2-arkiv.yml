@@ -54,7 +54,7 @@ jobs:
             --pattern "optimism-binaries-2026-01-22.tar.xz"
           gh release download v0.0.0 \
             --repo salad-x-golem/yagna-arkiv-market-matcher \
-            --pattern "op-geth-2026-01-27.tar.xz"
+            --pattern "arkiv-op-geth-1.101605.0-1.1.tar.xz"
           
           tar -xJf optimism-binaries-2026-01-22.tar.xz
           # use arkiv op-geth build
