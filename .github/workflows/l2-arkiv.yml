@@ -30,6 +30,7 @@ jobs:
         run: |
           cd /root/arkiv-op-geth/arkiv-op-geth
           rm build/bin -fr || true
+          export CI=false
           make
           cp build/bin/geth /usr/local/bin/op-geth
           op-geth version
