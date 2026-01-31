@@ -11,6 +11,10 @@ on:
         description: "Workers"
         required: false
         default: "[\"zeus\"]"
+      arkiv-op-geth:
+        description: "Arkiv op geth tag/commit used for tests"
+        required: true
+        default: "v1.101605.0-1.2"
 
 jobs:
   integration:
@@ -30,6 +34,10 @@ jobs:
         run: |
           cd /root/arkiv-op-geth/arkiv-op-geth
           rm build/bin -fr || true
+          git fetch
+          git checkout ${{ inputs.arkiv-op-geth }}
+          # To speed up build process we used already setup repo and go in build machine
+          # CI false informs build system use local git settings instead of action one
           export CI=false
           make
           cp build/bin/geth /usr/local/bin/op-geth
