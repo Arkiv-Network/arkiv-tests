@@ -15,6 +15,10 @@ on:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
         default: "v1.101605.0-1.2"
+      prometheus-job-name:
+        description: "Job name for metrics"
+        required: true
+        default: "default-job-name"
 
 jobs:
   integration:
@@ -22,6 +26,8 @@ jobs:
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     # Use the matrix variable here
     runs-on: ${{ matrix.runner }}
+    env:
+      PROMETHEUS_JOB_NAME: ${{ inputs.prometheus-job-name }}
 
     strategy:
       # If one runner fails, the others will still finish their tests
@@ -32,7 +38,12 @@ jobs:
     steps:
       - name: Build arkiv-op-geth
         run: |
-          cd /root/arkiv-op-geth/arkiv-op-geth
+          if [ ! -d /root/salad-x-golem/arkiv-op-geth ]; then
+            mkdir -p /root/salad-x-golem
+            git clone https://github.com/salad-x-golem/arkiv-op-geth.git /root/salad-x-golem/arkiv-op-geth
+          fi
+          cd /root/salad-x-golem/arkiv-op-geth
+          
           rm build/bin -fr || true
           git fetch
           git checkout ${{ inputs.arkiv-op-geth }}
