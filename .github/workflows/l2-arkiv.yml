@@ -26,6 +26,14 @@ jobs:
         runner: ${{ fromJSON(inputs.workers) }}
 
     steps:
+      - name: Build arkiv-op-geth
+        run: |
+          cd /root/arkiv-op-geth/arkiv-op-geth
+          rm build/bin -fr || true
+          make
+          cp build/bin/geth /usr/local/bin/op-geth
+          op-geth version
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -72,14 +80,6 @@ jobs:
           mv op-node /usr/local/bin
           op-node --version
           op-deployer --version
-
-      - name: Build arkiv-op-geth
-        run: |
-          cd /root/arkiv-op-geth/arkiv-op-geth
-          rm build/bin -fr || true
-          make
-          cp build/bin/geth /usr/local/bin/op-geth
-          op-geth version
 
       - name: Run anvil
         run: |
