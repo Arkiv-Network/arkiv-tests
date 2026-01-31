@@ -60,8 +60,6 @@ jobs:
           
           # use arkiv op-geth build
           rm op-geth
-          tar -xJf arkiv-op-geth-1.101605.0-1.1.tar.xz
-          
           rm op-deployer
           
           gh release download v0.0.0 \
@@ -71,11 +69,17 @@ jobs:
           tar -xJf arkiv-op-deployer-0.4.4-1.tar.xz
           
           mv op-deployer /usr/local/bin
-          mv op-geth /usr/local/bin
           mv op-node /usr/local/bin
-          op-geth version
           op-node --version
           op-deployer --version
+
+      - name: Build arkiv-op-geth
+        run: |
+          cd /root/arkiv-op-geth/arkiv-op-geth
+          rm build/bin -fr || true
+          make
+          cp build/bin/geth /usr/local/bin/op-geth
+          op-geth version
 
       - name: Run anvil
         run: |
