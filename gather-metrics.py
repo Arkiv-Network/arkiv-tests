@@ -25,6 +25,47 @@ sqlite_db_size = Gauge(
     [],
     registry=registry
 )
+arkiv_store_creates = Gauge(
+    'arkiv_store_creates',
+    'Number of creates in db',
+    [],
+    registry=registry
+)
+
+arkiv_store_updates = Gauge(
+    'arkiv_store_updates',
+    'Number of updates in db',
+    [],
+    registry=registry
+)
+
+arkiv_store_deletes = Gauge(
+    'arkiv_store_deletes',
+    'Number of deletes in db',
+    [],
+    registry=registry
+)
+
+arkiv_store_extends = Gauge(
+    'arkiv_store_extends',
+    'Number of extends in db',
+    [],
+    registry=registry
+)
+
+arkiv_store_operations_started = Gauge(
+    'arkiv_store_operations_started',
+    'Number of started operations on db',
+    [],
+    registry=registry
+)
+
+arkiv_store_operations_successful = Gauge(
+    'arkiv_store_operations_successful',
+    'Number of successful operations on db',
+    [],
+    registry=registry
+)
 
 
 JOB_NAME = os.getenv('PROMETHEUS_JOB_NAME', 'geth-metrics-job')
@@ -45,8 +86,24 @@ def get_all_geth_metrics(host="127.0.0.1", port=6060):
                 chain_head_block = m.split(' ')[1]
                 print(f"Chain Head Block: {chain_head_block}")
                 current_head_gauge.set(int(chain_head_block))
-            if "arkiv_store" in m:
-                print(m)
+
+            if m.startswith("arkiv_store"):
+                metric_name = m.split(" ")[0]
+                val = int(m.split(" ")[1])
+
+                if metric_name == "arkiv_store_creates":
+                    arkiv_store_creates.set(val)
+                elif metric_name == "arkiv_store_updates":
+                    arkiv_store_updates.set(val)
+                elif metric_name == "arkiv_store_deletes":
+                    arkiv_store_deletes.set(val)
+                elif metric_name == "arkiv_store_extends":
+                    arkiv_store_extends.set(val)
+                elif metric_name == "arkiv_store_operations_started":
+                    arkiv_store_operations_started.set(val)
+                elif metric_name == "arkiv_store_operations_successful":
+                    arkiv_store_operations_successful.set(val)
+
 
     except requests.exceptions.RequestException as e:
         print(f"Error connecting to Geth metrics: {e}")
