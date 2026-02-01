@@ -1,6 +1,9 @@
 import logging
 import os
 import socket
+
+from eth_account import Account
+from eth_account.signers.local import LocalAccount
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 
@@ -44,3 +47,12 @@ def launch_image(image_to_run: str):
     golem_base.start()
     wait_for_logs(golem_base, "HTTP server started")
     return golem_base
+
+# for instance_index in range(50):
+#     for user_index in range(50):
+#         path = f"m/44'/60'/{instance_index}'/0/{user_index}"
+#         Account.enable_unaudited_hdwallet_features()
+#         account: LocalAccount = Account.from_mnemonic(
+#             "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut", account_path=path
+#         )
+#         print("Account:", account.address)
