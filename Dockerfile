@@ -13,6 +13,8 @@ RUN curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foun
 WORKDIR /app
 COPY start_arkiv.sh .
 COPY generate-intent-arkiv.py .
+COPY docker-accounts.txt test-accounts.txt
+COPY patch-genesis.py .
 COPY anvil-chain.json .
 RUN chmod +x start_arkiv.sh
 ENTRYPOINT ["/bin/bash", "start_arkiv.sh"]
