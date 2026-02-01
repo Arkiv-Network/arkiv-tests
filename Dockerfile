@@ -1,5 +1,7 @@
 FROM python:3.14-trixie
 
+RUN apt update && apt install jq
+
 # Download necessary binaries
 RUN curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
     && mv forge cast anvil chisel /usr/local/bin/ \
