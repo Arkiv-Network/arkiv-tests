@@ -227,7 +227,7 @@ jobs:
       - name: Start test
         run: |
           cd tests/stress-tests
-          poetry run locust -f stress/l3/dc_write_only.py --headless -u 1 -r 1 -t 10 --print-stats --html "test_report_{u}_{r}_{t}.html"
+          poetry run locust -f stress/l3/dc_write_only.py --headless -u 20 -r 1000 -t 60 --print-stats --html "test_report_{u}_{r}_{t}.html"
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
