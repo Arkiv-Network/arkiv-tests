@@ -58,6 +58,7 @@ Account.enable_unaudited_hdwallet_features()
 
 DEFAULT_CREATOR_ADDRESS = "0x0000000000000000000000000000000000dc0001"
 DEFAULT_PAYLOAD_SIZE = 10000
+REAL_DC_PAYLOAD_CONTENT = True
 DEFAULT_DC_NUM = 1
 DEFAULT_WORKLOADS_PER_NODE = 5
 DEFAULT_BLOCK = 1  # Starting block number (will be incremented per user)
@@ -155,6 +156,12 @@ class DataCenterUser(JsonRpcUser):
     account: Optional[LocalAccount] = None
     w3: Optional[Arkiv] = None
     block_duration_seconds: int = DEFAULT_BLOCK_DURATION_SECONDS
+    real_dc_payload_content: bytes | None = None
+
+    if (REAL_DC_PAYLOAD_CONTENT):
+        # load real dc payload content from file
+        with open(f"stress/l3/sample_sys_x5.payload", "rb") as f:
+            real_dc_payload_content = f.read()
 
     def _initialize_account_and_w3(self) -> Arkiv:
         if self.account is None or self.w3 is None:
@@ -217,21 +224,6 @@ class DataCenterUser(JsonRpcUser):
                 response=None,
             )
     
-    def on_start(self):
-        """Initialize user-specific state when user starts."""
-        super().on_start()
-        self._initialize_account_and_w3()
-
-        # Generate unique seed for this user (based on user ID)
-        self.seed = self.id
-        self.node_counter = 0
-        self.workload_counter = 0
-        self.current_block = DEFAULT_BLOCK
-        
-        # Randomize some parameters per user for variety
-        self.payload_size = random.randint(5000, 15000)
-        self.workloads_per_node = random.randint(3, 7)
-    
     @task
     def write_node_with_workloads(self):
         """
@@ -248,6 +240,7 @@ class DataCenterUser(JsonRpcUser):
             dc_num=self.dc_num,
             node_num=self.node_counter,
             payload_size=self.payload_size,
+            payload_content=self.real_dc_payload_content,
             block=self.current_block,
             seed=self.seed,
         )
@@ -285,6 +278,7 @@ class DataCenterUser(JsonRpcUser):
                 workload_num=self.workload_counter,
                 nodes_per_dc=self.node_counter,  # Not used when assigned_node provided
                 payload_size=self.payload_size,
+                payload_content=self.real_dc_payload_content,
                 block=self.current_block,
                 seed=self.seed,
                 status=wl_status,
