@@ -93,7 +93,7 @@ jobs:
           jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
           echo "Updated Genesis timestamp to: $NOW_HEX"
           
-          anvil --init anvil-chain.json -p 15900 --block-time 1 > anvil.log 2>&1 &
+          anvil --init anvil-chain.json -p 15900 --block-time 1 > anvil.log 2>&1 & echo $! > anvil.pid
 
       - name: Setup and initialize L2 node
         run: |
@@ -163,7 +163,7 @@ jobs:
             --metrics \
             --metrics.addr 127.0.0.1 \
             --metrics.port 6060 \
-            > op-geth.log 2>&1 &
+            > op-geth.log 2>&1 & echo $! > op-geth.pid
 
           echo "Starting L2 node op-node..."
           op-node \
@@ -181,7 +181,7 @@ jobs:
             --rollup.l1-chain-config anvil-chain.json \
             --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
             --l1.beacon.ignore \
-            > op-node.log 2>&1 &
+            > op-node.log 2>&1 & echo $! > op-node.pid
           
           # Wait up to 60 seconds for L2 to produce a block
           echo "Waiting for L2 to start producing blocks..."
@@ -221,7 +221,7 @@ jobs:
           # Start gathering metrics in the background
           export PROMETHEUS_JOB_NAME=${{ steps.test-name.outputs.val }}
           export PROMETHEUS_INSTANCE_NAME=${{ matrix.runner }}
-          python -u gather-metrics.py > gather-metrics.log 2>&1 &
+          python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
 
       - name: Start test
         run: |
@@ -270,9 +270,10 @@ jobs:
       - name: Stop services
         if: always()
         run: |
-          pkill op-node
-          pkill op-geth
-          pkill anvil
+          pkill $(cat op-node.pid)
+          pkill $(cat op-geth.pid)
+          pkill $(cat anvil.pid)
+          kill $(cat gather-metrics.pid)
 
       - name: Cleanup metrics gateway
         if: always()
