@@ -230,6 +230,7 @@ jobs:
       - name: Link to panel on Grafana
         run: |
           echo "https://l2.arkiv-global.net/d/advfmrd/l2-tests?var-jobname=${{ steps.test-name.outputs.val }}"
+          sleep 5
 
       - name: Start test
         run: |
