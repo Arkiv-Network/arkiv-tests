@@ -6,9 +6,6 @@
   "author": "",
   "type": "module",
   "main": "write_example.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "dependencies": {
     "@arkiv-network/sdk": "*"
   },
