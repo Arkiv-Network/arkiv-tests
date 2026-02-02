@@ -80,7 +80,9 @@ jobs:
 
       - name: Setup test in background
         run: |
-          (git clone https://github.com/arkiv-network/tests && git checkout feature/data-center-case-for-l3-stress && (cd tests/stress-tests && poetry install)) &
+          (git clone https://github.com/arkiv-network/tests \
+            && (cd tests && git checkout feature/data-center-case-for-l3-stress) \
+            && (cd tests/stress-tests && poetry install)) &
 
       - name: Run anvil
         run: |
