@@ -279,7 +279,7 @@ jobs:
       - name: Compress Test logs
         if: always()
         run: |
-          tar -cf test-logs.tar.gz *.html
+          tar -cf test-logs.tar.gz tests/stress-tests/*.html
 
       - uses: actions/upload-artifact@v5
         if: always()
