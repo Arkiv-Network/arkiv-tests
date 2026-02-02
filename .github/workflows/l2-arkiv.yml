@@ -39,6 +39,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set test name
+        id: test-name
+        run: |
+          TEST_NAME=$(python name-gen.py)
+          echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
+          echo "$TEST_NAME"
+
       # Already installed on custom runners
       #- name: Install bun
       #  uses: oven-sh/setup-bun@v2
@@ -214,15 +221,12 @@ jobs:
             echo "❌ L2 did not start producing blocks in time."
             exit 1
           fi
-          
+
+      - name: Gather metrics
+        run: |
           # Start gathering metrics in the background
-          export PROMETHEUS_JOB_NAME="arkiv-l2-${{ matrix.runner }}"
+          export PROMETHEUS_JOB_NAME=${{ steps.test-name.outputs.val }}
           python -u gather-metrics.py > gather-metrics.log 2>&1 &
-          
-          sleep 1
-          
-          bun run src/create_entity.ts
-          
 
       - name: Start test
         run: |
@@ -230,7 +234,6 @@ jobs:
           poetry run locust -f stress/l3/dc_write_only.py --headless -u 20 -r 1000 -t 60 --print-stats --html "test_report_{u}_{r}_{t}.html"
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-
 
       #- name: Run L2 node
       #  run: |
