@@ -278,6 +278,12 @@ jobs:
           pkill op-node
           pkill op-geth
           pkill anvil
+          pkill poetry
+
+      - name: Cleanup metrics gateway
+        if: always()
+        run: |
+          curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}
 
       - name: Move test log into test-log.html
         if: always()
