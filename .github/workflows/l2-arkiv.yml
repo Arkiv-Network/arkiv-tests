@@ -22,8 +22,6 @@ jobs:
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     # Use the matrix variable here
     runs-on: ${{ matrix.runner }}
-    env:
-      PROMETHEUS_JOB_NAME: ${{ inputs.prometheus-job-name }}
 
     strategy:
       # If one runner fails, the others will still finish their tests
@@ -222,6 +220,7 @@ jobs:
         run: |
           # Start gathering metrics in the background
           export PROMETHEUS_JOB_NAME=${{ steps.test-name.outputs.val }}
+          export PROMETHEUS_INSTANCE_NAME=${{ matrix.runner }}
           python -u gather-metrics.py > gather-metrics.log 2>&1 &
 
       - name: Start test
@@ -278,7 +277,7 @@ jobs:
       - name: Cleanup metrics gateway
         if: always()
         run: |
-          curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}
+          curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ matrix.runner }}
 
       - name: Move test log into test-log.html
         if: always()

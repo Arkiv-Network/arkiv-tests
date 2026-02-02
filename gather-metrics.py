@@ -1,4 +1,5 @@
 import os
+import socket
 
 import requests
 import time
@@ -69,6 +70,7 @@ arkiv_store_operations_successful = Gauge(
 
 
 JOB_NAME = os.getenv('PROMETHEUS_JOB_NAME', 'geth-metrics-job')
+INSTANCE_NAME = os.getenv('PROMETHEUS_INSTANCE_NAME', socket.gethostname())
 
 def get_all_geth_metrics(host="127.0.0.1", port=6060):
     url = f"http://{host}:{port}/debug/metrics/prometheus"
@@ -146,7 +148,7 @@ def run_infinite_loop():
             get_all_geth_metrics()
             # 4. Push to the Gateway
             # We use the same job name so the metric is overwritten/updated each time
-            push_to_gateway(gateway_url, job=JOB_NAME, registry=registry)
+            push_to_gateway(gateway_url, job=JOB_NAME, registry=registry, grouping_key={'instance': INSTANCE_NAME})
 
             print(f"Pushed iteration: {loop_count}")
 
