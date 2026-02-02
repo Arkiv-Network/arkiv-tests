@@ -18,7 +18,7 @@ async function main() {
   const account = privateKeyToAccount(`0x${privateKey}`);
 
   const l3Testnet = defineChain({
-    id: 31337,
+    id: 42069,
     name: "Arkiv L3 Testnet",
     network: "l3-testnet",
     nativeCurrency: {
