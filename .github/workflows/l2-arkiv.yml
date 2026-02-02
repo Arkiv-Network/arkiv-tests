@@ -270,9 +270,9 @@ jobs:
       - name: Stop services
         if: always()
         run: |
-          pkill $(cat op-node.pid)
-          pkill $(cat op-geth.pid)
-          pkill $(cat anvil.pid)
+          kill $(cat op-node.pid)
+          kill $(cat op-geth.pid)
+          kill $(cat anvil.pid)
           kill $(cat gather-metrics.pid)
 
       - name: Cleanup metrics gateway
