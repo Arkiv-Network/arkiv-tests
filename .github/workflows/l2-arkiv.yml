@@ -276,6 +276,17 @@ jobs:
           pkill op-geth
           pkill anvil
 
+      - name: Compress Test logs
+        if: always()
+        run: |
+          tar -cf test-logs.tar.gz *.html
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: test-logs-${{ matrix.runner }}
+          path: test-logs.tar.gz
+
       - name: Compress Arkiv logs
         if: always()
         run: |
