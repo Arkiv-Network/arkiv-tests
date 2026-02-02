@@ -15,10 +15,6 @@ on:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
         default: "v1.101605.0-1.2"
-      prometheus-job-name:
-        description: "Job name for metrics"
-        required: true
-        default: "default-job-name"
 
 jobs:
   integration:
@@ -278,7 +274,6 @@ jobs:
           pkill op-node
           pkill op-geth
           pkill anvil
-          pkill poetry
 
       - name: Cleanup metrics gateway
         if: always()
