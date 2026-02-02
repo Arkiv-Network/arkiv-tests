@@ -215,7 +215,7 @@ jobs:
           
           sleep 1
           
-          bun run create_entity.ts
+          bun run src/create_entity.ts
           
           # Sleep forever to keep the services running for inspection
           sleep infinity
