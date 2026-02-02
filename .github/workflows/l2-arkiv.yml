@@ -227,6 +227,10 @@ jobs:
           export PROMETHEUS_INSTANCE_NAME=${{ matrix.runner }}
           python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
 
+      - name: Link to panel on Grafana
+        run: |
+          echo "https://l2.arkiv-global.net/d/advfmrd/l2-tests?var-jobname=${{ steps.test-name.outputs.val }}"
+
       - name: Start test
         run: |
           cd tests/stress-tests
