@@ -1,5 +1,8 @@
+import asyncio
 import os
 import socket
+from asyncio import subprocess
+from time import sleep
 
 import requests
 import time
@@ -68,6 +71,13 @@ arkiv_store_operations_successful = Gauge(
     registry=registry
 )
 
+arkiv_geth_db_size = Gauge(
+    'arkiv_geth_db_size',
+    'Number of arkiv database size',
+    [],
+    registry=registry
+)
+
 
 JOB_NAME = os.getenv('PROMETHEUS_JOB_NAME', 'geth-metrics-job')
 INSTANCE_NAME = os.getenv('PROMETHEUS_INSTANCE_NAME', socket.gethostname())
@@ -118,7 +128,34 @@ def get_file_size(file_path):
         print(f"Error getting file size for {file_path}: {e}")
         return -1
 
-def run_infinite_loop():
+geth_folder_size = {}
+
+async def get_path_size_async(path):
+    if not os.path.isdir(path):
+        raise ValueError(f"Invalid directory: {path}")
+
+    # Run 'du' asynchronously
+    process = await asyncio.create_subprocess_exec(
+        'du', '-sb', path,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+
+    stdout, stderr = await process.communicate()
+
+    if process.returncode == 0:
+        # Extract the byte count from the output
+        return int(stdout.split()[0])
+    else:
+        raise Exception(f"du error: {stderr.decode()}")
+
+async def get_path_size_async_loop(path, metric):
+    while True:
+        size = await get_path_size_async(path)
+        metric.set(size)
+        await asyncio.sleep(1)
+
+async def run_infinite_loop():
     # 1. Create a registry
 
     # 2. Define a Gauge to track the loop iteration
@@ -135,6 +172,7 @@ def run_infinite_loop():
 
     print(f"Starting loop. Pushing to {gateway_url}...")
 
+    _cor = get_path_size_async_loop("l2-data/geth", arkiv_geth_db_size)
     while True:
         try:
             loop_count += 1
@@ -164,7 +202,4 @@ def run_infinite_loop():
             continue
 
 if __name__ == "__main__":
-    run_infinite_loop()
-
-if __name__ == "__main__":
-    get_all_geth_metrics()
+    asyncio.run(run_infinite_loop())
