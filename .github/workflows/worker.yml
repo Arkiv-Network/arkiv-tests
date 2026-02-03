@@ -32,7 +32,7 @@ jobs:
       - name: Clone tests
         run: |
           git clone https://github.com/Arkiv-Network/tests.git
-          (cd tests && git checkout scx1332/new-deploy)
+          (cd tests && git checkout main)
 
       - name: Prepare poetry
         run: |
