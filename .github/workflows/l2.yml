@@ -12,6 +12,8 @@ on:
         required: false
         default: "[\"luna\"]"
 
+# ["luna", "flux", "pulse", "apex", "zeus"]
+
 jobs:
   integration:
     name: Integration internal test

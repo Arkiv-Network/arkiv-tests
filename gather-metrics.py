@@ -1,7 +1,6 @@
 import asyncio
 import os
 import socket
-import time
 import requests
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 from prometheus_client.parser import text_string_to_metric_families
@@ -43,6 +42,7 @@ arkiv_store_extends = create_gauge('arkiv_store_extends', 'Number of extends in 
 arkiv_store_ops_started = create_gauge('arkiv_store_operations_started', 'Number of started operations on db')
 arkiv_store_ops_success = create_gauge('arkiv_store_operations_successful', 'Number of successful operations on db')
 
+arkiv_free_space = create_gauge('arkiv_free_space', 'Free space on machine')
 
 # --- Mapping ---
 METRIC_MAP = {
@@ -92,6 +92,43 @@ async def get_path_size_async_loop(path, metric):
     while True:
         size = await get_path_size_async(path)
         metric.set(size)
+        if size < 100000000:
+            await asyncio.sleep(1)
+        else:
+            await asyncio.sleep(10)
+
+async def get_free_disk_space():
+    # Execute 'df' for the root directory specifically
+    # Using the '/' argument ensures we don't parse unnecessary rows
+    proc = await asyncio.create_subprocess_exec(
+        'df', '/',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+
+    # Wait for the command to finish without blocking the event loop
+    stdout, stderr = await proc.communicate()
+
+    if proc.returncode == 0:
+        lines = stdout.decode().strip().split('\n')
+        # Skip header, grab the data line
+        data_line = lines[1].split()
+
+        # In 'df' output: index 3 is 'Available' blocks (1K each)
+        available_kb = int(data_line[3])
+        return available_kb * 1024
+    else:
+        raise RuntimeError(f"df command failed: {stderr.decode()}")
+
+
+async def get_free_space_async_loop(metric):
+    while True:
+        size = await get_free_disk_space()
+        if size < 1000000000:
+            # @todo implement panic stop whole test to prevent machine
+            pass
+
+        metric.set(size)
         await asyncio.sleep(1)
 
 async def run_infinite_loop():
@@ -100,6 +137,8 @@ async def run_infinite_loop():
 
     # Background task for folder size
     asyncio.create_task(get_path_size_async_loop("l2-data/geth", arkiv_geth_db_size))
+
+    asyncio.create_task(get_free_space_async_loop(arkiv_free_space))
 
     while True:
         try:
