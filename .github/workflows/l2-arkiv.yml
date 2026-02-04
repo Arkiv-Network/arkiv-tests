@@ -43,7 +43,9 @@ jobs:
           TEST_NAME=$(python name-gen.py)
           echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
           echo "$TEST_NAME"
-
+          curl -H POST ${TRACKER_BACKEND_URL}/test/new -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
       # Already installed on custom runners
       #- name: Install bun
       #  uses: oven-sh/setup-bun@v2
