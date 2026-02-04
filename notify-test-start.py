@@ -37,7 +37,7 @@ def create_test(backend_url, test_name, parameters):
     # Define the payload
     payload = {
         "name": test_name,
-        "parameters": json.dumps(parameters),
+        "params": json.dumps(parameters),
     }
 
     try:
