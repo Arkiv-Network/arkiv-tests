@@ -148,6 +148,12 @@ jobs:
           echo "Success! rollup.json has been synced."
         
           openssl rand -hex 32 > jwt.txt
+          
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -X POST -F "file=@genesis.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -X POST -F "file=@rollup.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
       - name: Run op-geth and op-node
         run: |
