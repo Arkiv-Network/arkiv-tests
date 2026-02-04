@@ -36,11 +36,17 @@ challenger_addr, challenger_key = create_keypair() # New Challenger Role
 # disable batcher, let the network
 sequencerWindowSize = 31556926
 maxSequencerDrift = 31556926
+l1ChainID = 31337
+l2ChainID = 42069
+l2BlockTime = 1
+l2GenesisBlockGasLimit = 200000000
 
 # 3. Define the Intent Content
 intent_content = f'''configType = "custom"
-l1ChainID = 31337
-fundDevAccounts = true
+l1ChainID = {l1ChainID}
+l2ChainID = {l2ChainID}
+l2BlockTime = {l2BlockTime}
+l2GenesisBlockGasLimit = {l2GenesisBlockGasLimit}
 
 l1ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-579f43b5bbb43e74216b7ed33125280567df86eaf00f7621f354e4a68c07323e.tar.gz"
 
