@@ -40,20 +40,15 @@ def create_test(backend_url, test_name, parameters):
         "params": json.dumps(parameters),
     }
 
-    try:
-        print(f"Sending request to: {url}")
-        print(f"Payload: {json.dumps(payload, indent=2)}")
+    print(f"Sending request to: {url}")
+    print(f"Payload: {json.dumps(payload, indent=2)}")
 
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
+    response = requests.post(url, json=payload)
+    response.raise_for_status()
 
-        print(f"\n✅ Success! Status Code: {response.status_code}")
-        print("Response Body:", response.json())
+    print(f"\n✅ Success! Status Code: {response.status_code}")
+    print("Response Body:", response.json())
 
-    except requests.exceptions.RequestException as e:
-        print(f"\n❌ An error occurred: {e}")
-        if hasattr(e.response, 'text'):
-            print("Server says:", e.response.text)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
