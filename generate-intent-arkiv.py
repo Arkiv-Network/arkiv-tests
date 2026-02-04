@@ -32,6 +32,11 @@ proposer_addr, proposer_key = create_keypair()
 sequencer_addr, sequencer_key = create_keypair()
 challenger_addr, challenger_key = create_keypair() # New Challenger Role
 
+
+# disable batcher, let the network
+sequencerWindowSize = 31556926
+maxSequencerDrift = 31556926
+
 # 3. Define the Intent Content
 intent_content = f'''configType = "custom"
 l1ChainID = 31337
@@ -54,6 +59,8 @@ l2ContractsLocator = "https://storage.googleapis.com/oplabs-contract-artifacts/a
   baseFeeVaultRecipient = "{admin_addr}"
   l1FeeVaultRecipient = "{admin_addr}"
   sequencerFeeVaultRecipient = "{admin_addr}"
+  sequencerWindowSize = {sequencerWindowSize}
+  maxSequencerDrift = {maxSequencerDrift}
   
   # Standard OP Stack Fee Params
   eip1559Denominator = 50
