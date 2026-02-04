@@ -237,11 +237,16 @@ jobs:
 
       - name: Start test
         run: |
+          # notify the test server
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -H POST ${TRACKER_BACKEND_URL}/test/start -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+
           cd tests/stress-tests
           # Todo fix test returning error
           poetry run locust -f stress/l3/dc_write_only.py --headless -u 20 -r 1000 -t ${{ fromJSON(inputs.test-length) }} --print-stats --html "test_report_{u}_{r}_{t}.html" || true
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
       #- name: Run L2 node
       #  run: |
@@ -293,14 +298,13 @@ jobs:
         run: |
           curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ matrix.runner }}
 
-      - name: Notify test server
+      - name: Notify test server about test finish
         if: always()
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -H POST ${TRACKER_BACKEND_URL}/test/finish -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
-
 
       - name: Move test log into test-log.html
         if: always()
