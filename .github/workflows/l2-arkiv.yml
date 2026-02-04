@@ -292,6 +292,15 @@ jobs:
         run: |
           curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ matrix.runner }}
 
+      - name: Notify test server
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -H POST ${TRACKER_BACKEND_URL}/test/finish -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+
       - name: Move test log into test-log.html
         if: always()
         run: |
