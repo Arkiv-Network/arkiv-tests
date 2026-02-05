@@ -19,6 +19,18 @@ on:
         description: "Test length in seconds"
         required: true
         default: "60"
+      block-every:
+        description: "Block time in seconds"
+        required: true
+        default: "1s"
+      block-limit:
+        description: "Block gas limit"
+        required: true
+        default: "60000000"
+      test-scenario:
+        description: "Test scenario to run"
+        required: true
+        default: "dc_write_only"
 
 jobs:
   integration:
@@ -44,7 +56,16 @@ jobs:
           echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
           echo "$TEST_NAME"
           curl -H POST ${TRACKER_BACKEND_URL}/test/new -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
-          python notify-test-start.py --name ${TEST_NAME} --parameters test-length=${{ fromJSON(inputs.test-length) }} runs-on=${{ matrix.runner }}
+          python notify-test-start.py \
+            --name ${TEST_NAME} \
+            --parameters \
+              test-length=${{ fromJSON(inputs.test-length) }} \
+              runs-on=${{ matrix.runner }} \
+              block-every=${{ inputs.block-every }} \
+              arkiv-op-geth=${{ inputs.arkiv-op-geth }} \
+              block-limit=${{ inputs.block-limit }} \
+              test-scenario=${{ inputs.test-scenario }}
+
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
       # Already installed on custom runners
