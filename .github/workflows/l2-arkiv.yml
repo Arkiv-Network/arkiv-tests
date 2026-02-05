@@ -315,21 +315,23 @@ jobs:
       - name: Move test log into test-log.html
         if: always()
         run: |
-          mv tests/stress-tests/*.html test-log.html
+          mv tests/stress-tests/*.html locust.html
 
-      - uses: actions/upload-artifact@v5
+      - name: Upload test report
         if: always()
-        with:
-          name: test-log-${{ matrix.runner }}
-          path: test-log.html
+        run: |
+          curl -X POST -F "file=@locust.html" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
       - name: Compress Arkiv logs
         if: always()
         run: |
           tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json deploy-config anvil-chain.json
 
-      - uses: actions/upload-artifact@v5
+      - name: Upload logs
         if: always()
-        with:
-          name: arkiv-data-${{ matrix.runner }}
-          path: arkiv-logs.tar.gz
+        run: |
+          curl -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
