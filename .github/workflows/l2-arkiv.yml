@@ -59,12 +59,12 @@ jobs:
           python notify-test-start.py \
             --name ${TEST_NAME} \
             --parameters \
-              test-length=${{ fromJSON(inputs.test-length) }} \
-              runs-on=${{ matrix.runner }} \
-              block-every=${{ inputs.block-every }} \
-              arkiv-op-geth=${{ inputs.arkiv-op-geth }} \
-              block-limit=${{ inputs.block-limit }} \
-              test-scenario=${{ inputs.test-scenario }}
+              testLength=${{ fromJSON(inputs.test-length) }} \
+              runsOn=${{ matrix.runner }} \
+              blockEvery=${{ inputs.block-every }} \
+              arkivOpGeth=${{ inputs.arkiv-op-geth }} \
+              blockLimit=${{ inputs.block-limit }} \
+              testScenario=${{ inputs.test-scenario }}
 
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
