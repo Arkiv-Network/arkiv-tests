@@ -320,6 +320,7 @@ jobs:
       - name: Upload test report
         if: always()
         run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -X POST -F "file=@locust.html" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
@@ -332,6 +333,7 @@ jobs:
       - name: Upload logs
         if: always()
         run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
