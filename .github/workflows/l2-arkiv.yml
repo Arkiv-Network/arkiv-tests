@@ -270,7 +270,7 @@ jobs:
 
           cd tests/stress-tests
           # Todo fix test returning error
-          poetry run locust -f stress/l3/dc_write_only.py --headless -u 20 -r 1000 -t ${{ fromJSON(inputs.test-length) }} --print-stats --html "test_report_{u}_{r}_{t}.html" || true
+          poetry run locust -f stress/l3/dc_write_only.py --headless -u 20 -r 1000 -t ${{ fromJSON(inputs.test-length) }} --print-stats --html "test_report_{u}_{r}_{t}.html" > locust.log 2>&1 || true
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
@@ -343,6 +343,7 @@ jobs:
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -X POST -F "file=@locust.html" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -X POST -F "file=@locust.log" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
