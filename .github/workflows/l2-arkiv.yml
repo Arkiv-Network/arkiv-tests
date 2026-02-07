@@ -372,10 +372,11 @@ jobs:
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
-      - name: Move test log into test-log.html
+      - name: Move test logs into main directory
         if: always()
         run: |
           mv tests/stress-tests/*.html locust.html
+          mv tests/stress-tests/locust.log locust.log
 
       - name: Upload test report
         if: always()
