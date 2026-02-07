@@ -79,4 +79,4 @@ if __name__ == "__main__":
     if not backend_url:
         print("Error: Backend URL must be provided via --url or TRACKER_BACKEND_URL environment variable.")
     else:
-        create_test(backend_url, args.name, args.parameters)
+        create_test(backend_url, args.parameters)
