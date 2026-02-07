@@ -49,7 +49,7 @@ def create_test(backend_url, parameters):
     print(f"\n✅ Success! Status Code: {response.status_code}")
     print("Response Body:", response.json())
     name = response.json().get("name")
-    with open("test-name.txt") as f:
+    with open("test-name.txt", "w") as f:
         f.write(name)
 
 
