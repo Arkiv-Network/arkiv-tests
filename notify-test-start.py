@@ -30,13 +30,13 @@ class ParseDict(argparse.Action):
 
         setattr(namespace, self.dest, param_dict)
 
-def create_test(backend_url, test_name, parameters):
+def create_test(backend_url, parameters):
     # Construct the full endpoint URL
     url = f"{backend_url}/test/new"
 
     # Define the payload
     payload = {
-        "name": test_name,
+        "name": "",
         "params": json.dumps(parameters),
     }
 
@@ -48,6 +48,9 @@ def create_test(backend_url, test_name, parameters):
 
     print(f"\n✅ Success! Status Code: {response.status_code}")
     print("Response Body:", response.json())
+    name = response.json().get("name")
+    with open("test-name.txt") as f:
+        f.write(name)
 
 
 if __name__ == "__main__":
@@ -59,11 +62,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--url",
         help="The backend URL (defaults to TRACKER_BACKEND_URL env var)"
-    )
-    parser.add_argument(
-        "--name",
-        required=True,
-        help="The name of the test to create"
     )
     parser.add_argument(
         "--parameters",

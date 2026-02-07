@@ -58,12 +58,7 @@ jobs:
       - name: Set test name
         id: test-name
         run: |
-          TEST_NAME=$(python name-gen.py)
-          echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
-          echo "$TEST_NAME"
-          curl -H POST ${TRACKER_BACKEND_URL}/test/new -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
           python notify-test-start.py \
-            --name ${TEST_NAME} \
             --parameters \
               testLength=${{ fromJSON(inputs.test-length) }} \
               runsOn=${{ inputs.worker }} \
@@ -73,7 +68,9 @@ jobs:
               testScenario=${{ inputs.test-scenario }} \
               testUsers=${{ inputs.test-users }} \
               isExternal=${{ inputs.is-external }}
-
+          TEST_NAME=$(cat test-name.txt)
+          echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
+          echo "$TEST_NAME"
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
       # Already installed on custom runners
