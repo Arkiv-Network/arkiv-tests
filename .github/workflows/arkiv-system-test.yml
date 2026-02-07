@@ -1,4 +1,4 @@
-name: Test Arkiv System
+name: Arkiv System Test
 
 on:
   workflow_dispatch:
