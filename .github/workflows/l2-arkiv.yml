@@ -7,10 +7,10 @@ on:
         description: "Timeout for jobs"
         required: true
         default: "5"
-      workers:
+      worker:
         description: "Workers"
         required: false
-        default: "[\"zeus\"]"
+        default: "zeus"
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
@@ -49,13 +49,7 @@ jobs:
     name: Integration internal test
     timeout-minutes: ${{ fromJSON(inputs.timeout-minutes) }}
     # Use the matrix variable here
-    runs-on: ${{ matrix.runner }}
-
-    strategy:
-      # If one runner fails, the others will still finish their tests
-      fail-fast: false
-      matrix:
-        runner: ${{ fromJSON(inputs.workers) }}
+    runs-on: ${{ inputs.worker }}
 
     steps:
       - name: Checkout
@@ -72,7 +66,7 @@ jobs:
             --name ${TEST_NAME} \
             --parameters \
               testLength=${{ fromJSON(inputs.test-length) }} \
-              runsOn=${{ matrix.runner }} \
+              runsOn=${{ inputs.worker }} \
               blockEvery=${{ inputs.block-every }} \
               arkivOpGeth=${{ inputs.arkiv-op-geth }} \
               blockLimit=${{ inputs.block-limit }} \
@@ -287,7 +281,7 @@ jobs:
         run: |
           # Start gathering metrics in the background
           export PROMETHEUS_JOB_NAME=${{ steps.test-name.outputs.val }}
-          export PROMETHEUS_INSTANCE_NAME=${{ matrix.runner }}
+          export PROMETHEUS_INSTANCE_NAME=${{ inputs.worker }}
           python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
 
       - name: Link to panel on Grafana
@@ -362,7 +356,7 @@ jobs:
       - name: Cleanup metrics gateway
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ matrix.runner }}
+          curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ inputs.worker }}
 
       - name: Notify test server about test finish
         if: always()
