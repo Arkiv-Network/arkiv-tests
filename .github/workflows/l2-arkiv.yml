@@ -38,7 +38,7 @@ on:
       is-external:
         description: "Whether test already deployed network"
         required: true
-        default: "true"
+        default: "false"
       external-rpc-url:
         description: "RPC URL of external network, if is-external is true"
         required: false
