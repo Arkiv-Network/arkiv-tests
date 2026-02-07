@@ -151,7 +151,7 @@ jobs:
           jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
           echo "Updated Genesis timestamp to: $NOW_HEX"
           
-          anvil --init anvil-chain.json -p 15900 --block-time ${{inputs.workflow_dispatch}} > anvil.log 2>&1 & echo $! > anvil.pid
+          anvil --init anvil-chain.json -p 15900 --block-time ${{inputs.block-every}} > anvil.log 2>&1 & echo $! > anvil.pid
 
       - name: Setup and initialize L2 node
         if: ${{ inputs.is-external == 'false' }}
