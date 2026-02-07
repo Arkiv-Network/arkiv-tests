@@ -3,7 +3,7 @@ name: Spawn Arkiv L2
 on:
   workflow_dispatch:
     inputs:
-      timeout_minutes:
+      timeout-minutes:
         description: "Timeout for jobs"
         required: true
         default: "5"
@@ -47,7 +47,7 @@ on:
 jobs:
   integration:
     name: Integration internal test
-    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    timeout-minutes: ${{ fromJSON(inputs.timeout-minutes) }}
     # Use the matrix variable here
     runs-on: ${{ matrix.runner }}
 
