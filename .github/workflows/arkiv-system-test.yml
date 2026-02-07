@@ -1,4 +1,4 @@
-name: Spawn Arkiv L2
+name: Test Arkiv System
 
 on:
   workflow_dispatch:
@@ -45,8 +45,8 @@ on:
         default: "https://kaolin.hoodi.arkiv.network/rpc"
 
 jobs:
-  integration:
-    name: Integration internal test
+  arkiv-system-testing:
+    name: Test Arkiv System
     timeout-minutes: ${{ fromJSON(inputs.timeout-minutes) }}
     # Use the matrix variable here
     runs-on: ${{ inputs.worker }}
