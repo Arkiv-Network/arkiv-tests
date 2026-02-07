@@ -39,6 +39,10 @@ on:
         description: "Whether test already deployed network"
         required: true
         default: "true"
+      external-rpc-url:
+        description: "RPC URL of external network, if is-external is true"
+        required: false
+        default: "https://kaolin.hoodi.arkiv.network/rpc"
 
 jobs:
   integration:
@@ -115,14 +119,28 @@ jobs:
           op-geth version
 
       - name: Install javascript dependencies in background
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           bun install&
 
+      - name: Install javascript dependencies
+        if: ${{ inputs.is-external == 'true' }}
+        run: |
+          bun install
+
       - name: Setup test in background
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           (git clone https://github.com/arkiv-network/tests \
             && (cd tests && git checkout feature/data-center-case-for-l3-stress) \
             && (cd tests/stress-tests && poetry install)) &
+
+      - name: Setup test
+        if: ${{ inputs.is-external == 'true' }}
+        run: |
+          (git clone https://github.com/arkiv-network/tests \
+            && (cd tests && git checkout feature/data-center-case-for-l3-stress) \
+            && (cd tests/stress-tests && poetry install))
 
       - name: Run anvil
         if: ${{ inputs.is-external == 'false' }}
@@ -286,6 +304,11 @@ jobs:
 
           cd tests/stress-tests
           # Todo fix test returning error
+          if [ "${{ inputs.is-external }}" = "true" ]; then
+            export LOCUST_HOST=${{ inputs.external-rpc-url }}
+          else
+            export LOCUST_HOST=http://localhost:8545
+          fi
           poetry run locust -f stress/l3/dc_write_only.py --headless -u ${{ inputs.test-users }} -r 1000 -t ${{ inputs.test-length }} --print-stats --html "test_report_{u}_{r}_{t}.html" > locust.log 2>&1 || true
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
