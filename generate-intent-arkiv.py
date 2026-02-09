@@ -46,6 +46,7 @@ intent_content = f'''configType = "custom"
 l1ChainID = {l1ChainID}
 l2ChainID = {l2ChainID}
 l2BlockTime = {l2BlockTime}
+blockTime = {l2BlockTime}
 l2GenesisBlockGasLimit = {l2GenesisBlockGasLimit}
 
 l1ContractsLocator = "embedded"
