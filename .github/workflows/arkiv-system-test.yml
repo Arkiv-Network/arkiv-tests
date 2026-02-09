@@ -14,7 +14,11 @@ on:
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
-        default: "v1.101605.0-1.2"
+        default: "v1.101605.0-metrics.2"
+      arkiv-op-node:
+        description: "Arkiv op node tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.12"
       test-length:
         description: "Test length in seconds"
         required: true
@@ -95,10 +99,11 @@ jobs:
         run: |
           set -x
           
-          ARKIV_GETH_TAG=v1.101605.0-metrics.2
+          ARKIV_GETH_TAG=${{ inputs.arkiv-op-geth }}
+          OP_NODE_TAG=${{ inputs.arkiv-op-node }}
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
             && mv forge cast anvil chisel /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/yagna-arkiv-market-matcher/releases/download/v0.0.0/op-node-v1.16.2-1b8c5410.tar.xz | tar -xJ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-node /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-geth /usr/local/bin/ \
