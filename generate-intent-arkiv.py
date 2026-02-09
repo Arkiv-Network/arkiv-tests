@@ -38,7 +38,7 @@ sequencerWindowSize = 31556926
 maxSequencerDrift = 31556926
 l1ChainID = 31337
 l2ChainID = 42069
-l2BlockTime = 1
+l2BlockTime = os.getenv("L2_BLOCK_TIME", "2")  # Default to 2 seconds if not set
 l2GenesisBlockGasLimit = 200000000
 
 # 3. Define the Intent Content

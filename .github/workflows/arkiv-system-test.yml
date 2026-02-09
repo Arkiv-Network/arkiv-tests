@@ -35,10 +35,14 @@ on:
         description: "Test length in seconds"
         required: true
         default: "60"
-      block-every:
-        description: "Block time in seconds"
+      block-every-l1:
+        description: "Block time in seconds L1"
         required: true
-        default: "1"
+        default: "2"
+      block-every-l2:
+        description: "Block time in seconds L2"
+        required: true
+        default: "2"
       block-limit:
         description: "Block gas limit"
         required: true
@@ -78,7 +82,8 @@ jobs:
             --parameters \
               testLength=${{ fromJSON(inputs.test-length) }} \
               runsOn=${{ inputs.worker }} \
-              blockEvery=${{ inputs.block-every }} \
+              blockEveryL1=${{ inputs.block-every-l1 }} \
+              blockEveryL2=${{ inputs.block-every-l2 }} \
               arkivOpGeth=${{ inputs.arkiv-op-geth }} \
               blockLimit=${{ inputs.block-limit }} \
               testScenario=${{ inputs.test-scenario }} \
@@ -168,7 +173,7 @@ jobs:
           jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
           echo "Updated Genesis timestamp to: $NOW_HEX"
           
-          anvil --init anvil-chain.json -p 15900 --block-time ${{inputs.block-every}} > anvil.log 2>&1 & echo $! > anvil.pid
+          anvil --init anvil-chain.json -p 15900 --block-time ${{inputs.block-every-l1}} > anvil.log 2>&1 & echo $! > anvil.pid
 
       - name: Setup and initialize L2 node
         if: ${{ inputs.is-external == 'false' }}
@@ -176,7 +181,7 @@ jobs:
           # Initialize the deployment intent
           set -x
           op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
-          python generate-intent-arkiv.py
+          L2_BLOCK_TIME=${{inputs.block-every-l2}} python generate-intent-arkiv.py
           echo "Contents of deploy-config/intent.toml:\n" && cat deploy-config/intent.toml
           op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
           op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
