@@ -124,10 +124,10 @@ jobs:
             && mv op-batcher /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-proposer /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-deployer /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-geth /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/yagna-arkiv-market-matcher/releases/download/v0.0.0/arkiv-op-deployer-0.4.4-1.tar.xz | tar -xJ \
-            && mv op-deployer /usr/local/bin/          
           
           op-node --version
           op-deployer --version
