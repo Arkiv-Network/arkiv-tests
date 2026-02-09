@@ -314,14 +314,24 @@ jobs:
             --value 100ether \
             "$PROPOSER_ADDRESS"
 
+          # Extract the DisputeGameFactory proxy address from the deployment state
+          DGF_ADDRESS=$(op-deployer inspect l1 --workdir deploy-config 42069 | jq -r '.DisputeGameFactoryProxy')
+          if [ -z "$DGF_ADDRESS" ] || [ "$DGF_ADDRESS" = "null" ]; then
+            echo "❌ Failed to extract DisputeGameFactoryProxy address from deployment state"
+            exit 1
+          fi
+          echo "DisputeGameFactory address: $DGF_ADDRESS"
+
           echo "Starting op-proposer..."
           op-proposer \
             --l1-eth-rpc=http://localhost:15900 \
             --rollup-rpc=http://localhost:8547 \
             --private-key="$PROPOSER_PRIVATE_KEY" \
+            --game-factory-address="$DGF_ADDRESS" \
             --poll-interval=12s \
             --rpc.addr=0.0.0.0 \
             --rpc.port=8549 \
+            --allow-non-finalized \
             > op-proposer.log 2>&1 & echo $! > op-proposer.pid
 
           # Wait up to 60 seconds for L2 to produce a block
