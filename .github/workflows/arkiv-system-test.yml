@@ -19,6 +19,14 @@ on:
         description: "Arkiv op node tag/commit used for tests"
         required: true
         default: "v0.0.0-test.12"
+      arkiv-op-deployer:
+        description: "Arkiv op deployer tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.12"
+      arkiv-op-batcher:
+        description: "Arkiv op batcher tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.12"
       test-length:
         description: "Test length in seconds"
         required: true
@@ -101,10 +109,14 @@ jobs:
           
           ARKIV_GETH_TAG=${{ inputs.arkiv-op-geth }}
           OP_NODE_TAG=${{ inputs.arkiv-op-node }}
+          OP_BATCHER_TAG=${{ inputs.arkiv-op-batcher }}
+          OP_DEPLOYER_TAG=${{ inputs.arkiv-op-deployer }}
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
             && mv forge cast anvil chisel /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-node /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-batcher /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-geth /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/yagna-arkiv-market-matcher/releases/download/v0.0.0/arkiv-op-deployer-0.4.4-1.tar.xz | tar -xJ \
@@ -113,6 +125,7 @@ jobs:
           op-node --version
           op-deployer --version
           op-geth version
+          op-batcher --version
 
       - name: Install javascript dependencies in background
         if: ${{ inputs.is-external == 'false' }}
