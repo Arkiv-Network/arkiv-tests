@@ -342,7 +342,7 @@ jobs:
             --fee-limit-multiplier=25 \
             --txmgr.min-basefee=1 \
             --txmgr.min-tip-cap=1 \
-            --wait-node-sync=true \  
+            --wait-node-sync=true \
             --rpc.addr=0.0.0.0 \
             --metrics.enabled=true \
             --metrics.addr=0.0.0.0 \
