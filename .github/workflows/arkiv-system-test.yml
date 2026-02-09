@@ -465,12 +465,12 @@ jobs:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
       - name: Compress Arkiv logs
-        if: ${{ inputs.is-external == 'false' }}
+        if: always()
         run: |
-          tar -cf arkiv-logs.tar.gz *.log rollup.json genesis.json deploy-config anvil-chain.json
+          tar -cf arkiv-logs.tar.gz *.log *.json
 
       - name: Upload logs
-        if: ${{ inputs.is-external == 'false' }}
+        if: always()
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
