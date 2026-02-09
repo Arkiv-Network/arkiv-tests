@@ -62,6 +62,7 @@ l2ContractsLocator = "embedded"
 
 [[chains]]
   id = "0x000000000000000000000000000000000000000000000000000000000000a455"
+  blockTime = {l2BlockTime}
   baseFeeVaultRecipient = "{admin_addr}"
   l1FeeVaultRecipient = "{admin_addr}"
   sequencerFeeVaultRecipient = "{admin_addr}"
