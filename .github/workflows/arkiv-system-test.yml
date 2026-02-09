@@ -219,8 +219,8 @@ jobs:
           openssl rand -hex 32 > jwt.txt
           
           TEST_NAME=${{ steps.test-name.outputs.val }}
-          curl -X POST -F "file=@genesis.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
-          curl -X POST -F "file=@rollup.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@genesis.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@rollup.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
@@ -375,7 +375,7 @@ jobs:
         run: |
           # notify the test server
           TEST_NAME=${{ steps.test-name.outputs.val }}
-          curl -H POST ${TRACKER_BACKEND_URL}/test/start -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+          curl -sS -X POST ${TRACKER_BACKEND_URL}/test/start -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
 
           cd tests/stress-tests
           # Todo fix test returning error
@@ -439,13 +439,13 @@ jobs:
       - name: Cleanup metrics gateway
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          curl -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ inputs.worker }}
+          curl -sS -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ inputs.worker }}
 
       - name: Notify test server about test finish
         if: always()
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
-          curl -H POST ${TRACKER_BACKEND_URL}/test/finish -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+          curl -sS -X POST ${TRACKER_BACKEND_URL}/test/finish -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
@@ -459,8 +459,8 @@ jobs:
         if: always()
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
-          curl -X POST -F "file=@locust.html" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
-          curl -X POST -F "file=@locust.log" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@locust.html" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@locust.log" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
@@ -473,6 +473,6 @@ jobs:
         if: always()
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
-          curl -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
