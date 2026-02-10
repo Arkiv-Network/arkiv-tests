@@ -314,6 +314,7 @@ jobs:
           echo "Starting op-batcher..."
           mkdir pprof-data
           op-batcher \
+            --log.level=debug \
             --altda.enabled=true \
             --altda.da-service=true \
             --altda.da-server=http://localhost:3100 \
