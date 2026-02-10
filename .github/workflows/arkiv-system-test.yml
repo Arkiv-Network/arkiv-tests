@@ -323,7 +323,7 @@ jobs:
           op-batcher \
             --throttle.unsafe-da-bytes-lower-threshold=40000000 \
             --throttle.unsafe-da-bytes-upper-threshold=80000000 \
-            --max-l1-tx-size-bytes=100001 \
+            --max-l1-tx-size-bytes=1000001 \
             --compressor=none \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
