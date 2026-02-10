@@ -29,6 +29,6 @@
   },
   "nonce": "0x0",
   "timestamp": "0x0",
-  "gasLimit": "0x1c9c380",
+  "gasLimit": "0x10000000",
   "difficulty": "0x0"
 }
