@@ -324,6 +324,7 @@ jobs:
             --throttle.unsafe-da-bytes-lower-threshold=40000000 \
             --throttle.unsafe-da-bytes-upper-threshold=80000000 \
             --max-l1-tx-size-bytes=5000001 \
+            --approx-compr-ratio=1.0 \
             --log.level=debug \
             --altda.enabled=true \
             --altda.da-service=true \
