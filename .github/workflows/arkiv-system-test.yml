@@ -22,7 +22,7 @@ on:
       arkiv-op-da-server:
         description: "Arkiv da server tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.14"
+        default: "v0.0.0-test.13"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
