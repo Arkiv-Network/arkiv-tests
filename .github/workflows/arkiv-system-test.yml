@@ -249,6 +249,13 @@ jobs:
       - name: Run op-geth and op-node
         if: ${{ inputs.is-external == 'false' }}
         run: |
+          echo "Starting da-server..."
+          da-server \
+            --addr 0.0.0.0 \
+            --port 3100 \
+            --file ./da-data \
+            > da-server.log 2>&1 & echo $! > da-server.pid
+            
           echo "Starting L2 node op-geth..."
           op-geth \
             --datadir ./l2-data \
@@ -307,7 +314,7 @@ jobs:
           op-batcher \
             --altda.enabled=true \
             --altda.da-service=true \
-            --altda.da-server=http://altai:3100 \
+            --altda.da-server=http://localhost:3100 \
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8545 \
             --rollup-rpc=http://localhost:8547 \
