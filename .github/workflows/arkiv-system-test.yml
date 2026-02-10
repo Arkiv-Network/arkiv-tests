@@ -333,7 +333,7 @@ jobs:
             --poll-interval=10s \
             --check-recent-txs-depth=4 \
             --sub-safety-margin=20 \
-            --num-confirmations=1 \
+            --num-confirmations=0 \
             --safe-abort-nonce-too-low-count=3 \
             --resubmission-timeout=30s \
             --rpc.addr=0.0.0.0 \
