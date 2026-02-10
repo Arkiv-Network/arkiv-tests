@@ -323,7 +323,7 @@ jobs:
           op-batcher \
             --throttle.unsafe-da-bytes-lower-threshold=10000000 \
             --throttle.unsafe-da-bytes-upper-threshold=20000000 \
-            --max-l1-tx-size-bytes=2000001 \
+            --max-l1-tx-size-bytes=4000001 \
             --log.level=debug \
             --altda.enabled=true \
             --altda.da-service=true \
@@ -335,7 +335,7 @@ jobs:
             --poll-interval=10s \
             --check-recent-txs-depth=4 \
             --sub-safety-margin=20 \
-            --num-confirmations=2 \
+            --num-confirmations=1 \
             --safe-abort-nonce-too-low-count=3 \
             --resubmission-timeout=30s \
             --rpc.addr=0.0.0.0 \
