@@ -88,7 +88,10 @@ jobs:
               blockLimit=${{ inputs.block-limit }} \
               testScenario=${{ inputs.test-scenario }} \
               testUsers=${{ inputs.test-users }} \
-              isExternal=${{ inputs.is-external }}
+              isExternal=${{ inputs.is-external }} \
+              githubRunId=${{ github.run_id }} \
+              gitref=${{ github.ref }}
+          
           TEST_NAME=$(cat test-name.txt)
           echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
           echo "$TEST_NAME"
@@ -288,6 +291,9 @@ jobs:
 
           echo "Starting op-batcher..."
           op-batcher \
+            --altda.enabled=true \
+            --altda.da-service=true \
+            --altda.da-server=http://altai:3100 \
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8545 \
             --rollup-rpc=http://localhost:8547 \
