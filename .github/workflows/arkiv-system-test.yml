@@ -328,11 +328,12 @@ jobs:
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8545 \
             --rollup-rpc=http://localhost:8547 \
+            --max-l1-tx-size-bytes=10000000 \
             --private-key="$BATCHER_PRIVATE_KEY" \
             --poll-interval=10s \
             --check-recent-txs-depth=4 \
             --sub-safety-margin=20 \
-            --num-confirmations=10 \
+            --num-confirmations=2 \
             --safe-abort-nonce-too-low-count=3 \
             --resubmission-timeout=30s \
             --rpc.addr=0.0.0.0 \
