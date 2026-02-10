@@ -18,7 +18,11 @@ on:
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.12"
+        default: "v0.0.0-test.13"
+      arkiv-op-da-server:
+        description: "Arkiv da server tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.14"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
@@ -26,7 +30,7 @@ on:
       arkiv-op-batcher:
         description: "Arkiv op batcher tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.12"
+        default: "v0.0.0-test.13"
       arkiv-op-proposer:
         description: "Arkiv op proposer tag/commit used for tests"
         required: true
@@ -85,6 +89,11 @@ jobs:
               blockEveryL1=${{ inputs.block-every-l1 }} \
               blockEveryL2=${{ inputs.block-every-l2 }} \
               arkivOpGeth=${{ inputs.arkiv-op-geth }} \
+              arkivOpNode=${{ inputs.arkiv-op-node }} \
+              arkivOpDeployer=${{ inputs.arkiv-op-deployer }} \
+              arkivOpBatcher=${{ inputs.arkiv-op-batcher }} \
+              arkivOpProposer=${{ inputs.arkiv-op-proposer }} \
+              arkivOpDaServer=${{ inputs.arkiv-op-da-server }} \
               blockLimit=${{ inputs.block-limit }} \
               testScenario=${{ inputs.test-scenario }} \
               testUsers=${{ inputs.test-users }} \
@@ -124,6 +133,7 @@ jobs:
           OP_BATCHER_TAG=${{ inputs.arkiv-op-batcher }}
           OP_DEPLOYER_TAG=${{ inputs.arkiv-op-deployer }}
           OP_PROPOSER_TAG=${{ inputs.arkiv-op-proposer }}
+          OP_DA_SERVER_TAG=${{ inputs.arkiv-op-da-server }}
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
             && mv forge cast anvil chisel /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
@@ -134,14 +144,18 @@ jobs:
             && mv op-proposer /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-deployer /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv da-server /usr/local/bin/ \
             && curl -sL https://github.com/salad-x-golem/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-geth /usr/local/bin/ \
+            
           
           op-node --version
           op-deployer --version
           op-geth version
           op-batcher --version
           op-proposer --version
+          da-server --version
 
       - name: Install javascript dependencies in background
         if: ${{ inputs.is-external == 'false' }}
