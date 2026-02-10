@@ -127,6 +127,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -x
+          # uninstall previous versions
+          rm -f /usr/local/bin/op-geth
+          rm -f /usr/local/bin/op-node
+          rm -f /usr/local/bin/op-deployer
+          rm -f /usr/local/bin/op-batcher
+          rm -f /usr/local/bin/op-proposer
+          rm -f /usr/local/bin/da-server
           
           ARKIV_GETH_TAG=${{ inputs.arkiv-op-geth }}
           OP_NODE_TAG=${{ inputs.arkiv-op-node }}
