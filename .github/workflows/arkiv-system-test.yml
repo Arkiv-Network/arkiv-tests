@@ -441,12 +441,16 @@ jobs:
           echo "https://l2.arkiv-global.net/d/advfmrd/l2-tests?var-jobname=${{ steps.test-name.outputs.val }}"
           sleep 5
 
-      - name: Start test
+      - name: Notify that the test is starting
         run: |
           # notify the test server
           TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -sS -X POST ${TRACKER_BACKEND_URL}/test/start -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
+      - name: Start test
+        run: |
           cd tests/stress-tests
           # Todo fix test returning error
           if [ "${{ inputs.is-external }}" = "true" ]; then
@@ -454,10 +458,10 @@ jobs:
           else
             export LOCUST_HOST=http://localhost:8545
           fi
+          set -x
           poetry run locust -f stress/l3/dc_write_only.py --headless -u ${{ inputs.test-users }} -r 1000 -t ${{ inputs.test-length }} --print-stats --html "test_report_{u}_{r}_{t}.html" > locust.log 2>&1 || true
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
       #- name: Run L2 node
       #  run: |
