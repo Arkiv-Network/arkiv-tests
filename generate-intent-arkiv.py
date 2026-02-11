@@ -44,13 +44,8 @@ l2GenesisBlockGasLimit = 200000000
 # 3. Define the Intent Content
 intent_content = f'''configType = "custom"
 l1ChainID = {l1ChainID}
-l2ChainID = {l2ChainID}
-l2BlockTime = {l2BlockTime}
-blockTime = {l2BlockTime}
 l2GenesisBlockGasLimit = {l2GenesisBlockGasLimit}
-
 l1ContractsLocator = "embedded"
-
 l2ContractsLocator = "embedded"
 
 [superchainRoles]
@@ -63,12 +58,9 @@ l2ContractsLocator = "embedded"
 
 [[chains]]
   id = "0x000000000000000000000000000000000000000000000000000000000000a455"
-  blockTime = {l2BlockTime}
   baseFeeVaultRecipient = "{admin_addr}"
   l1FeeVaultRecipient = "{admin_addr}"
   sequencerFeeVaultRecipient = "{admin_addr}"
-  sequencerWindowSize = {sequencerWindowSize}
-  
   eip1559Denominator = 50
   eip1559DenominatorCanyon = 250
   eip1559Elasticity = 6
