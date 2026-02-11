@@ -34,8 +34,8 @@ challenger_addr, challenger_key = create_keypair() # New Challenger Role
 
 
 # disable batcher, let the network
-sequencerWindowSize = 31556926
-maxSequencerDrift = 31556926
+sequencerWindowSize = 3600*12
+# maxSequencerDrift = 31556926
 l1ChainID = 31337
 l2ChainID = 42069
 l2BlockTime = os.getenv("L2_BLOCK_TIME", "2")  # Default to 2 seconds if not set
@@ -68,19 +68,19 @@ l2ContractsLocator = "embedded"
   l1FeeVaultRecipient = "{admin_addr}"
   sequencerFeeVaultRecipient = "{admin_addr}"
   sequencerWindowSize = {sequencerWindowSize}
-  maxSequencerDrift = {maxSequencerDrift}
   
-  # Standard OP Stack Fee Params
   eip1559Denominator = 50
   eip1559DenominatorCanyon = 250
   eip1559Elasticity = 6
-  gasLimit = 30000000
+  gasLimit = 60000000
   
   [chains.dangerousAltDAConfig]
     useAltDA = true
     daCommitmentType = "GenericCommitment"
-    daChallengeWindow = 160
-    daResolveWindow = 160
+    daChallengeWindow = 30
+    daResolveWindow = 43200
+    daBondSize = 10
+    daResolverRefundPercentage = 100
   
   [chains.roles]
     l1ProxyAdminOwner = "{admin_addr}"
