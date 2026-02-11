@@ -27,7 +27,7 @@ done
 
 if [ "$found" -ne 0 ]; then
   echo ""
-  echo "Commit rejected: trailing whitespace after backslash in .sh/.yml files."
+  echo "Commit rejected: trailing whitespace after backslash in .sh/.yml/.yaml files."
   echo "This breaks line continuation and leads to undefined behaviour."
   echo "Please remove the trailing spaces after the backslash(es)."
   exit 1
