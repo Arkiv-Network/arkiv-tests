@@ -18,11 +18,11 @@ on:
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.18"
+        default: "v0.0.0-test.19"
       arkiv-op-da-server:
         description: "Arkiv da server tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.18"
+        default: "v0.0.0-test.19"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
@@ -30,11 +30,11 @@ on:
       arkiv-op-batcher:
         description: "Arkiv op batcher tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.18"
+        default: "v0.0.0-test.19"
       arkiv-op-proposer:
         description: "Arkiv op proposer tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.18"
+        default: "v0.0.0-test.19"
       test-length:
         description: "Test length in seconds"
         required: true
@@ -259,6 +259,7 @@ jobs:
           echo "Starting da-server..."
           mkdir da-data
           da-server \
+            --log.level=debug \
             --addr 0.0.0.0 \
             --port 3100 \
             --file.path ./da-data \
@@ -266,6 +267,7 @@ jobs:
             
           echo "Starting L2 node op-geth..."
           op-geth \
+            --log.level=debug \
             --datadir ./l2-data \
             --http \
             --http.port 8545 \
@@ -287,6 +289,7 @@ jobs:
 
           echo "Starting L2 node op-node..."
           op-node \
+            --log.level=debug \
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
@@ -385,6 +388,7 @@ jobs:
 
           echo "Starting op-proposer..."
           op-proposer \
+            --log.level=debug \
             --poll-interval=12s \
             --rpc.port=8549 \
             --l1-eth-rpc=http://localhost:15900 \
