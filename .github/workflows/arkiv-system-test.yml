@@ -42,7 +42,7 @@ on:
       block-every-l1:
         description: "Block time in seconds L1"
         required: true
-        default: "4"
+        default: "12"
       block-every-l2:
         description: "Block time in seconds L2"
         required: true
