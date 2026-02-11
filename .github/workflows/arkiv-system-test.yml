@@ -10,7 +10,7 @@ on:
       worker:
         description: "Workers"
         required: false
-        default: "zeus"
+        default: "pulse"
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
@@ -18,11 +18,11 @@ on:
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.19"
+        default: "v0.0.0-test.20"
       arkiv-op-da-server:
         description: "Arkiv da server tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.19"
+        default: "v0.0.0-test.20"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
@@ -30,11 +30,11 @@ on:
       arkiv-op-batcher:
         description: "Arkiv op batcher tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.19"
+        default: "v0.0.0-test.20"
       arkiv-op-proposer:
         description: "Arkiv op proposer tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.19"
+        default: "v0.0.0-test.20"
       test-length:
         description: "Test length in seconds"
         required: true
