@@ -336,7 +336,7 @@ jobs:
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
-            --max-l1-tx-size-bytes=1000001 \
+            --max-l1-tx-size-bytes=2000001 \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8545 \
