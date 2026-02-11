@@ -291,7 +291,7 @@ jobs:
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
             --altda.verify-on-read=true \
-            --altda.max-concurrent-da-requests=1 \          
+            --altda.max-concurrent-da-requests=1 \
             --l2=http://localhost:8551 \
             --l2.jwt-secret=jwt.txt \
             --sequencer.enabled \
