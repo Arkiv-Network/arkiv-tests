@@ -267,7 +267,6 @@ jobs:
             
           echo "Starting L2 node op-geth..."
           op-geth \
-            --log.level=debug \
             --datadir ./l2-data \
             --http \
             --http.port 8545 \
