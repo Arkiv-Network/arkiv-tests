@@ -289,6 +289,9 @@ jobs:
           op-node \
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --altda.verify-on-read=true \
+            --altda.max-concurrent-da-requests=1 \          
             --l2=http://localhost:8551 \
             --l2.jwt-secret=jwt.txt \
             --sequencer.enabled \
@@ -329,6 +332,7 @@ jobs:
           op-batcher \
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8545 \

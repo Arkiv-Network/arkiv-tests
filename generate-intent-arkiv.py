@@ -76,6 +76,12 @@ l2ContractsLocator = "embedded"
   eip1559Elasticity = 6
   gasLimit = 30000000
   
+  [chains.dangerousAltDAConfig]
+    useAltDA = true
+    daCommitmentType = "GenericCommitment"
+    daChallengeWindow = 160
+    daResolveWindow = 160
+  
   [chains.roles]
     l1ProxyAdminOwner = "{admin_addr}"
     l2ProxyAdminOwner = "{admin_addr}"
