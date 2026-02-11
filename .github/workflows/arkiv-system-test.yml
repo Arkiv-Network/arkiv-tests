@@ -10,7 +10,7 @@ on:
       worker:
         description: "Workers"
         required: false
-        default: "zeus"
+        default: "pulse"
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
@@ -58,7 +58,7 @@ on:
       test-users:
         description: "Number of users to run"
         required: true
-        default: "20"
+        default: "1"
       is-external:
         description: "Whether test already deployed network"
         required: true
