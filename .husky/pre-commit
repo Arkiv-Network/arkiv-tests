@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# Check for trailing spaces after backslash in .sh and .yml files
+# A backslash followed by spaces at end of line breaks line continuation
+# and leads to undefined behaviour
+
+files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(sh|yml|yaml)$' || true)
+
+if [ -z "$files" ]; then
+  exit 0
+fi
+
+found=0
+
+IFS='
+'
+for file in $files; do
+  if [ ! -f "$file" ]; then
+    continue
+  fi
+  # Match lines ending with backslash followed by one or more spaces/tabs
+  if grep -nP '\\\s+$' "$file"; then
+    echo "ERROR: Trailing whitespace after backslash found in $file (see above)"
+    found=1
+  fi
+done
+
+if [ "$found" -ne 0 ]; then
+  echo ""
+  echo "Commit rejected: trailing whitespace after backslash in .sh/.yml files."
+  echo "This breaks line continuation and leads to undefined behaviour."
+  echo "Please remove the trailing spaces after the backslash(es)."
+  exit 1
+fi
