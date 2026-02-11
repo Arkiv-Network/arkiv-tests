@@ -18,11 +18,11 @@ on:
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.28"
+        default: "v0.0.0-test.30"
       arkiv-op-da-server:
         description: "Arkiv da server tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.28"
+        default: "v0.0.0-test.30"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
@@ -30,11 +30,11 @@ on:
       arkiv-op-batcher:
         description: "Arkiv op batcher tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.28"
+        default: "v0.0.0-test.30"
       arkiv-op-proposer:
         description: "Arkiv op proposer tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.28"
+        default: "v0.0.0-test.30"
       test-length:
         description: "Test length in seconds"
         required: true
@@ -51,6 +51,10 @@ on:
         description: "Block gas limit"
         required: true
         default: "60000000"
+      altda-limit:
+        description: "Alt-da limit"
+        required: true
+        default: "5000000"
       test-scenario:
         description: "Test scenario to run"
         required: true
@@ -336,7 +340,7 @@ jobs:
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
-            --max-l1-tx-size-bytes=5000001 \
+            --max-l1-tx-size-bytes=${{inputs.altda-limit}} \
             --throttle.unsafe-da-bytes-lower-threshold=40000000 \
             --throttle.unsafe-da-bytes-upper-threshold=80000000 \
             --log.level=debug \
