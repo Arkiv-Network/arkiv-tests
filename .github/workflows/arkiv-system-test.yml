@@ -288,7 +288,7 @@ jobs:
           echo "Starting L2 node op-node..."
           op-node \
             --altda.enabled=true \
-            --altda.da-server=http://localhost:3100 \          
+            --altda.da-server=http://localhost:3100 \
             --l2=http://localhost:8551 \
             --l2.jwt-secret=jwt.txt \
             --sequencer.enabled \
