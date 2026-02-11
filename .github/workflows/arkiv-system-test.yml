@@ -103,7 +103,8 @@ jobs:
               testUsers=${{ inputs.test-users }} \
               isExternal=${{ inputs.is-external }} \
               githubRunId=${{ github.run_id }} \
-              gitref=${{ github.ref }}
+              gitref=${{ github.ref }} \
+              altDaLimit=${{ inputs.altda-limit }}
           
           TEST_NAME=$(cat test-name.txt)
           echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
