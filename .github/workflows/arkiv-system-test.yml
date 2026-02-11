@@ -322,12 +322,13 @@ jobs:
 
           echo "Starting op-batcher..."
           mkdir pprof-data
+
+          # --throttle.unsafe-da-bytes-lower-threshold=40000000 
+          # --throttle.unsafe-da-bytes-upper-threshold=80000000 
+          # --max-l1-tx-size-bytes=1000001 
           op-batcher \
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
-            # --throttle.unsafe-da-bytes-lower-threshold=40000000 \
-            # --throttle.unsafe-da-bytes-upper-threshold=80000000 \
-            # --max-l1-tx-size-bytes=1000001 \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8545 \
