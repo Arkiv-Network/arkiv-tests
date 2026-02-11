@@ -6,7 +6,7 @@ on:
       timeout-minutes:
         description: "Timeout for jobs"
         required: true
-        default: "70"
+        default: "700"
       worker:
         description: "Workers"
         required: false
@@ -38,7 +38,7 @@ on:
       test-length:
         description: "Test length in seconds"
         required: true
-        default: "3600"
+        default: "36000"
       block-every-l1:
         description: "Block time in seconds L1"
         required: true
