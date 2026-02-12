@@ -398,6 +398,7 @@ jobs:
             --p2p.listen.tcp=9442 \
             --p2p.listen.udp=9442 \
             --p2p.no-discovery=true \
+            --p2p.discovery.path=opnode_validator_db \
             --l1=http://localhost:15900 \
             --l1.rpckind=basic \
             --l1.beacon.ignore \
