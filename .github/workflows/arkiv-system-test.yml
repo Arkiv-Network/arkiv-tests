@@ -363,7 +363,7 @@ jobs:
             --l1.beacon.ignore \
             > op-node-sequencer.log 2>&1 & echo $! > op-node-sequencer.pid
           
-          OP_NODE_PEER_ID=$(op-node --l2=http://localhost:8551 --l2.jwt-secret=jwt-validator.txt p2p info | jq -r '.self.peerID')
+          OP_NODE_PEER_ID=$(cat op-node-sequencer-peer-id.txt)
 
           echo "Starting L2 node op-node..."
           op-node \
