@@ -419,8 +419,8 @@ jobs:
             --throttle.unsafe-da-bytes-upper-threshold=${{inputs.unsafe-max}} \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
-            --l2-eth-rpc=http://localhost:8545 \
-            --rollup-rpc=http://localhost:8547 \
+            --l2-eth-rpc=http://localhost:8645 \
+            --rollup-rpc=http://localhost:8647 \
             --private-key="$BATCHER_PRIVATE_KEY" \
             --poll-interval=10s \
             --check-recent-txs-depth=4 \
@@ -472,7 +472,7 @@ jobs:
             --poll-interval=12s \
             --rpc.port=8549 \
             --l1-eth-rpc=http://localhost:15900 \
-            --rollup-rpc=http://localhost:8547 \
+            --rollup-rpc=http://localhost:8647 \
             --private-key="$PROPOSER_PRIVATE_KEY" \
             --game-factory-address="$DGF_ADDRESS" \
             --proposal-interval=1800s \
