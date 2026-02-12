@@ -247,9 +247,9 @@ jobs:
           echo "Querying database for enode path..."
           GETH_SEQUENCER_ENODE=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "admin.nodeInfo.enode")
           echo "Retrieved Geth Sequencer Enode: ${GETH_SEQUENCER_ENODE}"
-          echo ["${GETH_SEQUENCER_ENODE}"] > ./validator_data/geth/static-nodes.json
+          echo ["${GETH_SEQUENCER_ENODE}"] > ./validator-data/geth/static-nodes.json
           echo "Added to validator static-nodes.json"
-          cat ./validator_data/geth/static-nodes.json
+          cat ./validator-data/geth/static-nodes.json
           
           # 4. Update rollup.json
           # - Sets .genesis.l2.hash to the new hash
