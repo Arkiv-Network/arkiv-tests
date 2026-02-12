@@ -55,14 +55,14 @@ on:
         description: "Alt-da limit"
         required: true
         default: "5000000"
-      altda-limit:
-        description: "Alt-da limit"
+      min-unsafe-limit:
+        description: "Min threshold for unsafe da bytes to trigger throttling"
         required: true
-        default: "5000000"
-      altda-limit:
-        description: "Alt-da limit"
+        default: "10000000"
+      max-unsafe-limit:
+        description: "Max threshold when throttling 100%"
         required: true
-        default: "5000000"
+        default: "50000000"
       test-scenario:
         description: "Test scenario to run"
         required: true
@@ -112,7 +112,9 @@ jobs:
               isExternal=${{ inputs.is-external }} \
               githubRunId=${{ github.run_id }} \
               gitref=${{ github.ref }} \
-              altDaLimit=${{ inputs.altda-limit }}
+              altDaLimit=${{ inputs.altda-limit }} \
+              minUnsafeLimit=${{ inputs.min-unsafe-limit }} \
+              maxUnsafeLimit=${{ inputs.max-unsafe-limit }} 
           
           TEST_NAME=$(cat test-name.txt)
           echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
@@ -415,8 +417,8 @@ jobs:
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
             --max-l1-tx-size-bytes=${{inputs.altda-limit}} \
-            --throttle.unsafe-da-bytes-lower-threshold=${{inputs.unsafe-min}} \
-            --throttle.unsafe-da-bytes-upper-threshold=${{inputs.unsafe-max}} \
+            --throttle.unsafe-da-bytes-lower-threshold=${{inputs.min-unsafe-limit}} \
+            --throttle.unsafe-da-bytes-upper-threshold=${{inputs.max-unsafe-limit}} \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8645 \
