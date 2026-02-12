@@ -335,12 +335,8 @@ jobs:
 
           echo "Starting L2 node op-node..."
           
-          op-sequencer-p2p-private-key.txt
-          
           op-node p2p genkey | tee op-node-sequencer.p2p.private.key | op-node p2p pub2id > op-node-sequencer-peer-id.txt
           P2P_SEQUENCER_KEY=$(cat op-node-sequencer.p2p.private.key)
-          
-          cat op-node-sequencer.p2p.key | op-node p2p genkey > op-sequencer-p2p-private-key.txt
           
           op-node \
             --log.level=debug \
