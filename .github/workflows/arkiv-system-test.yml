@@ -376,7 +376,7 @@ jobs:
             > op-geth-validator.log 2>&1 & echo $! > op-geth-validator.pid
 
 
-          OP_NODE_PEER_ID=$(cat op-node-sequencer-peer-id.txt)
+          OP_NODE_PEER_ID=$(cat op-node-peer-id.txt)
 
           echo "Starting validator op-node..."
           op-node \
