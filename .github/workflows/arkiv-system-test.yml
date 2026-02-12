@@ -55,6 +55,14 @@ on:
         description: "Alt-da limit"
         required: true
         default: "5000000"
+      altda-limit:
+        description: "Alt-da limit"
+        required: true
+        default: "5000000"
+      altda-limit:
+        description: "Alt-da limit"
+        required: true
+        default: "5000000"
       test-scenario:
         description: "Test scenario to run"
         required: true
@@ -218,13 +226,12 @@ jobs:
           
           python patch-genesis.py 
           
-          op-geth --datadir ./l2-data init --state.scheme=hash genesis.json > init_output.txt 2>&1
+          op-geth --datadir ./sequencer-data init --state.scheme=hash genesis.json > init_sequencer_genesis.log 2>&1
+          op-geth --datadir ./validator-data init --state.scheme=hash genesis.json > init_validator_genesis.log 2>&1
 
           # 3. Use 'console' mode to query the database for the exact block hash
-          # We use --exec to run a distinct JavaScript command
           echo "Querying database for full hash..."
-          FULL_HASH=$(op-geth --datadir l2-data --verbosity 0 console --exec "eth.getBlock(0).hash")
-          
+          FULL_HASH=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "eth.getBlock(0).hash")
           # Clean up quotes from the output (e.g., "0x..." -> 0x...)
           FULL_HASH=$(echo "$FULL_HASH" | tr -d '"')
           
@@ -233,8 +240,14 @@ jobs:
             echo "Error: Retrieved invalid hash: $FULL_HASH"
             exit 1
           fi
-          
           echo "Detected Full Genesis Hash: $FULL_HASH"
+
+          echo "Querying database for enode path..."
+          GETH_SEQUENCER_ENODE=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "admin.nodeInfo.enode")
+          echo "Retrieved Geth Sequencer Enode: ${GETH_SEQUENCER_ENODE}"
+          echo ["${GETH_SEQUENCER_ENODE}"] > ./validator_data/geth/static-nodes.json
+          echo "Added to validator static-nodes.json"
+          cat ./validator_data/geth/static-nodes.json
           
           # 4. Update rollup.json
           # - Sets .genesis.l2.hash to the new hash
@@ -250,7 +263,8 @@ jobs:
           
           echo "Success! rollup.json has been synced."
         
-          openssl rand -hex 32 > jwt.txt
+          openssl rand -hex 32 > jwt-sequencer.txt
+          openssl rand -hex 32 > jwt-validator.txt
           
           TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -sS -X POST -F "file=@genesis.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
@@ -271,26 +285,88 @@ jobs:
             --generic-commitment \
             > da-server.log 2>&1 & echo $! > da-server.pid
             
-          echo "Starting L2 node op-geth..."
+          echo "Starting L2 sequencer node op-geth..."
           op-geth \
-            --datadir ./l2-data \
+            --datadir=./sequencer-data \
             --http \
-            --http.port 8545 \
-            --http.addr "0.0.0.0" \
-            --http.vhosts "*" \
-            --http.api "web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
-            --authrpc.addr "localhost" \
-            --authrpc.port 8551 \
-            --authrpc.vhosts "*" \
-            --authrpc.jwtsecret jwt.txt \
+            --http.port=8645 \
+            --http.addr=0.0.0.0 \
+            --http.vhosts="*" \
+            --http.api="web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
+            --authrpc.addr=0.0.0.0 \
+            --authrpc.port=8651 \
+            --authrpc.vhosts="*" \
+            --authrpc.jwtsecret jwt-sequencer.txt \
             --syncmode=full \
             --gcmode=archive \
             --nodiscover \
             --networkid=42069 \
             --metrics \
-            --metrics.addr 127.0.0.1 \
-            --metrics.port 6060 \
-            > op-geth.log 2>&1 & echo $! > op-geth.pid
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=6160 \
+            --port=30505 \
+            > op-geth-sequencer.log 2>&1 & echo $! > op-geth-sequencer.pid
+
+          echo "Starting L2 sequencer node op-geth..."
+          
+          SEQUENCER_ENODE_ADDRESS=$(cat geth_sequencer_enode.txt)
+          op-geth \
+            --datadir=./validator-data \
+            --http \
+            --http.port=8545 \
+            --http.addr=0.0.0.0 \
+            --http.vhosts="*" \
+            --http.api="web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
+            --authrpc.addr="localhost" \
+            --authrpc.port=8551 \
+            --authrpc.vhosts="*" \
+            --authrpc.jwtsecret=jwt-validator.txt \
+            --syncmode=full \
+            --gcmode=archive \
+            --nodiscover \
+            --networkid=42069 \
+            --metrics \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=6060 \
+            --discovery.port=30405 \
+            --port=30405 \
+            > op-geth.log 2>&1 & echo $! > op-geth-validator.pid
+
+          echo "Starting L2 node op-node..."
+          
+          op-sequencer-p2p-private-key.txt
+          
+          op-node p2p genkey | tee op-node-sequencer.p2p.private.key | op-node p2p pub2id > op-node-sequencer-peer-id.txt
+          P2P_SEQUENCER_KEY=$(cat op-node-sequencer.p2p.private.key)
+          
+          cat op-node-sequencer.p2p.key | op-node p2p genkey > op-sequencer-p2p-private-key.txt
+          
+          op-node \
+            --log.level=debug \
+            --altda.enabled=true \
+            --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --altda.verify-on-read=true \
+            --altda.max-concurrent-da-requests=1 \
+            --l2=http://localhost:8651 \
+            --l2.jwt-secret=jwt-sequencer.txt \
+            --sequencer.enabled \
+            --sequencer.l1-confs=0 \
+            --verifier.l1-confs=0 \
+            --rpc.addr=0.0.0.0 \
+            --rpc.port=8647 \
+            --p2p.disable \
+            --l1=http://localhost:15900 \
+            --l1.rpckind=basic \
+            --rollup.config=rollup.json \
+            --rollup.l1-chain-config anvil-chain.json \
+            --p2p.sequencer.key=${P2P_SEQUENCER_KEY} \
+            --p2p.listen.ip=0.0.0.0 \
+            --p2p.listen.tcp=9442 \
+            --l1.beacon.ignore \
+            > op-node-sequencer.log 2>&1 & echo $! > op-node-sequencer.pid
+          
+          OP_NODE_PEER_ID=$(op-node --l2=http://localhost:8551 --l2.jwt-secret=jwt-validator.txt p2p info | jq -r '.self.peerID')
 
           echo "Starting L2 node op-node..."
           op-node \
@@ -301,21 +377,18 @@ jobs:
             --altda.verify-on-read=true \
             --altda.max-concurrent-da-requests=1 \
             --l2=http://localhost:8551 \
-            --l2.jwt-secret=jwt.txt \
-            --sequencer.enabled \
-            --sequencer.l1-confs=0 \
+            --l2.jwt-secret=jwt-validator.txt \
             --verifier.l1-confs=0 \
             --rpc.addr=0.0.0.0 \
             --rpc.port=8547 \
-            --p2p.disable \
+            --p2p.static=/ip4/127.0.0.1/tcp/9442/${OP_NODE_PEER_ID}
             --l1=http://localhost:15900 \
             --l1.rpckind=basic \
             --rollup.config=rollup.json \
             --rollup.l1-chain-config anvil-chain.json \
-            --p2p.sequencer.key=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
             --l1.beacon.ignore \
-            > op-node.log 2>&1 & echo $! > op-node.pid
-
+            > op-node-validator.log 2>&1 & echo $! > op-node-validator.pid
+          
           # Read the batcher private key generated by generate-intent-arkiv.py
           BATCHER_PRIVATE_KEY=$(grep BATCHER_PRIVATE_KEY deploy-config/keys.txt | cut -d'=' -f2)
           if [ -z "$BATCHER_PRIVATE_KEY" ]; then
@@ -342,8 +415,8 @@ jobs:
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
             --max-l1-tx-size-bytes=${{inputs.altda-limit}} \
-            --throttle.unsafe-da-bytes-lower-threshold=40000000 \
-            --throttle.unsafe-da-bytes-upper-threshold=80000000 \
+            --throttle.unsafe-da-bytes-lower-threshold=${{inputs.unsafe-min}} \
+            --throttle.unsafe-da-bytes-upper-threshold=${{inputs.unsafe-max}} \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
             --l2-eth-rpc=http://localhost:8545 \
@@ -524,10 +597,12 @@ jobs:
       - name: Stop services
         if: ${{ inputs.is-external == 'false' }}
         run: |
+          kill $(cat op-geth-validator.pid)
+          kill $(cat op-node-validator.pid)
           kill $(cat op-proposer.pid)
           kill $(cat op-batcher.pid)
-          kill $(cat op-node.pid)
-          kill $(cat op-geth.pid)
+          kill $(cat op-geth-sequencer.pid)
+          kill $(cat op-node-sequencer.pid)
           kill $(cat anvil.pid)
           kill $(cat gather-metrics.pid)
 
