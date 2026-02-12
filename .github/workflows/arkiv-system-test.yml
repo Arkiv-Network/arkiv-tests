@@ -393,7 +393,7 @@ jobs:
             --rpc.addr=0.0.0.0 \
             --rpc.port=8547 \
             --p2p.static=/ip4/127.0.0.1/tcp/9442/p2p/${OP_NODE_PEER_ID} \
-            --p2p.sync.req-resp=true
+            --p2p.sync.req-resp=true \
             --p2p.listen.ip=0.0.0.0 \
             --p2p.listen.tcp=9442 \
             --p2p.listen.udp=9442 \
