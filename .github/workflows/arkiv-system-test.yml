@@ -310,30 +310,6 @@ jobs:
             --port=30505 \
             > op-geth-sequencer.log 2>&1 & echo $! > op-geth-sequencer.pid
 
-          echo "Starting L2 sequencer node op-geth..."
-          
-          op-geth \
-            --datadir=./validator-data \
-            --http \
-            --http.port=8545 \
-            --http.addr=0.0.0.0 \
-            --http.vhosts="*" \
-            --http.api="web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
-            --authrpc.addr="localhost" \
-            --authrpc.port=8551 \
-            --authrpc.vhosts="*" \
-            --authrpc.jwtsecret=jwt-validator.txt \
-            --syncmode=full \
-            --gcmode=archive \
-            --nodiscover \
-            --networkid=42069 \
-            --metrics \
-            --metrics.addr=0.0.0.0 \
-            --metrics.port=6060 \
-            --discovery.port=30405 \
-            --port=30405 \
-            > op-geth-validator.log 2>&1 & echo $! > op-geth-validator.pid
-
           echo "Starting sequencer op-node..."
           
           op-node p2p genkey | tee op-node-sequencer.p2p.private.key | op-node p2p priv2id > op-node-sequencer-peer-id.txt
@@ -364,6 +340,32 @@ jobs:
             --l1.beacon.ignore \
             > op-node-sequencer.log 2>&1 & echo $! > op-node-sequencer.pid
           
+          sleep 10 # wait for sequencer to start and create the first block so that validator can sync
+          echo "Starting L2 validator node op-geth..."
+          
+          op-geth \
+            --datadir=./validator-data \
+            --http \
+            --http.port=8545 \
+            --http.addr=0.0.0.0 \
+            --http.vhosts="*" \
+            --http.api="web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
+            --authrpc.addr="localhost" \
+            --authrpc.port=8551 \
+            --authrpc.vhosts="*" \
+            --authrpc.jwtsecret=jwt-validator.txt \
+            --syncmode=full \
+            --gcmode=archive \
+            --nodiscover \
+            --networkid=42069 \
+            --metrics \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=6060 \
+            --discovery.port=30405 \
+            --port=30405 \
+            > op-geth-validator.log 2>&1 & echo $! > op-geth-validator.pid
+
+
           OP_NODE_PEER_ID=$(cat op-node-sequencer-peer-id.txt)
 
           echo "Starting validator op-node..."
