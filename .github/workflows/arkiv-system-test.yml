@@ -311,7 +311,6 @@ jobs:
 
           echo "Starting L2 sequencer node op-geth..."
           
-          SEQUENCER_ENODE_ADDRESS=$(cat geth_sequencer_enode.txt)
           op-geth \
             --datadir=./validator-data \
             --http \
