@@ -277,6 +277,7 @@ jobs:
       - name: Run op-geth and op-node
         if: ${{ inputs.is-external == 'false' }}
         run: |
+          set -x
           echo "Starting da-server..."
           mkdir da-data
           da-server \
@@ -333,7 +334,7 @@ jobs:
             --port=30405 \
             > op-geth-validator.log 2>&1 & echo $! > op-geth-validator.pid
 
-          echo "Starting L2 node op-node..."
+          echo "Starting sequencer op-node..."
           
           op-node p2p genkey | tee op-node-sequencer.p2p.private.key | op-node p2p priv2id > op-node-sequencer-peer-id.txt
           P2P_SEQUENCER_KEY=$(cat op-node-sequencer.p2p.private.key)
@@ -365,7 +366,7 @@ jobs:
           
           OP_NODE_PEER_ID=$(cat op-node-sequencer-peer-id.txt)
 
-          echo "Starting L2 node op-node..."
+          echo "Starting validator op-node..."
           op-node \
             --log.level=debug \
             --altda.enabled=true \
