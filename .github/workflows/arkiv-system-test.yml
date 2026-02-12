@@ -331,11 +331,11 @@ jobs:
             --metrics.port=6060 \
             --discovery.port=30405 \
             --port=30405 \
-            > op-geth.log 2>&1 & echo $! > op-geth-validator.pid
+            > op-geth-validator.log 2>&1 & echo $! > op-geth-validator.pid
 
           echo "Starting L2 node op-node..."
           
-          op-node p2p genkey | tee op-node-sequencer.p2p.private.key | op-node p2p pub2id > op-node-sequencer-peer-id.txt
+          op-node p2p genkey | tee op-node-sequencer.p2p.private.key | op-node p2p priv2id > op-node-sequencer-peer-id.txt
           P2P_SEQUENCER_KEY=$(cat op-node-sequencer.p2p.private.key)
           
           op-node \
