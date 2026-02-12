@@ -343,7 +343,7 @@ jobs:
             --l1.rpckind=basic \
             --rollup.config=rollup.json \
             --rollup.l1-chain-config anvil-chain.json \
-            --p2p.priv.path=./op-node-identity.key
+            --p2p.priv.path=./op-node-identity.key \
             --p2p.sequencer.key=${P2P_SEQUENCER_KEY} \
             --p2p.listen.ip=0.0.0.0 \
             --p2p.listen.tcp=9442 \
