@@ -34,6 +34,7 @@ arkiv_used_space = create_no_label_gauge('arkiv_used_space', 'Used space on mach
 
 current_head_gauge = create_gauge('chain_head_block_number', 'The current chain head block number from Geth')
 arkiv_geth_db_size = create_gauge('arkiv_geth_db_size', 'geth database size')
+arkiv_da_data_size = create_no_label_gauge('arkiv_da_data_size', 'da data size')
 
 sqlite_db_size = create_gauge('arkiv_sqlite_db_size_bytes', 'The size of the SQLite DB file in bytes')
 sqlite_wal_size = create_gauge('arkiv_sqlite_wal_size_bytes', 'The size of the SQLite WAL file in bytes')
@@ -143,6 +144,7 @@ async def run_infinite_loop():
     # Background task for folder size
     asyncio.create_task(get_path_size_async_loop("sequencer-data/geth", arkiv_geth_db_size.labels(**{'node_type': "sequencer"})))
     asyncio.create_task(get_path_size_async_loop("validator-data/geth", arkiv_geth_db_size.labels(**{'node_type': "validator"})))
+    asyncio.create_task(get_path_size_async_loop("da-data", arkiv_da_data_size))
 
     asyncio.create_task(get_free_space_async_loop(arkiv_free_space, arkiv_used_space))
 
