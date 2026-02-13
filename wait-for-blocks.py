@@ -38,10 +38,15 @@ def wait_for_l2_production(l2_url, l1_url, timeout, required_blocks):
 
     start_time = time.time()
     blocks_seen = 0
+    blocks_advanced = -1
 
+    last_l2_block = -1
     while time.time() - start_time < timeout:
         # 1. Get L2 Block
         l2_block = get_block_number(l2_url)
+        if l2_block != last_l2_block:
+            blocks_advanced += 1
+            last_l2_block = l2_block
 
         # 2. Check if block is valid and > 0
         if l2_block > 0:
@@ -56,8 +61,8 @@ def wait_for_l2_production(l2_url, l1_url, timeout, required_blocks):
             blocks_seen += 1
 
             # Check exit condition
-            if blocks_seen >= required_blocks:
-                print(f"L2 has produced {blocks_seen} blocks. Proceeding with the workflow.")
+            if blocks_seen >= required_blocks and blocks_advanced >= required_blocks:
+                print(f"L2 has produced at least {blocks_advanced} blocks. Proceeding with the workflow.")
                 return # Success
 
         else:

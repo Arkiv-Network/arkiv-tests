@@ -471,7 +471,7 @@ jobs:
             --l2-url http://localhost:8645 \
             --l1-url http://localhost:15900 \
             --timeout 60 \
-            --blocks 5
+            --blocks 3
 
       - name: Start validator node
         if: ${{ inputs.is-external == 'false' }}
@@ -539,7 +539,7 @@ jobs:
             --l2-url http://localhost:8545 \
             --l1-url http://localhost:15900 \
             --timeout 60 \
-            --blocks 5
+            --blocks 3
 
       - name: Gather metrics
         if: ${{ inputs.is-external == 'false' }}
