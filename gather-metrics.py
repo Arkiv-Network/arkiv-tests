@@ -23,7 +23,7 @@ push_registry = CollectorRegistry()
 # --- 2. Define Gauges (Detached) ---
 # We use registry=None so we can manually decide which registry they belong to later.
 def create_gauge(name, desc):
-    return Gauge(name, desc, ["node-name"], registry=push_registry)
+    return Gauge(name, desc, ["node_name"], registry=push_registry)
 
 # -- Metrics we WANT to push --
 current_head_gauge = create_gauge('chain_head_block_number', 'The current chain head block number from Geth')
@@ -73,7 +73,7 @@ def update_geth_metrics(node_type):
                 target_gauge = METRIC_MAP[family.name]
                 if family.samples:
                     val = family.samples[0].value
-                    target_gauge.labels(**{'node-name': node_type}).set(val)
+                    target_gauge.labels(**{'node_name': node_type}).set(val)
 
     except Exception as e:
         print(f"Error parsing metrics: {e}")
@@ -143,8 +143,8 @@ async def run_infinite_loop():
     print(f"Starting loop. Pushing selected metrics to {GATEWAY_URL}...")
 
     # Background task for folder size
-    asyncio.create_task(get_path_size_async_loop("sequencer-data/geth", arkiv_geth_db_size.labels(**{'node-name': "sequencer"})))
-    asyncio.create_task(get_path_size_async_loop("validator-data/geth", arkiv_geth_db_size.labels(**{'node-name': "validator"})))
+    asyncio.create_task(get_path_size_async_loop("sequencer-data/geth", arkiv_geth_db_size.labels(**{'node_name': "sequencer"})))
+    asyncio.create_task(get_path_size_async_loop("validator-data/geth", arkiv_geth_db_size.labels(**{'node_name': "validator"})))
 
     asyncio.create_task(get_free_space_async_loop(arkiv_free_space))
 
@@ -155,11 +155,11 @@ async def run_infinite_loop():
             # This metric is updated, but NOT pushed (because it's not in push_registry)
             iteration_gauge.set(loop_count)
 
-            sqlite_db_size.labels(**{'node-name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db'))
-            sqlite_wal_size.labels(**{'node-name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db-wal'))
+            sqlite_db_size.labels(**{'node_name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node_name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db-wal'))
 
-            sqlite_db_size.labels(**{'node-name': "validator"}).set(get_file_size('validator-data/golem-base.db'))
-            sqlite_wal_size.labels(**{'node-name': "validator"}).set(get_file_size('validator-data/golem-base.db-wal'))
+            sqlite_db_size.labels(**{'node_name': "validator"}).set(get_file_size('validator-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node_name': "validator"}).set(get_file_size('validator-data/golem-base.db-wal'))
 
             # Update all Geth metrics (some might be pushed, some not, depending on registration)
             update_geth_metrics("sequencer")
