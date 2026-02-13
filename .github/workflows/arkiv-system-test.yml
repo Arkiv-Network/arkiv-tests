@@ -520,7 +520,7 @@ jobs:
          
           while [ $SECONDS -lt $end ]; do
             # Try to get the block number, suppress error output
-            L2_BLOCK=$(cast block-number --rpc-url http://localhost:8645 2>/dev/null || echo "0")
+            L2_BLOCK=$(cast block-number --rpc-url http://localhost:8545 2>/dev/null || echo "0")
           
             # Check if block number is a valid integer and greater than 0
             if [[ "$L2_BLOCK" =~ ^[0-9]+$ ]] && [ "$L2_BLOCK" -gt 0 ]; then
