@@ -43,6 +43,7 @@ jobs:
       - name: Run worker
         run: |
           cd tests/stress-tests
+          export LOCUST_HOST=http://127.0.0.1:8645
           poetry run locust -f stress/l3/locustfile.py --worker --master-host locust.arkiv-global.net --master-port 5557 --class-picker
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
