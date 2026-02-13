@@ -21,18 +21,21 @@ push_registry = CollectorRegistry()
 # containing ALL metrics. For this script, we just focus on the push one.
 
 
-arkiv_free_space = Gauge('arkiv_free_space', 'Free space on machine', [], registry=push_registry)
+def create_no_label_gauge(name, desc):
+    return Gauge(name, desc, ["node_type"], registry=push_registry)
 
 def create_gauge(name, desc):
     return Gauge(name, desc, ["node_type"], registry=push_registry)
+
+iteration_gauge = create_no_label_gauge('batch_job_iteration_number', 'The current loop index of the script')
+arkiv_free_space = create_no_label_gauge('arkiv_free_space', 'Free space on machine')
+
 
 current_head_gauge = create_gauge('chain_head_block_number', 'The current chain head block number from Geth')
 arkiv_geth_db_size = create_gauge('arkiv_geth_db_size', 'geth database size')
 
 sqlite_db_size = create_gauge('arkiv_sqlite_db_size_bytes', 'The size of the SQLite DB file in bytes')
 sqlite_wal_size = create_gauge('arkiv_sqlite_wal_size_bytes', 'The size of the SQLite WAL file in bytes')
-
-iteration_gauge = create_gauge('batch_job_iteration_number', 'The current loop index of the script')
 
 arkiv_store_creates = create_gauge('arkiv_store_creates', 'Number of creates in db')
 arkiv_store_updates = create_gauge('arkiv_store_updates', 'Number of updates in db')
