@@ -498,6 +498,7 @@ jobs:
             --metrics.port=6060 \
             --discovery.port=30405 \
             --port=30405 \
+            --rollup.sequencerhttp=http://localhost:8647 \
             > op-geth-val.log 2>&1 & echo $! > op-geth-val.pid
 
 
