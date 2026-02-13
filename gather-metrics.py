@@ -29,6 +29,7 @@ def create_gauge(name, desc):
 
 iteration_gauge = create_no_label_gauge('batch_job_iteration_number', 'The current loop index of the script')
 arkiv_free_space = create_no_label_gauge('arkiv_free_space', 'Free space on machine')
+arkiv_used_space = create_no_label_gauge('arkiv_used_space', 'Used space on machine')
 
 
 current_head_gauge = create_gauge('chain_head_block_number', 'The current chain head block number from Geth')
@@ -116,21 +117,23 @@ async def get_free_disk_space():
         # Skip header, grab the data line
         data_line = lines[1].split()
 
-        # In 'df' output: index 3 is 'Available' blocks (1K each)
+        # In 'df' output: index 2 is 'Used' and index 3 is 'Available' blocks (1K each)
+        used_kb = int(data_line[2])
         available_kb = int(data_line[3])
-        return available_kb * 1024
+        return available_kb * 1024, used_kb * 1024
     else:
         raise RuntimeError(f"df command failed: {stderr.decode()}")
 
 
-async def get_free_space_async_loop(metric):
+async def get_free_space_async_loop(metric_free, metric_used):
     while True:
-        size = await get_free_disk_space()
-        if size < 1000000000:
+        free, taken = await get_free_disk_space()
+        if free < 1000000000:
             # @todo implement panic stop whole test to prevent machine
             pass
 
-        metric.set(size)
+        metric_free.set(free)
+        metric_used.set(taken)
         await asyncio.sleep(1)
 
 async def run_infinite_loop():
@@ -141,7 +144,7 @@ async def run_infinite_loop():
     asyncio.create_task(get_path_size_async_loop("sequencer-data/geth", arkiv_geth_db_size.labels(**{'node_type': "sequencer"})))
     asyncio.create_task(get_path_size_async_loop("validator-data/geth", arkiv_geth_db_size.labels(**{'node_type': "validator"})))
 
-    asyncio.create_task(get_free_space_async_loop(arkiv_free_space))
+    asyncio.create_task(get_free_space_async_loop(arkiv_free_space, arkiv_used_space))
 
     while True:
         try:
