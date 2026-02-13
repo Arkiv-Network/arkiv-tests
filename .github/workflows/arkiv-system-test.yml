@@ -466,38 +466,12 @@ jobs:
             --metrics.port=7375 \
             > op-proposer.log 2>&1 & echo $! > op-proposer.pid
 
-          # Wait up to 60 seconds for L2 to produce a block
-          echo "Waiting for L2 to start producing blocks..."
-          end=$((SECONDS+60))
-          NUM_BLOCKS=0
-         
-          while [ $SECONDS -lt $end ]; do
-            # Try to get the block number, suppress error output
-            L2_BLOCK=$(cast block-number --rpc-url http://localhost:8545 2>/dev/null || echo "0")
-          
-            # Check if block number is a valid integer and greater than 0
-            if [[ "$L2_BLOCK" =~ ^[0-9]+$ ]] && [ "$L2_BLOCK" -gt 0 ]; then
-              echo "✅ L2 is live! Current block: $L2_BLOCK"
-              
-              # Print L1 status as well for confirmation
-              L1_BLOCK=$(cast block-number --rpc-url http://localhost:15900)
-              echo "✅ L1 Current block: $L1_BLOCK"
-          
-              NUM_BLOCKS=$((NUM_BLOCKS+1))
-              if [ $NUM_BLOCKS -ge 5 ]; then
-                echo "L2 has produced $NUM_BLOCKS blocks. Proceeding with the workflow."
-                break
-              fi
-            fi
-            
-            echo "Waiting for L2... (Current block: $L2_BLOCK)"
-            sleep 1
-          done
-          
-          if [ $NUM_BLOCKS -lt 5 ]; then
-            echo "❌ L2 did not start producing blocks in time."
-            exit 1
-          fi
+          # Wait up to 60 seconds for sequencer to produce blocks
+          python -u wait-for-blocks.py \
+            --l2-url http://localhost:8645 \
+            --l1-url http://localhost:15900 \
+            --timeout 60 \
+            --blocks 5
 
       - name: Start validator node
         if: ${{ inputs.is-external == 'false' }}
@@ -559,7 +533,13 @@ jobs:
             --rollup.config=rollup.json \
             --rollup.l1-chain-config anvil-chain.json \
             > op-node-val.log 2>&1 & echo $! > op-node-val.pid
-        
+          
+          # Wait up to 60 seconds for validator to produce blocks
+          python -u wait-for-blocks.py \
+            --l2-url http://localhost:8545 \
+            --l1-url http://localhost:15900 \
+            --timeout 60 \
+            --blocks 5
 
       - name: Gather metrics
         if: ${{ inputs.is-external == 'false' }}
