@@ -55,7 +55,7 @@ op-geth \
   --http.port 8545 \
   --http.addr "0.0.0.0" \
   --http.vhosts "*" \
-  --http.api "web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
+  --http.api "web3,debug,eth,txpool,net,admin,miner,arkiv" \
   --authrpc.addr "localhost" \
   --authrpc.port 8551 \
   --authrpc.vhosts "*" \

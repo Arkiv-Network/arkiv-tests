@@ -307,7 +307,7 @@ jobs:
             --http.port=8645 \
             --http.addr=0.0.0.0 \
             --http.vhosts="*" \
-            --http.api="web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
+            --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
             --authrpc.addr=0.0.0.0 \
             --authrpc.port=8651 \
             --authrpc.vhosts="*" \
@@ -484,7 +484,7 @@ jobs:
             --http.port=8545 \
             --http.addr=0.0.0.0 \
             --http.vhosts="*" \
-            --http.api="web3,debug,eth,txpool,net,admin,miner,golembase,arkiv" \
+            --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
             --authrpc.addr="localhost" \
             --authrpc.port=8551 \
             --authrpc.vhosts="*" \
