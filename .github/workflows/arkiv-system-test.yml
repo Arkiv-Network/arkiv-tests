@@ -400,8 +400,8 @@ jobs:
             --p2p.static=/ip4/127.0.0.1/tcp/9442/p2p/${OP_NODE_PEER_ID} \
             --p2p.sync.req-resp=true \
             --p2p.listen.ip=0.0.0.0 \
-            --p2p.listen.tcp=9442 \
-            --p2p.listen.udp=9442 \
+            --p2p.listen.tcp=9342 \
+            --p2p.listen.udp=9342 \
             --p2p.no-discovery=true \
             --p2p.discovery.path=opnode_validator_db \
             --p2p.peerstore.path=opnode_peerstore_validator_db \
