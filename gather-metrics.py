@@ -20,34 +20,26 @@ push_registry = CollectorRegistry()
 # Optional: If you had a local web server, you might have a 'local_registry'
 # containing ALL metrics. For this script, we just focus on the push one.
 
-# --- 2. Define Gauges (Detached) ---
-# We use registry=None so we can manually decide which registry they belong to later.
+
+arkiv_free_space = Gauge('arkiv_free_space', 'Free space on machine', [], registry=push_registry)
+
 def create_gauge(name, desc):
-    return Gauge(name, desc, ["node_name"], registry=push_registry)
+    return Gauge(name, desc, ["node_type"], registry=push_registry)
 
-# -- Metrics we WANT to push --
 current_head_gauge = create_gauge('chain_head_block_number', 'The current chain head block number from Geth')
-
 arkiv_geth_db_size = create_gauge('arkiv_geth_db_size', 'geth database size')
 
 sqlite_db_size = create_gauge('arkiv_sqlite_db_size_bytes', 'The size of the SQLite DB file in bytes')
 sqlite_wal_size = create_gauge('arkiv_sqlite_wal_size_bytes', 'The size of the SQLite WAL file in bytes')
 
-# -- Metrics we might NOT want to push (Example) --
-# Let's say we only want these logged locally but NOT sent to the gateway to save bandwidth
-# To push them, simply uncomment the .register() lines below.
 iteration_gauge = create_gauge('batch_job_iteration_number', 'The current loop index of the script')
 
-
-# Database operation metrics
 arkiv_store_creates = create_gauge('arkiv_store_creates', 'Number of creates in db')
 arkiv_store_updates = create_gauge('arkiv_store_updates', 'Number of updates in db')
 arkiv_store_deletes = create_gauge('arkiv_store_deletes', 'Number of deletes in db')
 arkiv_store_extends = create_gauge('arkiv_store_extends', 'Number of extends in db')
 arkiv_store_ops_started = create_gauge('arkiv_store_operations_started', 'Number of started operations on db')
 arkiv_store_ops_success = create_gauge('arkiv_store_operations_successful', 'Number of successful operations on db')
-
-arkiv_free_space = create_gauge('arkiv_free_space', 'Free space on machine')
 
 # --- Mapping ---
 METRIC_MAP = {
@@ -73,7 +65,7 @@ def update_geth_metrics(node_type):
                 target_gauge = METRIC_MAP[family.name]
                 if family.samples:
                     val = family.samples[0].value
-                    target_gauge.labels(**{'node_name': node_type}).set(val)
+                    target_gauge.labels(**{'node_type': node_type}).set(val)
 
     except Exception as e:
         print(f"Error parsing metrics: {e}")
@@ -143,8 +135,8 @@ async def run_infinite_loop():
     print(f"Starting loop. Pushing selected metrics to {GATEWAY_URL}...")
 
     # Background task for folder size
-    asyncio.create_task(get_path_size_async_loop("sequencer-data/geth", arkiv_geth_db_size.labels(**{'node_name': "sequencer"})))
-    asyncio.create_task(get_path_size_async_loop("validator-data/geth", arkiv_geth_db_size.labels(**{'node_name': "validator"})))
+    asyncio.create_task(get_path_size_async_loop("sequencer-data/geth", arkiv_geth_db_size.labels(**{'node_type': "sequencer"})))
+    asyncio.create_task(get_path_size_async_loop("validator-data/geth", arkiv_geth_db_size.labels(**{'node_type': "validator"})))
 
     asyncio.create_task(get_free_space_async_loop(arkiv_free_space))
 
@@ -155,11 +147,11 @@ async def run_infinite_loop():
             # This metric is updated, but NOT pushed (because it's not in push_registry)
             iteration_gauge.set(loop_count)
 
-            sqlite_db_size.labels(**{'node_name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db'))
-            sqlite_wal_size.labels(**{'node_name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db-wal'))
+            sqlite_db_size.labels(**{'node_type': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node_type': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db-wal'))
 
-            sqlite_db_size.labels(**{'node_name': "validator"}).set(get_file_size('validator-data/golem-base.db'))
-            sqlite_wal_size.labels(**{'node_name': "validator"}).set(get_file_size('validator-data/golem-base.db-wal'))
+            sqlite_db_size.labels(**{'node_type': "validator"}).set(get_file_size('validator-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node_type': "validator"}).set(get_file_size('validator-data/golem-base.db-wal'))
 
             # Update all Geth metrics (some might be pushed, some not, depending on registration)
             update_geth_metrics("sequencer")
