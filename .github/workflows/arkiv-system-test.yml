@@ -285,7 +285,7 @@ jobs:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
       - name: Start da-server
-        if: ${{ inputs.is-external == 'true' }}
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           echo "Starting da-server..."
           mkdir da-data
