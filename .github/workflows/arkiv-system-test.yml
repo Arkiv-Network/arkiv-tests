@@ -490,7 +490,7 @@ jobs:
             --authrpc.vhosts="*" \
             --authrpc.jwtsecret=jwt-validator.txt \
             --syncmode=full \
-            --gcmode=archive \
+            --gcmode=full \
             --nodiscover \
             --networkid=42069 \
             --metrics \
