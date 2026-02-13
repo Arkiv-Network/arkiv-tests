@@ -8,7 +8,9 @@ from prometheus_client.parser import text_string_to_metric_families
 # --- Configuration ---
 JOB_NAME = os.getenv('PROMETHEUS_JOB_NAME', 'geth-metrics-job')
 INSTANCE_NAME = os.getenv('PROMETHEUS_INSTANCE_NAME', socket.gethostname())
-GETH_METRICS_URL = "http://127.0.0.1:6060/debug/metrics/prometheus"
+GETH_SEQ_METRICS_URL = "http://127.0.0.1:6160/debug/metrics/prometheus"
+GETH_VAL_METRICS_URL = "http://127.0.0.1:6060/debug/metrics/prometheus"
+
 GATEWAY_URL = 'https://l2.arkiv-global.net/eKUSzE1KvC'
 
 # --- 1. Define Registries ---
@@ -21,18 +23,21 @@ push_registry = CollectorRegistry()
 # --- 2. Define Gauges (Detached) ---
 # We use registry=None so we can manually decide which registry they belong to later.
 def create_gauge(name, desc):
-    return Gauge(name, desc, [], registry=push_registry)
+    return Gauge(name, desc, ["node-name"], registry=push_registry)
 
 # -- Metrics we WANT to push --
 current_head_gauge = create_gauge('chain_head_block_number', 'The current chain head block number from Geth')
-arkiv_geth_db_size = create_gauge('arkiv_geth_db_size', 'Number of arkiv database size')
-sqlite_wal_size = create_gauge('sqlite_wal_file_size_bytes', 'The size of the SQLite WAL file in bytes')
+
+arkiv_geth_db_size = create_gauge('arkiv_geth_db_size', 'geth database size')
+
+sqlite_db_size = create_gauge('arkiv_sqlite_db_size_bytes', 'The size of the SQLite DB file in bytes')
+sqlite_wal_size = create_gauge('arkiv_sqlite_wal_size_bytes', 'The size of the SQLite WAL file in bytes')
 
 # -- Metrics we might NOT want to push (Example) --
 # Let's say we only want these logged locally but NOT sent to the gateway to save bandwidth
 # To push them, simply uncomment the .register() lines below.
 iteration_gauge = create_gauge('batch_job_iteration_number', 'The current loop index of the script')
-sqlite_db_size = create_gauge('sqlite_db_file_size_bytes', 'The size of the SQLite DB file in bytes')
+
 
 # Database operation metrics
 arkiv_store_creates = create_gauge('arkiv_store_creates', 'Number of creates in db')
@@ -55,9 +60,10 @@ METRIC_MAP = {
     'arkiv_store_operations_successful': arkiv_store_ops_success,
 }
 
-def update_geth_metrics():
+def update_geth_metrics(node_type):
     try:
-        response = requests.get(GETH_METRICS_URL)
+        url = GETH_SEQ_METRICS_URL if node_type == 'sequencer' else GETH_VAL_METRICS_URL
+        response = requests.get(url)
         response.raise_for_status()
 
         families = text_string_to_metric_families(response.text)
@@ -67,10 +73,11 @@ def update_geth_metrics():
                 target_gauge = METRIC_MAP[family.name]
                 if family.samples:
                     val = family.samples[0].value
-                    target_gauge.set(val)
+                    target_gauge.labels(**{'node-name': node_type}).set(val)
 
     except Exception as e:
         print(f"Error parsing metrics: {e}")
+
 
 def get_file_size(file_path):
     try:
@@ -136,7 +143,8 @@ async def run_infinite_loop():
     print(f"Starting loop. Pushing selected metrics to {GATEWAY_URL}...")
 
     # Background task for folder size
-    asyncio.create_task(get_path_size_async_loop("l2-data/geth", arkiv_geth_db_size))
+    asyncio.create_task(get_path_size_async_loop("sequencer-data/geth", arkiv_geth_db_size.labels(**{'node-name': "sequencer"})))
+    asyncio.create_task(get_path_size_async_loop("validator-data/geth", arkiv_geth_db_size.labels(**{'node-name': "validator"})))
 
     asyncio.create_task(get_free_space_async_loop(arkiv_free_space))
 
@@ -147,14 +155,15 @@ async def run_infinite_loop():
             # This metric is updated, but NOT pushed (because it's not in push_registry)
             iteration_gauge.set(loop_count)
 
-            # This is updated but NOT pushed
-            sqlite_db_size.set(get_file_size('l2-data/golem-base.db'))
+            sqlite_db_size.labels(**{'node-name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node-name': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db-wal'))
 
-            # This IS pushed
-            sqlite_wal_size.set(get_file_size('l2-data/golem-base.db-wal'))
+            sqlite_db_size.labels(**{'node-name': "validator"}).set(get_file_size('validator-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node-name': "validator"}).set(get_file_size('validator-data/golem-base.db-wal'))
 
             # Update all Geth metrics (some might be pushed, some not, depending on registration)
-            update_geth_metrics()
+            update_geth_metrics("sequencer")
+            update_geth_metrics("validator")
 
             # --- 4. Push ONLY the specific registry ---
             push_to_gateway(
