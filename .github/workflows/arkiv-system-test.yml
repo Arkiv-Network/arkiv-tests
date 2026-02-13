@@ -571,10 +571,10 @@ jobs:
           if [ "${{ inputs.is-external }}" = "true" ]; then
             export LOCUST_HOST=${{ inputs.external-rpc-url }}
           else
-            export LOCUST_HOST=http://localhost:8545
+            export LOCUST_HOST=http://localhost:8645
           fi
           set -x
-          poetry run locust -f stress/l3/dc_write_only.py --headless -u ${{ inputs.test-users }} -r 1000 -t ${{ inputs.test-length }} --print-stats --html "test_report_{u}_{r}_{t}.html" > locust.log 2>&1 || true
+          poetry run locust -f stress/l3/dc_write_only.py --headless -u ${{ inputs.test-users }} -r 100 -t ${{ inputs.test-length }} --print-stats --html "test_report_{u}_{r}_{t}.html" > locust.log 2>&1 || true
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
