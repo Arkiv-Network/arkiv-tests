@@ -22,7 +22,7 @@ push_registry = CollectorRegistry()
 
 
 def create_no_label_gauge(name, desc):
-    return Gauge(name, desc, ["node_type"], registry=push_registry)
+    return Gauge(name, desc, [], registry=push_registry)
 
 def create_gauge(name, desc):
     return Gauge(name, desc, ["node_type"], registry=push_registry)
