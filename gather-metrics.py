@@ -2,7 +2,7 @@ import asyncio
 import os
 import socket
 import requests
-from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+from prometheus_client import CollectorRegistry, Gauge, push_to_gateway, Histogram, Summary
 from prometheus_client.parser import text_string_to_metric_families
 
 # --- Configuration ---
@@ -27,6 +27,9 @@ def create_no_label_gauge(name, desc):
 def create_gauge(name, desc):
     return Gauge(name, desc, ["node_type"], registry=push_registry)
 
+def create_summary(name, desc):
+    return Summary(name, desc, ["quantile", "node_type"], registry=push_registry)
+
 iteration_gauge = create_no_label_gauge('batch_job_iteration_number', 'The current loop index of the script')
 arkiv_free_space = create_no_label_gauge('arkiv_free_space', 'Free space on machine')
 arkiv_used_space = create_no_label_gauge('arkiv_used_space', 'Used space on machine')
@@ -46,6 +49,8 @@ arkiv_store_extends = create_gauge('arkiv_store_extends', 'Number of extends in 
 arkiv_store_ops_started = create_gauge('arkiv_store_operations_started', 'Number of started operations on db')
 arkiv_store_ops_success = create_gauge('arkiv_store_operations_successful', 'Number of successful operations on db')
 
+rpc_duration_eth_chainId_success = create_summary('rpc_duration_eth_chainId_success', 'Duration of Geth RPC calls in seconds')
+
 # --- Mapping ---
 METRIC_MAP = {
     'chain_head_block': current_head_gauge,
@@ -55,6 +60,7 @@ METRIC_MAP = {
     'arkiv_store_extends': arkiv_store_extends,
     'arkiv_store_operations_started': arkiv_store_ops_started,
     'arkiv_store_operations_successful': arkiv_store_ops_success,
+    'rpc_duration_eth_chainId_success': rpc_duration_eth_chainId_success,
 }
 
 def update_geth_metrics(node_type):
@@ -67,10 +73,19 @@ def update_geth_metrics(node_type):
 
         for family in families:
             if family.name in METRIC_MAP:
-                target_gauge = METRIC_MAP[family.name]
-                if family.samples:
-                    val = family.samples[0].value
-                    target_gauge.labels(**{'node_type': node_type}).set(val)
+                target_metric = METRIC_MAP[family.name]
+                if isinstance(target_metric, Summary):
+                    for sample in family.samples:
+                        if sample.value is not None:
+                            quantile = sample.labels.get('quantile')
+                            if quantile is None:
+                                print(f"Warning: Sample for {family.name} is missing 'quantile' label. Skipping.")
+                                continue
+                            target_metric.labels(**{'quantile': quantile, 'node_type': node_type}).observe(sample.value)
+                if isinstance(target_metric, Gauge):
+                    if family.samples:
+                        val = family.samples[0].value
+                        target_metric.labels(**{'node_type': node_type}).set(val)
 
     except Exception as e:
         print(f"Error parsing metrics: {e}")
