@@ -11,7 +11,7 @@ INSTANCE_NAME = os.getenv('PROMETHEUS_INSTANCE_NAME', socket.gethostname())
 GETH_SEQ_METRICS_URL = "http://127.0.0.1:6160/debug/metrics/prometheus"
 GETH_VAL_METRICS_URL = "http://127.0.0.1:6060/debug/metrics/prometheus"
 
-GATEWAY_URL = 'https://l2.arkiv-global.net/eKUSzE1KvC'
+GATEWAY_URL = os.getenv("PUSH_GATEWAY_URL", "")
 
 # --- 1. Define Registries ---
 # This registry is specifically for metrics we want to PUSH to the remote gateway

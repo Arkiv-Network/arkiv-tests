@@ -549,6 +549,8 @@ jobs:
           export PROMETHEUS_JOB_NAME=${{ steps.test-name.outputs.val }}
           export PROMETHEUS_INSTANCE_NAME=${{ inputs.worker }}
           python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
+        env:
+          PUSH_GATEWAY_URL: ${{ secrets.PUSH_GATEWAY_URL }}
 
       - name: Link to panel on Grafana
         if: ${{ inputs.is-external == 'false' }}
@@ -574,6 +576,8 @@ jobs:
             export LOCUST_HOST=http://localhost:8645
           fi
           set -x
+          export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+          export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="${{ secrets.OTEL_GATEWAY_URL }}v1/metrics"          
           poetry run locust -f stress/l3/dc_write_only.py \
             --web-port=6856 \
             --prometheus \
