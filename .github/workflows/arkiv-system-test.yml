@@ -325,6 +325,7 @@ jobs:
             --metrics.influxdb.bucket=arkiv-tests \
             --metrics.influxdb.organization=arkiv-network \
             --metrics.influxdb.token=my-super-secret-auth-token \
+            --metrics.influxdb.tags="test=${{ steps.test-name.outputs.val }},node=sequencer" \
             > op-geth-seq.log 2>&1 & echo $! > op-geth-seq.pid
 
           echo "Starting sequencer op-node..."
@@ -504,10 +505,12 @@ jobs:
             --discovery.port=30405 \
             --port=30405 \
             --rollup.sequencerhttp=http://localhost:8647 \
-            --metrics.push \
-            --metrics.push.endpoint=${{ secrets.PUSH_GATEWAY_URL }} \
-            --metrics.push.job=sequencer \
-            --metrics.push.instance=${{ inputs.worker }} \
+            --metrics.influxdbv2 \
+            --metrics.influxdb.endpoint=${{secrets.INFLUXDB_URL}} \
+            --metrics.influxdb.bucket=arkiv-tests \
+            --metrics.influxdb.organization=arkiv-network \
+            --metrics.influxdb.token=my-super-secret-auth-token \
+            --metrics.influxdb.tags="test=${{ steps.test-name.outputs.val }},node=validator" \
             > op-geth-val.log 2>&1 & echo $! > op-geth-val.pid
 
 
