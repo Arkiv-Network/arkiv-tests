@@ -13,7 +13,7 @@ def push_metrics():
         response.raise_for_status()
 
         # 2. Push to Gateway
-        push_res = requests.post(PUSH_GATEWAY_URL, data=response.text)
+        push_res = requests.put(PUSH_GATEWAY_URL, data=response.text)
         push_res.raise_for_status()
         print(f"Metrics pushed successfully at {time.ctime()}")
     except Exception as e:
