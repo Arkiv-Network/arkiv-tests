@@ -576,11 +576,9 @@ jobs:
             export LOCUST_HOST=http://localhost:8645
           fi
           set -x
-          export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
-          export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="${{ secrets.OTEL_GATEWAY_URL }}v1/metrics"          
-          poetry run locust -f stress/l3/dc_write_only.py \
+          poetry run locust -f stress/l3/${{inputs.test-scenario}}.py \
             --web-port=6856 \
-            --otel \
+            --csv=${{inputs.test-scenario}} \
             --headless \
             --processes 4 \
             --expect-workers 4 \
