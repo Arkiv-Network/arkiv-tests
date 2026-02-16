@@ -34,62 +34,11 @@ iteration_gauge = create_no_label_gauge('batch_job_iteration_number', 'The curre
 arkiv_free_space = create_no_label_gauge('arkiv_free_space', 'Free space on machine')
 arkiv_used_space = create_no_label_gauge('arkiv_used_space', 'Used space on machine')
 
-
-current_head_gauge = create_gauge('chain_head_block_number', 'The current chain head block number from Geth')
 arkiv_geth_db_size = create_gauge('arkiv_geth_db_size', 'geth database size')
 arkiv_da_data_size = create_no_label_gauge('arkiv_da_data_size', 'da data size')
 
 sqlite_db_size = create_gauge('arkiv_sqlite_db_size_bytes', 'The size of the SQLite DB file in bytes')
 sqlite_wal_size = create_gauge('arkiv_sqlite_wal_size_bytes', 'The size of the SQLite WAL file in bytes')
-
-arkiv_store_creates = create_gauge('arkiv_store_creates', 'Number of creates in db')
-arkiv_store_updates = create_gauge('arkiv_store_updates', 'Number of updates in db')
-arkiv_store_deletes = create_gauge('arkiv_store_deletes', 'Number of deletes in db')
-arkiv_store_extends = create_gauge('arkiv_store_extends', 'Number of extends in db')
-arkiv_store_ops_started = create_gauge('arkiv_store_operations_started', 'Number of started operations on db')
-arkiv_store_ops_success = create_gauge('arkiv_store_operations_successful', 'Number of successful operations on db')
-
-rpc_duration_eth_chainId_success = create_summary('rpc_duration_eth_chainId_success', 'Duration of Geth RPC calls in seconds')
-
-# --- Mapping ---
-METRIC_MAP = {
-    'chain_head_block': current_head_gauge,
-    'arkiv_store_creates': arkiv_store_creates,
-    'arkiv_store_updates': arkiv_store_updates,
-    'arkiv_store_deletes': arkiv_store_deletes,
-    'arkiv_store_extends': arkiv_store_extends,
-    'arkiv_store_operations_started': arkiv_store_ops_started,
-    'arkiv_store_operations_successful': arkiv_store_ops_success,
-    'rpc_duration_eth_chainId_success': rpc_duration_eth_chainId_success,
-}
-
-def update_geth_metrics(node_type):
-    try:
-        url = GETH_SEQ_METRICS_URL if node_type == 'sequencer' else GETH_VAL_METRICS_URL
-        response = requests.get(url)
-        response.raise_for_status()
-
-        families = text_string_to_metric_families(response.text)
-
-        for family in families:
-            if family.name in METRIC_MAP:
-                target_metric = METRIC_MAP[family.name]
-                if isinstance(target_metric, Summary):
-                    for sample in family.samples:
-                        if sample.value is not None:
-                            quantile = sample.labels.get('quantile')
-                            if quantile is None:
-                                print(f"Warning: Sample for {family.name} is missing 'quantile' label. Skipping.")
-                                continue
-                            target_metric.labels(**{'quantile': quantile, 'node_type': node_type}).observe(sample.value)
-                if isinstance(target_metric, Gauge):
-                    if family.samples:
-                        val = family.samples[0].value
-                        target_metric.labels(**{'node_type': node_type}).set(val)
-
-    except Exception as e:
-        print(f"Error parsing metrics: {e}")
-
 
 def get_file_size(file_path):
     try:
@@ -169,16 +118,6 @@ async def run_infinite_loop():
 
             # This metric is updated, but NOT pushed (because it's not in push_registry)
             iteration_gauge.set(loop_count)
-
-            sqlite_db_size.labels(**{'node_type': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db'))
-            sqlite_wal_size.labels(**{'node_type': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db-wal'))
-
-            sqlite_db_size.labels(**{'node_type': "validator"}).set(get_file_size('validator-data/golem-base.db'))
-            sqlite_wal_size.labels(**{'node_type': "validator"}).set(get_file_size('validator-data/golem-base.db-wal'))
-
-            # Update all Geth metrics (some might be pushed, some not, depending on registration)
-            update_geth_metrics("sequencer")
-            update_geth_metrics("validator")
 
             # --- 4. Push ONLY the specific registry ---
             push_to_gateway(
