@@ -320,10 +320,11 @@ jobs:
             --metrics.addr=0.0.0.0 \
             --metrics.port=6160 \
             --port=30505 \
-            --metrics.push \
-            --metrics.push.endpoint=${{ secrets.PUSH_GATEWAY_URL }} \
-            --metrics.push.job=sequencer \
-            --metrics.push.instance=${{ inputs.worker }} \
+            --metrics.influxdb \
+            --metrics.influxdb.endpoint=http://l2.arkiv-global.net:8086 \
+            --metrics.influxdb.bucket=arkiv-tests \
+            --metrics.influxdb.org=arkiv-network \
+            --metrics.influxdb.password=K9jkEDCWPpj \
             > op-geth-seq.log 2>&1 & echo $! > op-geth-seq.pid
 
           echo "Starting sequencer op-node..."
