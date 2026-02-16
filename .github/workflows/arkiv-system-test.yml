@@ -580,7 +580,7 @@ jobs:
           export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="${{ secrets.OTEL_GATEWAY_URL }}v1/metrics"          
           poetry run locust -f stress/l3/dc_write_only.py \
             --web-port=6856 \
-            --prometheus \
+            --otel \
             --headless \
             --processes 4 \
             --expect-workers 4 \
