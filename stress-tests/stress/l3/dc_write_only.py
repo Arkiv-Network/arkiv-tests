@@ -166,7 +166,7 @@ class DataCenterUser(JsonRpcUser):
     def _initialize_account_and_w3(self) -> Arkiv:
         if self.account is None or self.w3 is None:
             account_path = build_account_path(self.id)
-            print("Mnemonic:", config.mnemonic)
+            logging.info("Mnemonic: " + config.mnemonic)
             self.account = Account.from_mnemonic(config.mnemonic, account_path=account_path)
 
             self.w3 = Arkiv(
