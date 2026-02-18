@@ -62,7 +62,7 @@ def launch_image(image_to_run: str):
                 "--dev",
                 "--http",
                 "--http.api",
-                "eth,web3,net,debug,golembase",
+                "eth,web3,net,debug",
                 "--verbosity",
                 "5",
                 "--http.addr",
