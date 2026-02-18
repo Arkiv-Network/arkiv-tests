@@ -10,7 +10,7 @@ on:
       worker:
         description: "Workers"
         required: false
-        default: "pulse"
+        default: "zeus"
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
