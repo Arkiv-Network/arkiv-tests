@@ -119,6 +119,12 @@ async def run_infinite_loop():
             # This metric is updated, but NOT pushed (because it's not in push_registry)
             iteration_gauge.set(loop_count)
 
+            sqlite_db_size.labels(**{'node_type': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node_type': "sequencer"}).set(get_file_size('sequencer-data/golem-base.db-wal'))
+
+            sqlite_db_size.labels(**{'node_type': "validator"}).set(get_file_size('validator-data/golem-base.db'))
+            sqlite_wal_size.labels(**{'node_type': "validator"}).set(get_file_size('validator-data/golem-base.db-wal'))
+
             # --- 4. Push ONLY the specific registry ---
             push_to_gateway(
                 GATEWAY_URL,
