@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -x
+
+DATA_DIR="${ARKIV_SQLITE_DATA_DIRECTORY:-data}"
+SIGNER_ADDRESS="${ARKIV_SIGNER_ADDRESS:-0xYOUR_SIGNER_ADDRESS}"
+PASSWORD_FILE="${DATA_DIR}/password.txt"
+
+# Ensure password file exists to prevent startup failure
+if [ ! -f "$PASSWORD_FILE" ]; then
+    echo "Error: $PASSWORD_FILE not found. Please create it with your account password."
+    exit 1
+fi
+
+echo "Starting Geth with signer: $SIGNER_ADDRESS"
+
+./geth-l2 \
+    --datadir "${DATA_DIR}" \
+    --http \
+    --http.api 'eth,web3,net,debug,arkiv' \
+    --verbosity 3 \
+    --ws --ws.addr '0.0.0.0' --ws.port 8545 \
+    --http.addr '0.0.0.0' \
+    --http.port 8545 \
+    --http.corsdomain '*' \
+    --http.vhosts '*' \
+    --unlock "${SIGNER_ADDRESS}" \
+    --allow-insecure-unlock \
+    --password "${PASSWORD_FILE}" \
+    --mine \
+    --miner.etherbase "${SIGNER_ADDRESS}" \
+    2>&1 | tee "${DATA_DIR}/arkiv.log" &
+
+# Wait for arkiv to start
+echo "Waiting for Arkiv HTTP API to be ready..."
+
+# Set timeout variables
+MAX_RETRIES=20
+counter=0
+
+while [ $counter -lt $MAX_RETRIES ]; do
+    # Try to fetch the latest block number.
+    # We send output to /dev/null and check the exit status of curl.
+    if curl -s -X POST -H "Content-Type: application/json" \
+        --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+        http://127.0.0.1:8545 > /dev/null; then
+        echo "Arkiv is up and running!"
+        break
+    fi
+
+    echo "Waiting for Arkiv... $((counter+1))/$MAX_RETRIES"
+    sleep 1
+    counter=$((counter+1))
+done
+
+# Check if we timed out
+if [ $counter -eq $MAX_RETRIES ]; then
+    echo "Error: Arkiv HTTP API did not become available within 20 seconds."
+    exit 1
+fi

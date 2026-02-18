@@ -1,0 +1,703 @@
+name: Arkiv System Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout-minutes:
+        description: "Timeout for jobs"
+        required: true
+        default: "700"
+      worker:
+        description: "Workers"
+        required: false
+        default: "pulse"
+      arkiv-op-geth:
+        description: "Arkiv op geth tag/commit used for tests"
+        required: true
+        default: "v1.101605.0-metrics.2"
+      arkiv-op-node:
+        description: "Arkiv op node tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.30"
+      arkiv-op-da-server:
+        description: "Arkiv da server tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.30"
+      arkiv-op-deployer:
+        description: "Arkiv op deployer tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.25"
+      arkiv-op-batcher:
+        description: "Arkiv op batcher tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.30"
+      arkiv-op-proposer:
+        description: "Arkiv op proposer tag/commit used for tests"
+        required: true
+        default: "v0.0.0-test.30"
+      test-length:
+        description: "Test length in seconds"
+        required: true
+        default: "36000"
+      block-every-l1:
+        description: "Block time in seconds L1"
+        required: true
+        default: "12"
+      block-every-l2:
+        description: "Block time in seconds L2"
+        required: true
+        default: "2"
+      block-limit:
+        description: "Block gas limit"
+        required: true
+        default: "60000000"
+      altda-limit:
+        description: "Alt-da limit"
+        required: true
+        default: "5000000"
+      min-unsafe-limit:
+        description: "Min threshold for unsafe da bytes to trigger throttling"
+        required: true
+        default: "10000000"
+      max-unsafe-limit:
+        description: "Max threshold when throttling 100%"
+        required: true
+        default: "50000000"
+      test-scenario:
+        description: "Test scenario to run"
+        required: true
+        default: "dc_write_only"
+      test-users:
+        description: "Number of users to run"
+        required: true
+        default: "20"
+      is-external:
+        description: "Whether test already deployed network"
+        required: true
+        default: "false"
+      external-rpc-url:
+        description: "RPC URL of external network, if is-external is true"
+        required: false
+        default: "https://kaolin.hoodi.arkiv.network/rpc"
+
+jobs:
+  arkiv-system-testing:
+    name: Test Arkiv System
+    timeout-minutes: ${{ fromJSON(inputs.timeout-minutes) }}
+    # Use the matrix variable here
+    runs-on: ${{ inputs.worker }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set test name
+        id: test-name
+        run: |
+          python notify-test-start.py \
+            --parameters \
+              testLength=${{ fromJSON(inputs.test-length) }} \
+              runsOn=${{ inputs.worker }} \
+              blockEveryL1=${{ inputs.block-every-l1 }} \
+              blockEveryL2=${{ inputs.block-every-l2 }} \
+              arkivOpGeth=${{ inputs.arkiv-op-geth }} \
+              arkivOpNode=${{ inputs.arkiv-op-node }} \
+              arkivOpDeployer=${{ inputs.arkiv-op-deployer }} \
+              arkivOpBatcher=${{ inputs.arkiv-op-batcher }} \
+              arkivOpProposer=${{ inputs.arkiv-op-proposer }} \
+              arkivOpDaServer=${{ inputs.arkiv-op-da-server }} \
+              blockLimit=${{ inputs.block-limit }} \
+              testScenario=${{ inputs.test-scenario }} \
+              testUsers=${{ inputs.test-users }} \
+              isExternal=${{ inputs.is-external }} \
+              githubRunId=${{ github.run_id }} \
+              gitref=${{ github.ref }} \
+              altDaLimit=${{ inputs.altda-limit }} \
+              minUnsafeLimit=${{ inputs.min-unsafe-limit }} \
+              maxUnsafeLimit=${{ inputs.max-unsafe-limit }} 
+          
+          TEST_NAME=$(cat test-name.txt)
+          echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
+          echo "$TEST_NAME"
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+      # Already installed on custom runners
+      #- name: Install bun
+      #  uses: oven-sh/setup-bun@v2
+
+      # Already installed on custom runners
+      #- name: Get foundry cli
+      #  run: |
+      #    set -x
+      #    curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
+      #    sudo mv forge cast anvil chisel /usr/local/bin/
+      #    forge --version
+      #    chisel --version
+      #    cast --version
+      #    anvil --version
+
+      - name: Get op-geth, op-node and op-deployer binaries
+        if: ${{ inputs.is-external == 'false' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          # uninstall previous versions
+          rm -f /usr/local/bin/op-geth
+          rm -f /usr/local/bin/op-geth-seq
+          rm -f /usr/local/bin/op-geth-val
+          rm -f /usr/local/bin/op-node
+          rm -f /usr/local/bin/op-node-seq
+          rm -f /usr/local/bin/op-node-val
+          rm -f /usr/local/bin/op-deployer
+          rm -f /usr/local/bin/op-batcher
+          rm -f /usr/local/bin/op-proposer
+          rm -f /usr/local/bin/da-server
+          
+          ARKIV_GETH_TAG=${{ inputs.arkiv-op-geth }}
+          OP_NODE_TAG=${{ inputs.arkiv-op-node }}
+          OP_BATCHER_TAG=${{ inputs.arkiv-op-batcher }}
+          OP_DEPLOYER_TAG=${{ inputs.arkiv-op-deployer }}
+          OP_PROPOSER_TAG=${{ inputs.arkiv-op-proposer }}
+          OP_DA_SERVER_TAG=${{ inputs.arkiv-op-da-server }}
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
+            && mv forge cast anvil chisel /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-node /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-batcher /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-proposer /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-deployer /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv da-server /usr/local/bin/ \
+            && curl -sL https://github.com/salad-x-golem/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-geth /usr/local/bin/ \
+          
+          # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
+          cp /usr/local/bin/op-geth /usr/local/bin/op-geth-seq
+          cp /usr/local/bin/op-geth /usr/local/bin/op-geth-val
+          
+          cp /usr/local/bin/op-node /usr/local/bin/op-node-seq
+          cp /usr/local/bin/op-node /usr/local/bin/op-node-val
+            
+          op-node --version
+          op-deployer --version
+          op-geth version
+          op-batcher --version
+          op-proposer --version
+          da-server --version
+
+      - name: Install javascript dependencies in background
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          bun install&
+
+      - name: Install javascript dependencies
+        if: ${{ inputs.is-external == 'true' }}
+        run: |
+          bun install
+
+      - name: Setup test in background
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          (git clone https://github.com/arkiv-network/tests \
+            && (cd tests && git checkout feature/data-center-case-for-l3-stress) \
+            && (cd tests/stress-tests && poetry install)) &
+
+      - name: Setup test
+        if: ${{ inputs.is-external == 'true' }}
+        run: |
+          (git clone https://github.com/arkiv-network/tests \
+            && (cd tests && git checkout feature/data-center-case-for-l3-stress) \
+            && (cd tests/stress-tests && poetry install))
+
+      - name: Run anvil
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # Get current timestamp in hex
+          NOW_HEX=$(printf "0x%x" $(date +%s))
+          # Replace timestamp in anvil-chain.json (requires jq)
+          jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
+          echo "Updated Genesis timestamp to: $NOW_HEX"
+          
+          anvil --init anvil-chain.json -p 15900 --gas-limit 1000000000 --block-time ${{inputs.block-every-l1}} > anvil.log 2>&1 & echo $! > anvil.pid
+
+      - name: Setup and initialize L2 node
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # Initialize the deployment intent
+          set -x
+          op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
+          L2_BLOCK_TIME=${{inputs.block-every-l2}} python generate-intent-arkiv.py
+          echo "Contents of deploy-config/intent.toml:\n" && cat deploy-config/intent.toml
+          op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
+          op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
+          op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
+          
+          python patch-genesis.py 
+          
+          op-geth --datadir ./sequencer-data init --state.scheme=hash genesis.json > init_sequencer_genesis.log 2>&1
+          op-geth --datadir ./validator-data init --state.scheme=hash genesis.json > init_validator_genesis.log 2>&1
+
+          # 3. Use 'console' mode to query the database for the exact block hash
+          echo "Querying database for full hash..."
+          FULL_HASH=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "eth.getBlock(0).hash")
+          # Clean up quotes from the output (e.g., "0x..." -> 0x...)
+          FULL_HASH=$(echo "$FULL_HASH" | tr -d '"')
+          
+          # Validate the hash length (should be 66 characters: 0x + 64 hex chars)
+          if [[ ${#FULL_HASH} -ne 66 ]]; then
+            echo "Error: Retrieved invalid hash: $FULL_HASH"
+            exit 1
+          fi
+          echo "Detected Full Genesis Hash: $FULL_HASH"
+
+          echo "Querying database for enode path..."
+          GETH_SEQUENCER_ENODE=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "admin.nodeInfo.enode")
+          echo "Retrieved Geth Sequencer Enode: ${GETH_SEQUENCER_ENODE}"
+          echo ["${GETH_SEQUENCER_ENODE}"] > ./validator-data/geth/static-nodes.json
+          echo "Added to validator static-nodes.json"
+          cat ./validator-data/geth/static-nodes.json
+          
+          # 4. Update rollup.json
+          # - Sets .genesis.l2.hash to the new hash
+          # - Deletes the invalid .l2_genesis block at the bottom
+          echo "Patching rollup.json..."
+          jq --arg hash "$FULL_HASH" '
+            .genesis.l2.hash = $hash |
+            del(.l2_genesis)
+            ' "rollup.json" > "rollup.json.tmp" && mv "rollup.json.tmp" "rollup.json"
+        
+          # 5. Cleanup
+          rm -rf "$TEMP_DATADIR"
+          
+          echo "Success! rollup.json has been synced."
+        
+          openssl rand -hex 32 > jwt-sequencer.txt
+          openssl rand -hex 32 > jwt-validator.txt
+          
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST -F "file=@genesis.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@rollup.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Start da-server
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          echo "Starting da-server..."
+          mkdir da-data
+          da-server \
+            --log.level=debug \
+            --addr 0.0.0.0 \
+            --port 3100 \
+            --file.path ./da-data \
+            --generic-commitment \
+            > da-server.log 2>&1 & echo $! > da-server.pid
+
+      - name: Start sequencer node
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          echo "Starting L2 sequencer node op-geth..."
+          op-geth-seq \
+            --datadir=./sequencer-data \
+            --http \
+            --http.port=8645 \
+            --http.addr=0.0.0.0 \
+            --http.vhosts="*" \
+            --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
+            --authrpc.addr=0.0.0.0 \
+            --authrpc.port=8651 \
+            --authrpc.vhosts="*" \
+            --authrpc.jwtsecret jwt-sequencer.txt \
+            --syncmode=full \
+            --gcmode=archive \
+            --nodiscover \
+            --networkid=42069 \
+            --metrics \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=6160 \
+            --port=30505 \
+            --metrics.influxdbv2 \
+            --metrics.influxdb.endpoint=${{secrets.INFLUXDB_URL}} \
+            --metrics.influxdb.bucket=arkiv-tests \
+            --metrics.influxdb.organization=arkiv-network \
+            --metrics.influxdb.token=my-super-secret-auth-token \
+            --metrics.influxdb.tags="test=${{ steps.test-name.outputs.val }},node=sequencer" \
+            > op-geth-seq.log 2>&1 & echo $! > op-geth-seq.pid
+
+          echo "Starting sequencer op-node..."
+          
+          # --- 1. Identity Key (Defines Peer ID) ---
+          op-node p2p genkey > op-node-identity.key
+          op-node p2p priv2id < op-node-identity.key > op-node-peer-id.txt
+          
+          # --- 2. Sequencer Key (Signs the blocks) ---
+          # Read the batcher private key generated by generate-intent-arkiv.py
+          SEQUENCER_PRIVATE_KEY=$(grep SEQUENCER_PRIVATE_KEY deploy-config/keys.txt | cut -d'=' -f2)
+          if [ -z "$SEQUENCER_PRIVATE_KEY" ]; then
+            echo "❌ Failed to extract SEQUENCER_PRIVATE_KEY from deploy-config/keys.txt"
+            exit 1
+          fi
+          SEQUENCER_ADDRESS=$(cast wallet address "$SEQUENCER_PRIVATE_KEY")
+          echo "Sequencer address: $SEQUENCER_ADDRESS"
+          
+          op-node-seq \
+            --log.level=debug \
+            --altda.enabled=true \
+            --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --altda.verify-on-read=true \
+            --altda.max-concurrent-da-requests=1 \
+            --l2=http://localhost:8651 \
+            --l2.jwt-secret=jwt-sequencer.txt \
+            --l2.enginekind=geth \
+            --sequencer.enabled \
+            --sequencer.l1-confs=0 \
+            --verifier.l1-confs=0 \
+            --rpc.addr=0.0.0.0 \
+            --rpc.port=8647 \
+            --l1=http://localhost:15900 \
+            --l1.beacon.ignore \
+            --l1.trustrpc \
+            --l1.rpckind=basic \
+            --rollup.config=rollup.json \
+            --rollup.l1-chain-config anvil-chain.json \
+            --p2p.no-discovery \
+            --p2p.priv.path=./op-node-identity.key \
+            --p2p.sequencer.key=${SEQUENCER_PRIVATE_KEY} \
+            --p2p.listen.ip=127.0.0.1 \
+            --p2p.listen.tcp=9442 \
+            --p2p.listen.udp=9442 \
+            > op-node-seq.log 2>&1 & echo $! > op-node-seq.pid
+          
+          # Read the batcher private key generated by generate-intent-arkiv.py
+          BATCHER_PRIVATE_KEY=$(grep BATCHER_PRIVATE_KEY deploy-config/keys.txt | cut -d'=' -f2)
+          if [ -z "$BATCHER_PRIVATE_KEY" ]; then
+            echo "❌ Failed to extract BATCHER_PRIVATE_KEY from deploy-config/keys.txt"
+            exit 1
+          fi
+          BATCHER_ADDRESS=$(cast wallet address "$BATCHER_PRIVATE_KEY")
+          echo "Batcher address: $BATCHER_ADDRESS"
+
+          # Fund the batcher address on L1 (anvil) so it can pay for batch submission txs
+          cast send --rpc-url http://localhost:15900 \
+            --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            --value 100ether \
+            "$BATCHER_ADDRESS"
+
+          echo "Starting op-batcher..."
+          mkdir pprof-data
+
+          # --throttle.unsafe-da-bytes-lower-threshold=40000000 
+          # --throttle.unsafe-da-bytes-upper-threshold=80000000 
+          # --max-l1-tx-size-bytes=1000001 
+          op-batcher \
+            --altda.enabled=true \
+            --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --max-l1-tx-size-bytes=${{inputs.altda-limit}} \
+            --throttle.unsafe-da-bytes-lower-threshold=${{inputs.min-unsafe-limit}} \
+            --throttle.unsafe-da-bytes-upper-threshold=${{inputs.max-unsafe-limit}} \
+            --log.level=debug \
+            --l1-eth-rpc=http://localhost:15900 \
+            --l2-eth-rpc=http://localhost:8645 \
+            --rollup-rpc=http://localhost:8647 \
+            --private-key="$BATCHER_PRIVATE_KEY" \
+            --poll-interval=10s \
+            --check-recent-txs-depth=4 \
+            --sub-safety-margin=20 \
+            --num-confirmations=1 \
+            --safe-abort-nonce-too-low-count=3 \
+            --resubmission-timeout=30s \
+            --rpc.addr=0.0.0.0 \
+            --rpc.port=8548 \
+            --rpc.enable-admin \
+            --max-channel-duration=300 \
+            --batch-type=1 \
+            --data-availability-type=calldata \
+            --metrics.enabled=true \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=7365 \
+            --pprof.enabled \
+            --pprof.addr 0.0.0.0 \
+            --pprof.path pprof-data \
+            --pprof.port 6727 \
+            > op-batcher.log 2>&1 & echo $! > op-batcher.pid
+          
+          # Read the proposer private key generated by generate-intent-arkiv.py
+          PROPOSER_PRIVATE_KEY=$(grep PROPOSER_PRIVATE_KEY deploy-config/keys.txt | cut -d'=' -f2)
+          if [ -z "$PROPOSER_PRIVATE_KEY" ]; then
+            echo "❌ Failed to extract PROPOSER_PRIVATE_KEY from deploy-config/keys.txt"
+            exit 1
+          fi
+          PROPOSER_ADDRESS=$(cast wallet address "$PROPOSER_PRIVATE_KEY")
+          echo "Proposer address: $PROPOSER_ADDRESS"
+
+          # Fund the proposer address on L1 (anvil)
+          cast send --rpc-url http://localhost:15900 \
+            --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            --value 100ether \
+            "$PROPOSER_ADDRESS"
+
+          # Extract the DisputeGameFactory proxy address from the deployment state
+          DGF_ADDRESS=$(op-deployer inspect l1 --workdir deploy-config 42069 | jq -r '.DisputeGameFactoryProxy')
+          if [ -z "$DGF_ADDRESS" ] || [ "$DGF_ADDRESS" = "null" ]; then
+            echo "❌ Failed to extract DisputeGameFactoryProxy address from deployment state"
+            exit 1
+          fi
+          echo "DisputeGameFactory address: $DGF_ADDRESS"
+
+          echo "Starting op-proposer..."
+          op-proposer \
+            --log.level=debug \
+            --poll-interval=12s \
+            --rpc.port=8549 \
+            --l1-eth-rpc=http://localhost:15900 \
+            --rollup-rpc=http://localhost:8647 \
+            --private-key="$PROPOSER_PRIVATE_KEY" \
+            --game-factory-address="$DGF_ADDRESS" \
+            --proposal-interval=1800s \
+            --game-type=1 \
+            --txmgr.fee-limit-threshold=1000 \
+            --fee-limit-multiplier=25 \
+            --txmgr.min-basefee=1 \
+            --txmgr.min-tip-cap=1 \
+            --wait-node-sync=true \
+            --rpc.addr=0.0.0.0 \
+            --metrics.enabled=true \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=7375 \
+            > op-proposer.log 2>&1 & echo $! > op-proposer.pid
+
+          # Wait up to 60 seconds for sequencer to produce blocks
+          python -u wait-for-blocks.py \
+            --l2-url http://localhost:8645 \
+            --l1-url http://localhost:15900 \
+            --timeout 60 \
+            --blocks 3
+
+      - name: Start validator node
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          echo "Starting validator node op-geth..."
+          
+          op-geth-val \
+            --datadir=./validator-data \
+            --http \
+            --http.port=8545 \
+            --http.addr=0.0.0.0 \
+            --http.vhosts="*" \
+            --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
+            --authrpc.addr="localhost" \
+            --authrpc.port=8551 \
+            --authrpc.vhosts="*" \
+            --authrpc.jwtsecret=jwt-validator.txt \
+            --syncmode=full \
+            --gcmode=full \
+            --nodiscover \
+            --networkid=42069 \
+            --metrics \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=6060 \
+            --discovery.port=30405 \
+            --port=30405 \
+            --rollup.sequencerhttp=http://localhost:8647 \
+            --metrics.influxdbv2 \
+            --metrics.influxdb.endpoint=${{secrets.INFLUXDB_URL}} \
+            --metrics.influxdb.bucket=arkiv-tests \
+            --metrics.influxdb.organization=arkiv-network \
+            --metrics.influxdb.token=my-super-secret-auth-token \
+            --metrics.influxdb.tags="test=${{ steps.test-name.outputs.val }},node=validator" \
+            > op-geth-val.log 2>&1 & echo $! > op-geth-val.pid
+
+
+          OP_NODE_PEER_ID=$(cat op-node-peer-id.txt)
+
+          echo "Starting validator op-node..."
+          op-node-val \
+            --log.level=debug \
+            --altda.enabled=true \
+            --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --altda.verify-on-read=true \
+            --altda.max-concurrent-da-requests=1 \
+            --l2=http://localhost:8551 \
+            --l2.jwt-secret=jwt-validator.txt \
+            --l2.enginekind=geth \
+            --verifier.l1-confs=0 \
+            --rpc.addr=0.0.0.0 \
+            --rpc.port=8547 \
+            --p2p.static=/ip4/127.0.0.1/tcp/9442/p2p/${OP_NODE_PEER_ID} \
+            --p2p.sync.req-resp=true \
+            --p2p.listen.ip=0.0.0.0 \
+            --p2p.listen.tcp=9342 \
+            --p2p.listen.udp=9342 \
+            --p2p.no-discovery=true \
+            --p2p.discovery.path=opnode_validator_db \
+            --p2p.peerstore.path=opnode_peerstore_validator_db \
+            --l1=http://localhost:15900 \
+            --l1.rpckind=basic \
+            --l1.beacon.ignore \
+            --l1.trustrpc \
+            --syncmode=consensus-layer \
+            --rollup.config=rollup.json \
+            --rollup.l1-chain-config anvil-chain.json \
+            > op-node-val.log 2>&1 & echo $! > op-node-val.pid
+          
+          # Wait up to 60 seconds for validator to produce blocks
+          python -u wait-for-blocks.py \
+            --l2-url http://localhost:8545 \
+            --l1-url http://localhost:15900 \
+            --timeout 60 \
+            --blocks 3
+
+      - name: Gather metrics
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # Start gathering metrics in the background
+          export PROMETHEUS_JOB_NAME=${{ steps.test-name.outputs.val }}
+          export PROMETHEUS_INSTANCE_NAME=${{ inputs.worker }}
+          python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
+          
+          # export METRICS_URL=http://127.0.0.1:6060/debug/metrics/prometheus
+          # export PUSH_GATEWAY_URL=${{ secrets.PUSH_GATEWAY_URL }}/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ inputs.worker }}/node_type/validator
+          # python -u metrics-bridge.py > metrics-bridge-validator.log 2>&1 & echo $! > metrics-bridge-validator.pid
+          
+          # export METRICS_URL=http://127.0.0.1:6160/debug/metrics/prometheus
+          # export PUSH_GATEWAY_URL=${{ secrets.PUSH_GATEWAY_URL }}/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ inputs.worker }}/node_type/sequencer
+          # python -u metrics-bridge.py > metrics-bridge-sequencer.log 2>&1 & echo $! > metrics-bridge-sequencer.pid
+        env:
+          PUSH_GATEWAY_URL: ${{ secrets.PUSH_GATEWAY_URL }}
+
+      - name: Link to panel on Grafana
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          echo "https://l2.arkiv-global.net/d/advfmrd/l2-tests?var-jobname=${{ steps.test-name.outputs.val }}"
+          sleep 5
+
+      - name: Notify that the test is starting
+        run: |
+          # notify the test server
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST ${TRACKER_BACKEND_URL}/test/start -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Start test
+        run: |
+          cd tests/stress-tests
+          # Todo fix test returning error
+          if [ "${{ inputs.is-external }}" = "true" ]; then
+            export LOCUST_HOST=${{ inputs.external-rpc-url }}
+          else
+            export LOCUST_HOST=http://localhost:8645
+          fi
+          set -x
+          poetry run locust -f stress/l3/${{inputs.test-scenario}}.py \
+            --web-port=6856 \
+            --csv=${{inputs.test-scenario}} \
+            --headless \
+            --processes 4 \
+            --expect-workers 4 \
+            -u=${{ inputs.test-users }} \
+            -r=100 \
+            -t=${{ inputs.test-length }} \
+            --print-stats \
+            --html "test_report_{u}_{r}_{t}.html" > locust.log 2>&1 || true
+        env:
+          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+
+      #- name: Run L2 node
+      #  run: |
+      #    python -u generate-genesis.py 5
+      #    ./init_geth-l2.sh
+      #    ./start_geth-l2.sh
+      #  env:
+      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
+
+      #- name: Show balances of main accounts
+      #  run: |
+      #    python show-account-values.py
+
+      #- name: Deploy GLM contract
+      #  run: |
+      #    cd l2
+      #    ./build.sh
+      #    # Load private key from .env file
+      #    source .env
+      #    forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
+      #  env:
+      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
+
+      # - name: Build and run integration tests
+      #   run: |
+      #     bun install
+      #     bun write_example.ts
+#
+      # - name: Stop Arkiv node
+      #   if: always()
+      #   run: |
+      #     pkill arkiv
+#
+      # - name: Check sqlite file
+      #   if: always()
+      #   run: |
+      #     sqlite3 arkiv_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
+#
+      - name: Stop services
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          kill $(cat metrics-bridge-validator.pid)
+          kill $(cat metrics-bridge-sequencer.pid)
+          kill $(cat gather-metrics.pid)
+          kill $(cat op-geth-val.pid)
+          kill $(cat op-node-val.pid)
+          kill $(cat op-proposer.pid)
+          kill $(cat op-batcher.pid)
+          kill $(cat op-geth-seq.pid)
+          kill $(cat op-node-seq.pid)
+          kill $(cat anvil.pid)
+
+      - name: Cleanup metrics gateway
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          curl -sS -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/${{ inputs.worker }}
+
+      - name: Notify test server about test finish
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST ${TRACKER_BACKEND_URL}/test/finish -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Move test logs into main directory
+        if: always()
+        run: |
+          mv tests/stress-tests/*.html locust.html
+          mv tests/stress-tests/locust.log locust.log
+
+      - name: Upload test report
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST -F "file=@locust.html" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@locust.log" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Compress Arkiv logs
+        if: always()
+        run: |
+          tar -cf arkiv-logs.tar.gz *.log *.json
+
+      - name: Upload logs
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}

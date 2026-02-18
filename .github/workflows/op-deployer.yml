@@ -1,0 +1,78 @@
+name: Build op-deployer
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: "Timeout for jobs"
+        required: true
+        default: "10"
+      tag:
+        description: "Tag to build"
+        required: false
+        default: "v0.4.4-1"
+
+jobs:
+  integration:
+    name: Integration internal test
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    # Use the matrix variable here
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clone op-deployer repo
+        run: |
+          git clone https://github.com/Arkiv-Network/op-deployer
+          cd op-deployer
+          git checkout ${{ inputs.tag }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+
+      - name: Build op-deployer
+        run: |
+          cd op-deployer/op-deployer
+          go build -o bin/op-deployer cmd/op-deployer/main.go
+          mv bin/op-deployer ./op-deployer
+          ./op-deployer --version
+
+      - name: Upload op-deployer binary as artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: op-deployer-binary
+          path: op-deployer/op-deployer/op-deployer
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/salad-x-golem/arkiv-setup
+          tags: |
+            # Tags the image with the short commit SHA (e.g., sha-5f3a2b)
+            type=sha
+            # Sets 'latest' tag if this is the default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Optional: Keeps semver support if you push tags
+            type=semver,pattern={{version}}
+
+      # Build and push Docker image
+      # Uses the action instead of raw shell command for better stability
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: op-deployer/op-deployer
+          file: op-deployer/op-deployer/Dockerfile.minimal
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ inputs.tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          # RELEASE_VERSION has to be the same as version of Blockscout to work
+          build-args: |
+            RELEASE_VERSION=10.0.0

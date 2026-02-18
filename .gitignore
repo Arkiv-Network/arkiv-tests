@@ -1,0 +1,9 @@
+.idea
+/generated_keys/genesis.json
+/generated_keys/genesis_alloc.json
+/generated_keys/keys.json
+/keys.json
+/genesis.json
+/node_modules/
+/package-lock.json
+/bun.lock
