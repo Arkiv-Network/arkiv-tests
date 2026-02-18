@@ -646,8 +646,6 @@ jobs:
       - name: Stop services
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          kill $(cat metrics-bridge-validator.pid)
-          kill $(cat metrics-bridge-sequencer.pid)
           kill $(cat gather-metrics.pid)
           kill $(cat op-geth-val.pid)
           kill $(cat op-node-val.pid)
