@@ -199,19 +199,15 @@ jobs:
         run: |
           bun install
 
-      - name: Setup test in background
+      - name: Install tests dependencies in background
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          (git clone https://github.com/arkiv-network/tests \
-            && (cd tests && git checkout feature/data-center-case-for-l3-stress) \
-            && (cd tests/stress-tests && poetry install)) &
+          (cd stress-tests && poetry install) &
 
       - name: Setup test
         if: ${{ inputs.is-external == 'true' }}
         run: |
-          (git clone https://github.com/arkiv-network/tests \
-            && (cd tests && git checkout feature/data-center-case-for-l3-stress) \
-            && (cd tests/stress-tests && poetry install))
+          (cd stress-tests && poetry install)
 
       - name: Run anvil
         if: ${{ inputs.is-external == 'false' }}
@@ -588,7 +584,7 @@ jobs:
 
       - name: Start test
         run: |
-          cd tests/stress-tests
+          cd stress-tests
           # Todo fix test returning error
           if [ "${{ inputs.is-external }}" = "true" ]; then
             export LOCUST_HOST=${{ inputs.external-rpc-url }}
@@ -677,8 +673,8 @@ jobs:
       - name: Move test logs into main directory
         if: always()
         run: |
-          mv tests/stress-tests/*.html locust.html
-          mv tests/stress-tests/locust.log locust.log
+          mv stress-tests/*.html locust.html
+          mv stress-tests/locust.log locust.log
 
       - name: Upload test report
         if: always()
