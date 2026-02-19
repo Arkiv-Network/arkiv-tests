@@ -14,27 +14,27 @@ on:
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
-        default: "v1.101605.0-metrics.2"
+        default: "v1.101605.0-test"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.30"
+        default: "v0.9.0-test.1"
       arkiv-op-da-server:
         description: "Arkiv da server tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.30"
+        default: "v0.9.0-test.1"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.25"
+        default: "v0.9.0-test.1"
       arkiv-op-batcher:
         description: "Arkiv op batcher tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.30"
+        default: "v0.9.0-test.1"
       arkiv-op-proposer:
         description: "Arkiv op proposer tag/commit used for tests"
         required: true
-        default: "v0.0.0-test.30"
+        default: "v0.9.0-test.1"
       test-length:
         description: "Test length in seconds"
         required: true
@@ -162,17 +162,17 @@ jobs:
           OP_DA_SERVER_TAG=${{ inputs.arkiv-op-da-server }}
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
             && mv forge cast anvil chisel /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-node /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-batcher /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-proposer /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-deployer /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv da-server /usr/local/bin/ \
-            && curl -sL https://github.com/salad-x-golem/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-geth /usr/local/bin/ \
           
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
