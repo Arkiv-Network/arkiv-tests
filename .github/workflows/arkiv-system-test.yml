@@ -14,7 +14,7 @@ on:
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
-        default: "v1.101605.0-test"
+        default: "v1.101605.0-test.1"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
