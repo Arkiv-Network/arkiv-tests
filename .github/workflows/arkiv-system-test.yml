@@ -66,7 +66,7 @@ on:
       test-scenario:
         description: "Test scenario to run"
         required: true
-        default: "dc_write_only"
+        default: "LocustWriteOnly"
       test-users:
         description: "Number of users to run"
         required: true
@@ -582,7 +582,8 @@ jobs:
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
-      - name: Start test
+      - name: Start locust write only test
+        if: ${{ inputs.test-scenario == 'LocustWriteOnly' }}
         run: |
           cd stress-tests
           # Todo fix test returning error
@@ -592,9 +593,10 @@ jobs:
             export LOCUST_HOST=http://localhost:8645
           fi
           set -x
-          poetry run locust -f stress/l3/${{inputs.test-scenario}}.py \
+          LOCUST_TEST_NAME=dc_write_only
+          poetry run locust -f stress/l3/$LOCUST_TEST_NAME.py \
             --web-port=6856 \
-            --csv=${{inputs.test-scenario}} \
+            --csv=$LOCUST_TEST_NAME \
             --headless \
             --processes 4 \
             --expect-workers 4 \
