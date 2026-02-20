@@ -91,6 +91,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cleanup after previous runs
+        run: |
+          # cleanup op-deployer caches
+          rm ~/.op-deployer
+          # clean up anvil data and logs
+          rm ~/.foundry
+
       - name: Set test name
         id: test-name
         run: |
