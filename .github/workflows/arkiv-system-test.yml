@@ -38,7 +38,7 @@ on:
       test-length:
         description: "Test length in seconds"
         required: true
-        default: "36000"
+        default: "180"
       block-every-l1:
         description: "Block time in seconds L1"
         required: true
