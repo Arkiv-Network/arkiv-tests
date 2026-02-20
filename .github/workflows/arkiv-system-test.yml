@@ -615,6 +615,12 @@ jobs:
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
+      - name: Build test report
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          python query_arkiv.py --start -1h --end now
+        
+
       #- name: Run L2 node
       #  run: |
       #    python -u generate-genesis.py 5
