@@ -94,9 +94,9 @@ jobs:
       - name: Cleanup after previous runs
         run: |
           # cleanup op-deployer caches
-          rm ~/.op-deployer
+          rm -rf ~/.op-deployer
           # clean up anvil data and logs
-          rm ~/.foundry
+          rm -rf ~/.foundry
 
       - name: Set test name
         id: test-name
