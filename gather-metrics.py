@@ -10,9 +10,9 @@ INSTANCE_NAME = os.getenv('INSTANCE_NAME', socket.gethostname())
 
 # InfluxDB v2 specifics
 INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://localhost:8086")
-INFLUX_TOKEN = os.getenv("INFLUX_TOKEN", "my-super-secret-auth-token")
-INFLUX_ORG = os.getenv("INFLUX_ORG", "arkiv-network")
-INFLUX_BUCKET = os.getenv("INFLUX_BUCKET", "arkiv-tests")
+INFLUX_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-auth-token")
+INFLUX_ORG = os.getenv("INFLUXDB_ORG", "arkiv-network")
+INFLUX_BUCKET = os.getenv("INFLUXDB_BUCKET", "arkiv-tests")
 
 # --- State Management ---
 # Since we don't have Prometheus 'Gauge' objects holding state anymore,

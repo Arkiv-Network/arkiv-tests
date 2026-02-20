@@ -571,6 +571,9 @@ jobs:
           python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
         env:
           INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+          INFLUXDB_TOKEN: my-super-secret-auth-token
+          INFLUXDB_ORG: arkiv-network
+          INFLUXDB_BUCKET: arkiv-tests
 
       - name: Link to panel on Grafana
         if: ${{ inputs.is-external == 'false' }}
