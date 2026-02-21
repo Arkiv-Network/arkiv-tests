@@ -626,7 +626,7 @@ jobs:
       - name: Build test report
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          python query_arkiv.py --test_name ${{ steps.test-name.outputs.val }}
+          python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }}
         env:
           INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
           INFLUXDB_TOKEN: my-super-secret-auth-token
