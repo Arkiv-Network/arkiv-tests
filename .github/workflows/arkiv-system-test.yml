@@ -627,6 +627,11 @@ jobs:
         if: ${{ inputs.is-external == 'false' }}
         run: |
           python query_arkiv.py --test_name ${{ steps.test-name.outputs.val }}
+        env:
+          INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+          INFLUXDB_TOKEN: my-super-secret-auth-token
+          INFLUXDB_ORG: arkiv-network
+          INFLUXDB_BUCKET: arkiv-tests
 
       #- name: Run L2 node
       #  run: |
