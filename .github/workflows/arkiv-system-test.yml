@@ -212,12 +212,12 @@ jobs:
       - name: Install tests dependencies in background
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          (cd stress-tests && poetry install) &
+          poetry install &
 
       - name: Setup test
         if: ${{ inputs.is-external == 'true' }}
         run: |
-          (cd stress-tests && poetry install)
+          poetry install
 
       - name: Run anvil
         if: ${{ inputs.is-external == 'false' }}
@@ -592,14 +592,13 @@ jobs:
 
       - name: Show balances of main accounts
         run: |
-          cd stress-tests && poetry run python ../show-account-values.py
+          poetry run python show-account-values.py
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
       - name: Start locust write only test
         if: ${{ inputs.test-scenario == 'LocustWriteOnly' }}
         run: |
-          cd stress-tests
           # Todo fix test returning error
           if [ "${{ inputs.is-external }}" = "true" ]; then
             export LOCUST_HOST=${{ inputs.external-rpc-url }}
@@ -608,7 +607,7 @@ jobs:
           fi
           set -x
           LOCUST_TEST_NAME=dc_write_only
-          poetry run locust -f stress/l3/$LOCUST_TEST_NAME.py \
+          poetry run locust -f stress-tests/stress/l3/$LOCUST_TEST_NAME.py \
             --web-port=6856 \
             --csv=$LOCUST_TEST_NAME \
             --headless \
@@ -618,7 +617,7 @@ jobs:
             -r=100 \
             -t=${{ inputs.test-length }} \
             --print-stats \
-            --html "test_report_{u}_{r}_{t}.html" > locust.log 2>&1 || true
+            --html "locust.html" > locust.log 2>&1 || true
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
@@ -633,39 +632,6 @@ jobs:
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
 
-      #- name: Run L2 node
-      #  run: |
-      #    python -u generate-genesis.py 5
-      #    ./init_geth-l2.sh
-      #    ./start_geth-l2.sh
-      #  env:
-      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
-
-      #- name: Deploy GLM contract
-      #  run: |
-      #    cd l2
-      #    ./build.sh
-      #    # Load private key from .env file
-      #    source .env
-      #    forge script script/DeployTestToken.s.sol --broadcast --rpc-url http://localhost:8545
-      #  env:
-      #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
-
-      # - name: Build and run integration tests
-      #   run: |
-      #     bun install
-      #     bun write_example.ts
-#
-      # - name: Stop Arkiv node
-      #   if: always()
-      #   run: |
-      #     pkill arkiv
-#
-      # - name: Check sqlite file
-      #   if: always()
-      #   run: |
-      #     sqlite3 arkiv_data/golem-base.db "PRAGMA wal_checkpoint(TRUNCATE);"
-#
       - name: Stop services
         if: ${{ inputs.is-external == 'false' }}
         run: |
@@ -691,12 +657,6 @@ jobs:
           curl -sS -X POST ${TRACKER_BACKEND_URL}/test/finish -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
-
-      - name: Move test logs into main directory
-        if: always()
-        run: |
-          mv stress-tests/*.html locust.html
-          mv stress-tests/locust.log locust.log
 
       - name: Upload test report
         if: always()
