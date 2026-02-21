@@ -598,7 +598,9 @@ jobs:
 
       - name: Show balances of main accounts
         run: |
-          python show-account-values.py
+          cd stress-tests && poetry run python ../show-account-values.py
+        env:
+          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
       - name: Start locust write only test
         if: ${{ inputs.test-scenario == 'LocustWriteOnly' }}
