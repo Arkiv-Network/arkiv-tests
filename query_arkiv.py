@@ -12,7 +12,9 @@ INFLUX_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-auth-token")
 INFLUX_ORG = os.getenv("INFLUXDB_ORG", "arkiv-network")
 INFLUX_BUCKET = os.getenv("INFLUXDB_BUCKET", "arkiv-tests")
 
-def query_database(start_time: str, end_time: str):
+
+# "260221T102531-LocustWriteOnly-int-zeus"
+def query_for_max(test_name: str, measurement: str, start_time: str, end_time: str, node_type: str):
     """
     Queries InfluxDB with the specified start and end times and prints the results.
     """
@@ -23,37 +25,35 @@ def query_database(start_time: str, end_time: str):
     flux_query = f"""
     from(bucket: "arkiv-tests")
       |> range(start: {start_time}, stop: {end_time})
-      |> filter(fn: (r) => r["_measurement"] == "arkiv_sqlite_db_size_bytes")
-      |> filter(fn: (r) => r["job"] == "260221T095756-LocustWriteOnly-int-zeus")
-      |> filter(fn: (r) => r["node_type"] == "sequencer")
-      |> aggregateWindow(every: 60s, fn: last, createEmpty: false)
+      |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+      |> filter(fn: (r) => r["test"] == "{test_name}")
+      |> filter(fn: (r) => r["node"] == "{node_type}")
+      |> max()
     """
 
     # Initialize the client and query the API
     with InfluxDBClient(url=INFLUXDB_URL, token=INFLUX_TOKEN, org=INFLUX_ORG) as client:
         query_api = client.query_api()
 
-        try:
-            result = query_api.query(org=INFLUX_ORG, query=flux_query)
+        result = query_api.query(org=INFLUX_ORG, query=flux_query)
 
-            # Loop through the tables and records to print the results
-            record_count = 0
-            for table in result:
-                for record in table.records:
-                    record_count += 1
-                    # Extracting the custom mapped fields
-                    time = record["_time"]
-                    field = record["_field"]
-                    value = record["_value"]
-                    print(f"Time: {time} | Field: {field} | Value: {value}")
+        # Loop through the tables and records to print the results
+        time = None
+        value = None
+        record_count = 0
+        for table in result:
+            for record in table.records:
+                record_count += 1
+                # Extracting the custom mapped fields
+                time = record["_time"]
+                value = record["_value"]
 
-            if record_count == 0:
-                print("Query returned no results.")
-            else:
-                print(f"\nTotal records returned: {record_count}")
+        if record_count != 1:
+            raise Exception(f"Expected no records, but found {record_count} records in the result.")
 
-        except Exception as e:
-            print(f"An error occurred while querying InfluxDB: {e}")
+        return time, value
+
+
 
 if __name__ == "__main__":
     # Set up command-line arguments
@@ -68,7 +68,16 @@ if __name__ == "__main__":
         default="now()",
         help="End time"
     )
+    parser.add_argument(
+        "--test_name",
+        default="260221T102531-LocustWriteOnly-int-zeus",
+        help="Test name to filter by (e.g., \"260221T102531-LocustWriteOnly-int-zeus\")"
+    )
 
     args = parser.parse_args()
 
-    query_database(args.start, args.end)
+    max_seq = query_for_max(args.test_name, "arkiv_sqlite_db_size_bytes", args.start, args.end, "sequencer")
+    max_val = query_for_max(args.test_name, "arkiv_sqlite_db_size_bytes", args.start, args.end, "validator")
+
+    print(f"Max SQLite DB Size for Sequencer: {max_seq[1]} bytes at {max_seq[0]}")
+    print(f"Max SQLite DB Size for Validator: {max_val[1]} bytes at {max_val[0]}")
