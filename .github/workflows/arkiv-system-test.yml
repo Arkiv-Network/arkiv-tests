@@ -582,12 +582,6 @@ jobs:
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
 
-      - name: Link to panel on Grafana
-        if: ${{ inputs.is-external == 'false' }}
-        run: |
-          echo "https://l2.arkiv-global.net/d/advfmrd/l2-tests?var-jobname=${{ steps.test-name.outputs.val }}"
-          sleep 5
-
       - name: Notify that the test is starting
         run: |
           # notify the test server
