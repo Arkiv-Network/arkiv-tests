@@ -1,6 +1,9 @@
 import os
 import argparse
 from influxdb_client import InfluxDBClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # --- Configuration ---
 # Update these with your actual InfluxDB connection details
@@ -21,10 +24,9 @@ def query_database(start_time: str, end_time: str):
     from(bucket: "arkiv-tests")
       |> range(start: {start_time}, stop: {end_time})
       |> filter(fn: (r) => r["_measurement"] == "arkiv_sqlite_db_size_bytes")
-      |> filter(fn: (r) => r["job"] == "260220T190951-LocustWriteOnly-int-luna")
+      |> filter(fn: (r) => r["job"] == "260221T095756-LocustWriteOnly-int-zeus")
       |> filter(fn: (r) => r["node_type"] == "sequencer")
       |> aggregateWindow(every: 60s, fn: last, createEmpty: false)
-      |> map(fn: (r) => ({{ _value: r._value, _time: r._time, _field: "Sqlite" }}))
     """
 
     # Initialize the client and query the API
@@ -58,13 +60,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Query InfluxDB with custom start and end times.")
     parser.add_argument(
         "--start",
-        required=True,
-        help="Start time in RFC3339 format (e.g., 2026-02-20T19:11:51.083Z or -1h)"
+        default="0",
+        help="Start time"
     )
     parser.add_argument(
         "--end",
-        required=True,
-        help="End time in RFC3339 format (e.g., 2026-02-20T19:23:15.559Z or now())"
+        default="now()",
+        help="End time"
     )
 
     args = parser.parse_args()

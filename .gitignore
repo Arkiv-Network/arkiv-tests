@@ -1,3 +1,4 @@
+.env
 .idea
 /generated_keys/genesis.json
 /generated_keys/genesis_alloc.json

@@ -119,9 +119,9 @@ async def run_infinite_loop():
 
                 # Helper function to mimic Prometheus logic (Measurement Name -> value, plus tags)
                 def create_point(measurement, value, node_type=None):
-                    p = Point(measurement).tag("job", JOB_NAME).tag("instance", INSTANCE_NAME)
+                    p = Point(measurement).tag("test", JOB_NAME).tag("instance", INSTANCE_NAME)
                     if node_type:
-                        p.tag("node_type", node_type)
+                        p.tag("node", node_type)
                     # Field name "value" is a standard convention for single-value metrics
                     return p.field("value", float(value))
 

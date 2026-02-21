@@ -307,6 +307,10 @@ jobs:
         if: ${{ inputs.is-external == 'false' }}
         run: |
           echo "Starting L2 sequencer node op-geth..."
+          
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
+          
           op-geth-seq \
             --datadir=./sequencer-data \
             --http \
@@ -331,7 +335,7 @@ jobs:
             --metrics.influxdb.bucket=arkiv-tests \
             --metrics.influxdb.organization=arkiv-network \
             --metrics.influxdb.token=my-super-secret-auth-token \
-            --metrics.influxdb.tags="test=${{ steps.test-name.outputs.val }},node=sequencer" \
+            --metrics.influxdb.tags="test=$TEST_NAME,node=sequencer,instance=$WORKER_NAME" \
             > op-geth-seq.log 2>&1 & echo $! > op-geth-seq.pid
 
           echo "Starting sequencer op-node..."
@@ -489,6 +493,9 @@ jobs:
         if: ${{ inputs.is-external == 'false' }}
         run: |
           echo "Starting validator node op-geth..."
+
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
           
           op-geth-val \
             --datadir=./validator-data \
@@ -516,7 +523,7 @@ jobs:
             --metrics.influxdb.bucket=arkiv-tests \
             --metrics.influxdb.organization=arkiv-network \
             --metrics.influxdb.token=my-super-secret-auth-token \
-            --metrics.influxdb.tags="test=${{ steps.test-name.outputs.val }},node=validator" \
+            --metrics.influxdb.tags="test=$TEST_NAME,node=validator,instance=$WORKER_NAME" \
             > op-geth-val.log 2>&1 & echo $! > op-geth-val.pid
 
 
