@@ -607,7 +607,7 @@ jobs:
           fi
           set -x
           LOCUST_TEST_NAME=dc_write_only
-          poetry run locust -f stress-tests/stress/l3/$LOCUST_TEST_NAME.py \
+          poetry run locust -f stress/l3/$LOCUST_TEST_NAME.py \
             --web-port=6856 \
             --csv=$LOCUST_TEST_NAME \
             --headless \
