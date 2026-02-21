@@ -85,7 +85,7 @@ if __name__ == "__main__":
     max_geth_val = query_for_max(args.test_name, "arkiv_geth_db_size", args.start, args.end, "validator")
     max_wal_seq = query_for_max(args.test_name, "arkiv_sqlite_wal_size_bytes", args.start, args.end, "sequencer")
     max_wal_val = query_for_max(args.test_name, "arkiv_sqlite_wal_size_bytes", args.start, args.end, "validator")
-    max_da_data = query_for_max(args.test_name, "arkiv_da_data_size_bytes", args.start, args.end, "")
+    max_da_data = query_for_max(args.test_name, "arkiv_da_data_size", args.start, args.end, "")
 
     print(f"Max SQLite DB Size for Sequencer: {max_seq[1]} bytes at {max_seq[0]}")
     print(f"Max SQLite DB Size for Validator: {max_val[1]} bytes at {max_val[0]}")
