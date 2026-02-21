@@ -22,12 +22,15 @@ def query_for_max(test_name: str, measurement: str, start_time: str, end_time: s
 
     # Construct the Flux query.
     # Note the double curly braces {{ }} in the map() function to escape them in Python f-strings.
+
+    node_type_filter = f'|> filter(fn: (r) => r["node"] == "{node_type}")' if node_type else ""
+
     flux_query = f"""
     from(bucket: "arkiv-tests")
       |> range(start: {start_time}, stop: {end_time})
       |> filter(fn: (r) => r["_measurement"] == "{measurement}")
       |> filter(fn: (r) => r["test"] == "{test_name}")
-      |> filter(fn: (r) => r["node"] == "{node_type}")
+      {node_type_filter}
       |> max()
     """
 
@@ -78,6 +81,16 @@ if __name__ == "__main__":
 
     max_seq = query_for_max(args.test_name, "arkiv_sqlite_db_size_bytes", args.start, args.end, "sequencer")
     max_val = query_for_max(args.test_name, "arkiv_sqlite_db_size_bytes", args.start, args.end, "validator")
+    max_geth_seq = query_for_max(args.test_name, "arkiv_geth_db_size", args.start, args.end, "sequencer")
+    max_geth_val = query_for_max(args.test_name, "arkiv_geth_db_size", args.start, args.end, "validator")
+    max_wal_seq = query_for_max(args.test_name, "arkiv_sqlite_wal_size_bytes", args.start, args.end, "sequencer")
+    max_wal_val = query_for_max(args.test_name, "arkiv_sqlite_wal_size_bytes", args.start, args.end, "validator")
+    max_da_data = query_for_max(args.test_name, "arkiv_da_data_size_bytes", args.start, args.end, "")
 
     print(f"Max SQLite DB Size for Sequencer: {max_seq[1]} bytes at {max_seq[0]}")
     print(f"Max SQLite DB Size for Validator: {max_val[1]} bytes at {max_val[0]}")
+    print(f"Max SQLite WAL Size for Sequencer: {max_wal_seq[1]} bytes at {max_wal_seq[0]}")
+    print(f"Max SQLite WAL Size for Validator: {max_wal_val[1]} bytes at {max_wal_val[0]}")
+    print(f"Max Geth DB Size for Sequencer: {max_geth_seq[1]} bytes at {max_geth_seq[0]}")
+    print(f"Max Geth DB Size for Validator: {max_geth_val[1]} bytes at {max_geth_val[0]}")
+    print(f"Da size max at {max_wal_val[0]} is {max_da_data[1]} bytes")
