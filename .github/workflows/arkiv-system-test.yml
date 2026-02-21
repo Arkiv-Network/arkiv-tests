@@ -596,6 +596,10 @@ jobs:
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
+      - name: Show balances of main accounts
+        run: |
+          python show-account-values.py
+
       - name: Start locust write only test
         if: ${{ inputs.test-scenario == 'LocustWriteOnly' }}
         run: |
@@ -640,10 +644,6 @@ jobs:
       #    ./start_geth-l2.sh
       #  env:
       #    ARKIV_SQLITE_DATA_DIRECTORY: ./arkiv_data
-
-      #- name: Show balances of main accounts
-      #  run: |
-      #    python show-account-values.py
 
       #- name: Deploy GLM contract
       #  run: |
