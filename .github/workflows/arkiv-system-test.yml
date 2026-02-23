@@ -130,7 +130,7 @@ jobs:
           echo "worker=$WORKER_NAME" >> $GITHUB_OUTPUT
           if [ "${{ inputs.test-scenario }}" = "LocustWriteOnly" ]; then
             echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
-          else if [ "${{ inputs.test-scenario }}" = "OptimismBuild" ]; then
+          elif [ "${{ inputs.test-scenario }}" = "OptimismBuild" ]; then
             echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
           else
             # Error
