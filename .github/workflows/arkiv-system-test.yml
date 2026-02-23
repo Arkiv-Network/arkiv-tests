@@ -128,6 +128,15 @@ jobs:
           TEST_NAME=$(cat test-name.txt)
           echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
           echo "worker=$WORKER_NAME" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.test-scenario }}" = "LocustWriteOnly" ]; then
+            echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
+          else if [ "${{ inputs.test-scenario }}" = "OptimismBuild" ]; then
+            echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
+          else
+            # Error
+            echo "Error: Unknown test scenario ${{ inputs.test-scenario }}"
+            exit 1
+          fi
           echo "$TEST_NAME"
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
@@ -597,7 +606,7 @@ jobs:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
       - name: Start locust write only test
-        if: ${{ inputs.test-scenario == 'LocustWriteOnly' }}
+        if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' }}
         run: |
           # Todo fix test returning error
           if [ "${{ inputs.is-external }}" = "true" ]; then
