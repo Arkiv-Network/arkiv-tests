@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 
 import requests
@@ -7,6 +8,7 @@ from eth_account import Account
 Account.enable_unaudited_hdwallet_features()
 
 DEFAULT_COUNT = 10
+DEFAULT_SNAPSHOT_FILE = "account-values-snapshot.json"
 
 def load_addresses():
     with open("test-accounts.txt", "r") as f:
@@ -37,6 +39,9 @@ def main():
                         help=f"Number of addresses to derive (default: {DEFAULT_COUNT})")
     parser.add_argument("--rpc-url", type=str, default=os.environ.get("RPC_URL", "http://localhost:8545"),
                         help="RPC URL (default: http://localhost:8545)")
+    parser.add_argument("--snapshot-file", type=str,
+                        default=os.environ.get("ACCOUNT_VALUES_SNAPSHOT_FILE", DEFAULT_SNAPSHOT_FILE),
+                        help=f"Snapshot file path (default: {DEFAULT_SNAPSHOT_FILE})")
     args = parser.parse_args()
 
     addresses = load_addresses()
@@ -46,7 +51,6 @@ def main():
     current_block_res = rpc_post(args.rpc_url, "eth_blockNumber")
     current_block = -1
     if current_block_res and 'result' in current_block_res:
-        print(f"Current Block Number: {int(current_block_res['result'], 16)}\n")
         current_block = int(current_block_res['result'], 16)
 
     if current_block <= 0:
@@ -55,45 +59,40 @@ def main():
     current_block_hex = hex(current_block)
 
     if connection_response and 'result' in connection_response:
-        print(f"✅ Connected to RPC at {args.rpc_url}")
-        print(f"   Node Version: {connection_response['result']}\n")
-        print(f"{'Address':<45} | {'Balance (ETH)'}")
-        print("-" * 65)
-
+        current_values = {}
         for address in addresses:
             try:
-                response = rpc_post(args.rpc_url, "eth_getBalance", [address, current_block_hex])
-
-                if response and 'result' in response:
-                    hex_balance = response['result']
-                    balance_wei = int(hex_balance, 16)
-                    print(f"{address} | {balance_wei} ETH")
-                elif response and 'error' in response:
-                    print(f"{address} | RPC Error: {response['error']['message']}")
-                else:
-                    print(f"{address} | No response")
-
+                balance_response = rpc_post(args.rpc_url, "eth_getBalance", [address, current_block_hex])
+                nonce_response = rpc_post(args.rpc_url, "eth_getTransactionCount", [address, current_block_hex])
+                if (
+                    balance_response and 'result' in balance_response
+                    and nonce_response and 'result' in nonce_response
+                ):
+                    current_values[address] = {
+                        "balance_wei": int(balance_response['result'], 16),
+                        "nonce": int(nonce_response['result'], 16),
+                    }
             except Exception as e:
-                print(f"{address} | Error: {str(e)}")
+                raise RuntimeError(f"Failed to fetch account data for {address}: {str(e)}") from e
 
-        # Print nonces (transaction count) for each address
-        print("\nNonces (latest)")
-        print(f"{'Address':<45} | {'Nonce'}")
-        print("-" * 65)
+        previous_values = {}
+        if os.path.exists(args.snapshot_file):
+            with open(args.snapshot_file, "r") as f:
+                previous_values = json.load(f)
 
-        for address in addresses:
-            try:
-                response = rpc_post(args.rpc_url, "eth_getTransactionCount", [address, current_block_hex])
-                if response and 'result' in response:
-                    hex_nonce = response['result']
-                    nonce = int(hex_nonce, 16)
-                    print(f"{address} | {nonce}")
-                elif response and 'error' in response:
-                    print(f"{address} | RPC Error: {response['error']['message']}")
-                else:
-                    print(f"{address} | No response")
-            except Exception as e:
-                print(f"{address} | Error: {str(e)}")
+        total_gas_used_wei = 0
+        total_transactions_done = 0
+        for address, values in current_values.items():
+            previous = previous_values.get(address, values)
+            total_gas_used_wei += max(0, previous["balance_wei"] - values["balance_wei"])
+            total_transactions_done += max(0, values["nonce"] - previous["nonce"])
+
+        print(f"Accounts: {len(current_values)}")
+        print(f"Total gas used (wei): {total_gas_used_wei}")
+        print(f"Total transactions done: {total_transactions_done}")
+
+        with open(args.snapshot_file, "w") as f:
+            json.dump(current_values, f, indent=2)
 
     else:
         raise ConnectionError(f"❌ Failed to connect to RPC at {args.rpc_url}")
