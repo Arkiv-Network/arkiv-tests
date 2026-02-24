@@ -59,14 +59,12 @@ def main():
     parser.add_argument("--count", type=int, default=int(os.environ.get("ACCOUNT_COUNT", DEFAULT_COUNT)),
                         help=f"Number of addresses to derive (default: {DEFAULT_COUNT})")
     parser.add_argument("--rpc-url", type=str, default=os.environ.get("RPC_URL", "http://localhost:8545"),
-                        help="RPC URL (default: http://localhost:8545)")
+                        help="RPC URL (default: http://localhost:8545")
     # Default save file is results.json; can be overridden with --save or SAVE_FILE env var
     parser.add_argument("--save", type=str, default=os.environ.get("SAVE_FILE", "results.json"),
-                        help="Save account values to a JSON file (default: results.json)")
+                        help="Save aggregated values to a JSON file (default: results.json)")
     parser.add_argument("--compare", type=str, default=None,
                         help="Compare current values against a previously saved JSON file")
-    parser.add_argument("--aggregate-only", action="store_true", default=False,
-                        help="Only write aggregated summary JSON to the save file and suppress other output")
     args = parser.parse_args()
 
     addresses = load_addresses()
@@ -86,16 +84,15 @@ def main():
     if not (connection_response and 'result' in connection_response):
         raise ConnectionError(f"❌ Failed to connect to RPC at {args.rpc_url}")
 
-    # Only print connection info when not running in aggregate-only mode
-    if not args.aggregate_only:
-        print(f"✅ Connected to RPC at {args.rpc_url}")
-        print(f"   Node Version: {connection_response['result']}")
-        print(f"   Current Block Number: {current_block}\n")
+    # Always print connection info
+    print(f"✅ Connected to RPC at {args.rpc_url}")
+    print(f"   Node Version: {connection_response['result']}")
+    print(f"   Current Block Number: {current_block}\n")
 
     accounts = fetch_account_values(args.rpc_url, addresses, current_block_hex)
 
     save_path = args.save
-    # If aggregate-only is requested, compute aggregates and write only the summary JSON
+    # Write only the aggregated summary JSON to the save file (overwrite), do not include per-account details
     total_gas_used = 0
     total_transactions = 0
     accounts_with_tx = 0
@@ -134,39 +131,47 @@ def main():
         "total_transactions": total_transactions,
     }
 
-    if args.aggregate_only:
-        # Write only the aggregates to the save file (overwrite)
-        try:
-            with open(save_path, "w") as f:
-                json.dump(aggregates, f, indent=2)
-        except Exception as e:
-            raise RuntimeError(f"❌ Failed to write aggregate file {save_path}: {e}")
-        # Exit without additional printing or per-address file merges
-        return
-
-    # Default behavior: merge account-level data into the save file (unchanged behavior)
+    # Always write only aggregates to the save file if provided
     if save_path:
-        merged = {}
+        # If --merge is requested and file exists, try to read and merge numeric totals
         if os.path.exists(save_path):
             try:
                 with open(save_path, "r") as f:
                     existing = json.load(f)
-                    if isinstance(existing, dict):
-                        merged.update(existing)
-                    else:
-                        print(f"⚠️ Existing {save_path} is not a JSON object — it will be overwritten.")
+                if isinstance(existing, dict):
+                    # Numeric fields we want to merge by summing
+                    numeric_keys = ["num_addresses_checked", "accounts_with_tx", "total_gas_used_wei", "total_transactions"]
+                    for k in numeric_keys:
+                        existing_val = existing.get(k, 0)
+                        new_val = aggregates.get(k, 0)
+                        try:
+                            # ensure ints
+                            existing_val = int(existing_val)
+                        except Exception:
+                            existing_val = 0
+                        try:
+                            new_val = int(new_val)
+                        except Exception:
+                            new_val = 0
+                        existing[k] = existing_val + new_val
+                    # update metadata fields
+                    existing["rpc_url"] = aggregates["rpc_url"]
+                    existing["block_number"] = aggregates["block_number"]
+                    aggregates = existing
+                    print(f"🔀 Merged current aggregates into existing save file {save_path}")
+                else:
+                    print(f"⚠️  Existing save file {save_path} not a JSON object; will overwrite with current aggregates")
             except Exception as e:
-                print(f"⚠️ Failed to read existing {save_path} — it will be overwritten: {e}")
-        # Overwrite or add current run's accounts
-        merged.update(accounts)
+                print(f"⚠️  Failed to read/parse existing save file {save_path}: {e}; will overwrite with current aggregates")
+
         try:
             with open(save_path, "w") as f:
-                json.dump(merged, f, indent=2)
-            print(f"💾 Saved account values to {save_path} (merged {len(accounts)} addresses, total {len(merged)} addresses)")
+                json.dump(aggregates, f, indent=2)
+            print(f"💾 Saved aggregated values to {save_path} (num_addresses_checked: {len(accounts)})")
         except Exception as e:
             print(f"❌ Failed to write {save_path}: {e}")
 
-    # When not aggregate-only, still print the account summary
+    # Print the account summary
     print("📊 Account Summary")
     print(f"   Number of accounts: {len(accounts)}")
     print(f"   Accounts with at least one tx: {accounts_with_tx}")
