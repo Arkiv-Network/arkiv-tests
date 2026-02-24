@@ -134,6 +134,8 @@ jobs:
             echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
           elif [ "${{ inputs.test-scenario }}" = "OpGethBuild" ]; then
             echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.test-scenario }}" = "Empty" ]; then
+            echo "scenario=empty" >> $GITHUB_OUTPUT
           else
             # Error
             echo "Error: Unknown test scenario ${{ inputs.test-scenario }}"
