@@ -60,8 +60,9 @@ def main():
                         help=f"Number of addresses to derive (default: {DEFAULT_COUNT})")
     parser.add_argument("--rpc-url", type=str, default=os.environ.get("RPC_URL", "http://localhost:8545"),
                         help="RPC URL (default: http://localhost:8545)")
-    parser.add_argument("--save", type=str, default=None,
-                        help="Save account values to a JSON file")
+    # Default save file is results.json; can be overridden with --save or SAVE_FILE env var
+    parser.add_argument("--save", type=str, default=os.environ.get("SAVE_FILE", "results.json"),
+                        help="Save account values to a JSON file (default: results.json)")
     parser.add_argument("--compare", type=str, default=None,
                         help="Compare current values against a previously saved JSON file")
     args = parser.parse_args()
@@ -89,10 +90,28 @@ def main():
 
     accounts = fetch_account_values(args.rpc_url, addresses, current_block_hex)
 
+    # Save and merge with existing results.json by default
     if args.save:
-        with open(args.save, "w") as f:
-            json.dump(accounts, f, indent=2)
-        print(f"💾 Saved account values to {args.save}")
+        save_path = args.save
+        merged = {}
+        if os.path.exists(save_path):
+            try:
+                with open(save_path, "r") as f:
+                    existing = json.load(f)
+                    if isinstance(existing, dict):
+                        merged.update(existing)
+                    else:
+                        print(f"⚠️ Existing {save_path} is not a JSON object — it will be overwritten.")
+            except Exception as e:
+                print(f"⚠️ Failed to read existing {save_path} — it will be overwritten: {e}")
+        # Overwrite or add current run's accounts
+        merged.update(accounts)
+        try:
+            with open(save_path, "w") as f:
+                json.dump(merged, f, indent=2)
+            print(f"💾 Saved account values to {save_path} (merged {len(accounts)} addresses, total {len(merged)} addresses)")
+        except Exception as e:
+            print(f"❌ Failed to write {save_path}: {e}")
 
     total_gas_used = 0
     total_transactions = 0

@@ -698,3 +698,11 @@ jobs:
           curl -sS -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Upload results.json
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST -F "file=@results.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}

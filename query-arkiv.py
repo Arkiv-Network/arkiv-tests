@@ -1,5 +1,6 @@
 import os
 import argparse
+import json
 from influxdb_client import InfluxDBClient
 from dotenv import load_dotenv
 
@@ -17,8 +18,9 @@ INFLUX_BUCKET = os.getenv("INFLUXDB_BUCKET", "arkiv-tests")
 def query_for_max(test_name: str, measurement: str, start_time: str, end_time: str, node_type: str):
     """
     Queries InfluxDB with the specified start and end times and prints the results.
+    Returns a tuple (time, value) where time is converted to a string by the caller if needed.
     """
-    print(f"Querying InfluxDB from {start_time} to {end_time}...\n")
+    print(f"Querying InfluxDB from {start_time} to {end_time} for measurement '{measurement}', node='{node_type}'...\n")
 
     # Construct the Flux query.
     # Note the double curly braces {{ }} in the map() function to escape them in Python f-strings.
@@ -52,7 +54,7 @@ def query_for_max(test_name: str, measurement: str, start_time: str, end_time: s
                 value = record["_value"]
 
         if record_count != 1:
-            raise Exception(f"Expected no records, but found {record_count} records in the result.")
+            raise Exception(f"Expected exactly 1 record, but found {record_count} records in the result for measurement '{measurement}' and node '{node_type}'.")
 
         return time, value
 
@@ -79,18 +81,82 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    max_seq = query_for_max(args.test_name, "arkiv_sqlite_db_size_bytes", args.start, args.end, "sequencer")
-    max_val = query_for_max(args.test_name, "arkiv_sqlite_db_size_bytes", args.start, args.end, "validator")
-    max_geth_seq = query_for_max(args.test_name, "arkiv_geth_db_size", args.start, args.end, "sequencer")
-    max_geth_val = query_for_max(args.test_name, "arkiv_geth_db_size", args.start, args.end, "validator")
-    max_wal_seq = query_for_max(args.test_name, "arkiv_sqlite_wal_size_bytes", args.start, args.end, "sequencer")
-    max_wal_val = query_for_max(args.test_name, "arkiv_sqlite_wal_size_bytes", args.start, args.end, "validator")
-    max_da_data = query_for_max(args.test_name, "arkiv_da_data_size", args.start, args.end, "")
+    # Helper to run a query safely and capture errors instead of crashing
+    def safe_query(measurement, node_type=""):
+        try:
+            t, v = query_for_max(args.test_name, measurement, args.start, args.end, node_type)
+            # Convert time to string so it's JSON serializable
+            t_s = str(t) if t is not None else None
+            return {"time": t_s, "value": v}
+        except Exception as e:
+            return {"time": None, "value": None, "error": str(e)}
 
-    print(f"Max SQLite DB Size for Sequencer: {max_seq[1]} bytes at {max_seq[0]}")
-    print(f"Max SQLite DB Size for Validator: {max_val[1]} bytes at {max_val[0]}")
-    print(f"Max SQLite WAL Size for Sequencer: {max_wal_seq[1]} bytes at {max_wal_seq[0]}")
-    print(f"Max SQLite WAL Size for Validator: {max_wal_val[1]} bytes at {max_wal_val[0]}")
-    print(f"Max Geth DB Size for Sequencer: {max_geth_seq[1]} bytes at {max_geth_seq[0]}")
-    print(f"Max Geth DB Size for Validator: {max_geth_val[1]} bytes at {max_geth_val[0]}")
-    print(f"Da size max at {max_wal_val[0]} is {max_da_data[1]} bytes")
+    max_seq = safe_query("arkiv_sqlite_db_size_bytes", "sequencer")
+    max_val = safe_query("arkiv_sqlite_db_size_bytes", "validator")
+    max_geth_seq = safe_query("arkiv_geth_db_size", "sequencer")
+    max_geth_val = safe_query("arkiv_geth_db_size", "validator")
+    max_wal_seq = safe_query("arkiv_sqlite_wal_size_bytes", "sequencer")
+    max_wal_val = safe_query("arkiv_sqlite_wal_size_bytes", "validator")
+    max_da_data = safe_query("arkiv_da_data_size", "")
+
+    # Build structured results
+    results = {
+        "sqlite_db_size_bytes": {
+            "sequencer": max_seq,
+            "validator": max_val
+        },
+        "sqlite_wal_size_bytes": {
+            "sequencer": max_wal_seq,
+            "validator": max_wal_val
+        },
+        "geth_db_size": {
+            "sequencer": max_geth_seq,
+            "validator": max_geth_val
+        },
+        "da_data_size": max_da_data
+    }
+
+    # Print summary to stdout (best-effort)
+    def print_entry(name, entry):
+        if entry.get("error"):
+            print(f"{name}: ERROR: {entry['error']}")
+        else:
+            print(f"{name}: {entry['value']} bytes at {entry['time']}")
+
+    print_entry("Max SQLite DB Size for Sequencer", results["sqlite_db_size_bytes"]["sequencer"])
+    print_entry("Max SQLite DB Size for Validator", results["sqlite_db_size_bytes"]["validator"])
+    print_entry("Max SQLite WAL Size for Sequencer", results["sqlite_wal_size_bytes"]["sequencer"])
+    print_entry("Max SQLite WAL Size for Validator", results["sqlite_wal_size_bytes"]["validator"])
+    print_entry("Max Geth DB Size for Sequencer", results["geth_db_size"]["sequencer"])
+    print_entry("Max Geth DB Size for Validator", results["geth_db_size"]["validator"])
+    print_entry("DA data size", results["da_data_size"])
+
+    # Write results.json next to the script
+    script_dir = os.path.dirname(__file__)
+    out_path = os.path.join(script_dir, "results.json")
+
+    # If a results.json already exists, read it and merge entries; otherwise write fresh.
+    to_write = results
+    if os.path.exists(out_path):
+        try:
+            with open(out_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception as e:
+            print(f"Warning: failed to read existing results.json: {e}")
+            existing = {}
+
+        # Deep-merge: update nested dicts, overwrite non-dict or conflicting values with new ones
+        def deep_merge(dst, src):
+            for k, v in src.items():
+                if k in dst and isinstance(dst[k], dict) and isinstance(v, dict):
+                    deep_merge(dst[k], v)
+                else:
+                    dst[k] = v
+
+        deep_merge(existing, results)
+        to_write = existing
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(to_write, f, indent=2)
+
+    print(f"\nResults written to {out_path}")
