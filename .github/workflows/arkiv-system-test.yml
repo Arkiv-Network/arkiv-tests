@@ -607,6 +607,10 @@ jobs:
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
+      - name: Simple entity test
+        run: |
+          bun src/create_entity.ts
+
       - name: Start locust write only test
         if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' }}
         run: |

@@ -28,7 +28,7 @@ async function main() {
     },
     rpcUrls: {
       default: {
-        http: ["http://localhost:8545"],
+        http: ["http://localhost:8645"],
       },
     },
   });
