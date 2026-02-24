@@ -42,14 +42,14 @@ def fetch_account_values(rpc_url, addresses, block_hex):
             bal_response = rpc_post(rpc_url, "eth_getBalance", [address, block_hex])
             if bal_response and 'result' in bal_response:
                 balance = int(bal_response['result'], 16)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️  Error fetching balance for {address}: {e}")
         try:
             nonce_response = rpc_post(rpc_url, "eth_getTransactionCount", [address, block_hex])
             if nonce_response and 'result' in nonce_response:
                 nonce = int(nonce_response['result'], 16)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️  Error fetching nonce for {address}: {e}")
         accounts[address] = {"balance": balance, "nonce": nonce}
     return accounts
 
