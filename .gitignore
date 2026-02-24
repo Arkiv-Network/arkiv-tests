@@ -8,3 +8,5 @@
 /node_modules/
 /package-lock.json
 /bun.lock
+__pycache__/
+*.pyc
