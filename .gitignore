@@ -9,3 +9,4 @@
 /package-lock.json
 /bun.lock
 account-values.json
+__pycache__/
