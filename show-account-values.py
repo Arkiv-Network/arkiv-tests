@@ -83,7 +83,9 @@ def main():
         total_gas_used_wei = 0
         total_transactions_done = 0
         for address, values in current_values.items():
-            previous = previous_values.get(address, values)
+            previous = previous_values.get(address)
+            if previous is None:
+                continue
             total_gas_used_wei += max(0, previous["balance_wei"] - values["balance_wei"])
             total_transactions_done += max(0, values["nonce"] - previous["nonce"])
 

@@ -5,6 +5,7 @@ import tempfile
 import types
 import unittest
 from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 eth_account_module = types.ModuleType("eth_account")
@@ -21,7 +22,7 @@ sys.modules["eth_account"] = eth_account_module
 
 spec = importlib.util.spec_from_file_location(
     "show_account_values",
-    "/home/runner/work/arkiv-tests/arkiv-tests/show-account-values.py",
+    str(Path(__file__).resolve().with_name("show-account-values.py")),
 )
 show_account_values = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
