@@ -96,6 +96,7 @@ def main():
 
     total_gas_used = 0
     total_transactions = 0
+    accounts_with_tx = 0
 
     if args.compare:
         with open(args.compare, "r") as f:
@@ -108,13 +109,19 @@ def main():
                 nonce_after = accounts[address]["nonce"]
                 total_gas_used += balance_before - balance_after
                 total_transactions += nonce_after - nonce_before
+                if nonce_after > 0:
+                    accounts_with_tx += 1
     else:
         for address in addresses:
             if address in accounts:
-                total_transactions += accounts[address]["nonce"]
+                nonce = accounts[address]["nonce"]
+                total_transactions += nonce
+                if nonce > 0:
+                    accounts_with_tx += 1
 
     print("📊 Account Summary")
     print(f"   Number of accounts: {len(accounts)}")
+    print(f"   Accounts with at least one tx: {accounts_with_tx}")
     print(f"   Total gas used (wei): {total_gas_used}")
     print(f"   Total transactions: {total_transactions}")
 
