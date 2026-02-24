@@ -131,34 +131,17 @@ def main():
         "total_transactions": total_transactions,
     }
 
-    # Always write only aggregates to the save file if provided
+    # Always write aggregates to the save file if provided, preserving existing JSON keys
     if save_path:
-        # If --merge is requested and file exists, try to read and merge numeric totals
+        to_write = aggregates
         if os.path.exists(save_path):
             try:
                 with open(save_path, "r") as f:
                     existing = json.load(f)
                 if isinstance(existing, dict):
-                    # Numeric fields we want to merge by summing
-                    numeric_keys = ["num_addresses_checked", "accounts_with_tx", "total_gas_used_wei", "total_transactions"]
-                    for k in numeric_keys:
-                        existing_val = existing.get(k, 0)
-                        new_val = aggregates.get(k, 0)
-                        try:
-                            # ensure ints
-                            existing_val = int(existing_val)
-                        except Exception:
-                            existing_val = 0
-                        try:
-                            new_val = int(new_val)
-                        except Exception:
-                            new_val = 0
-                        existing[k] = existing_val + new_val
-                    # update metadata fields
-                    existing["rpc_url"] = aggregates["rpc_url"]
-                    existing["block_number"] = aggregates["block_number"]
-                    aggregates = existing
-                    print(f"🔀 Merged current aggregates into existing save file {save_path}")
+                    existing.update(aggregates)
+                    to_write = existing
+                    print(f"🔀 Updated existing save file {save_path} with current aggregates")
                 else:
                     print(f"⚠️  Existing save file {save_path} not a JSON object; will overwrite with current aggregates")
             except Exception as e:
@@ -166,7 +149,7 @@ def main():
 
         try:
             with open(save_path, "w") as f:
-                json.dump(aggregates, f, indent=2)
+                json.dump(to_write, f, indent=2)
             print(f"💾 Saved aggregated values to {save_path} (num_addresses_checked: {len(accounts)})")
         except Exception as e:
             print(f"❌ Failed to write {save_path}: {e}")
