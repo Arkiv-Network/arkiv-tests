@@ -8,20 +8,9 @@ Account.enable_unaudited_hdwallet_features()
 
 DEFAULT_COUNT = 10
 
-
-def build_account_path(user_index: int) -> str:
-    instance_index = 0
-    return f"m/44'/60'/{instance_index}'/0/{user_index}"
-
-
-def derive_addresses(mnemonic: str, count: int) -> list[str]:
-    addresses = []
-    for i in range(count):
-        account_path = build_account_path(i)
-        account = Account.from_mnemonic(mnemonic, account_path=account_path)
-        addresses.append(account.address)
-    return addresses
-
+def load_addresses():
+    with open("test-accounts.txt", "r") as f:
+        return [line.strip() for line in f.readlines()]
 
 def rpc_post(rpc_url, method, params=None):
     """Helper function to send JSON-RPC POST requests"""
@@ -44,18 +33,13 @@ def rpc_post(rpc_url, method, params=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Show account balances derived from a mnemonic")
-    parser.add_argument("--mnemonic", type=str, default=os.environ.get("MNEMONIC", ""),
-                        help="Mnemonic phrase (or set MNEMONIC env var)")
     parser.add_argument("--count", type=int, default=int(os.environ.get("ACCOUNT_COUNT", DEFAULT_COUNT)),
                         help=f"Number of addresses to derive (default: {DEFAULT_COUNT})")
     parser.add_argument("--rpc-url", type=str, default=os.environ.get("RPC_URL", "http://localhost:8545"),
                         help="RPC URL (default: http://localhost:8545)")
     args = parser.parse_args()
 
-    if not args.mnemonic:
-        raise ValueError("Mnemonic is required. Use --mnemonic or set MNEMONIC env var.")
-
-    addresses = derive_addresses(args.mnemonic, args.count)
+    addresses = load_addresses()
 
     connection_response = rpc_post(args.rpc_url, "web3_clientVersion")
 
