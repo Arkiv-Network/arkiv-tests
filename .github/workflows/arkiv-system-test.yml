@@ -625,11 +625,8 @@ jobs:
           set -x
           LOCUST_TEST_NAME=dc_write_only
           poetry run locust -f stress/l3/$LOCUST_TEST_NAME.py \
-            --web-port=6856 \
             --csv=$LOCUST_TEST_NAME \
             --headless \
-            --processes 4 \
-            --expect-workers 4 \
             -u=${{ inputs.test-users }} \
             -r=100 \
             -t=${{ inputs.test-length }} \
