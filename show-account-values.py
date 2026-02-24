@@ -139,8 +139,7 @@ def main():
                 with open(save_path, "r") as f:
                     existing = json.load(f)
                 if isinstance(existing, dict):
-                    existing.update(aggregates)
-                    to_write = existing
+                    to_write = {**existing, **aggregates}
                     print(f"🔀 Updated existing save file {save_path} with current aggregates")
                 else:
                     print(f"⚠️  Existing save file {save_path} not a JSON object; will overwrite with current aggregates")
