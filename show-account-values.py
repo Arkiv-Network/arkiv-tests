@@ -59,6 +59,17 @@ def main():
 
     connection_response = rpc_post(args.rpc_url, "web3_clientVersion")
 
+    current_block_res = rpc_post(args.rpc_url, "eth_blockNumber")
+    current_block = -1
+    if current_block_res and 'result' in current_block_res:
+        print(f"Current Block Number: {int(current_block_res['result'], 16)}\n")
+        current_block = int(current_block_res['result'], 16)
+
+    if current_block <= 0:
+        raise ConnectionError(f"❌ RPC at {args.rpc_url} is not responding with valid block number. Check if the node is running and accessible.")
+
+    current_block_hex = hex(current_block)
+
     if connection_response and 'result' in connection_response:
         print(f"✅ Connected to RPC at {args.rpc_url}")
         print(f"   Node Version: {connection_response['result']}\n")
@@ -67,13 +78,12 @@ def main():
 
         for address in addresses:
             try:
-                response = rpc_post(args.rpc_url, "eth_getBalance", [address, "latest"])
+                response = rpc_post(args.rpc_url, "eth_getBalance", [address, current_block_hex])
 
                 if response and 'result' in response:
                     hex_balance = response['result']
                     balance_wei = int(hex_balance, 16)
-                    balance_eth = balance_wei / 10**18
-                    print(f"{address} | {balance_eth} ETH")
+                    print(f"{address} | {balance_wei} ETH")
                 elif response and 'error' in response:
                     print(f"{address} | RPC Error: {response['error']['message']}")
                 else:
@@ -89,7 +99,7 @@ def main():
 
         for address in addresses:
             try:
-                response = rpc_post(args.rpc_url, "eth_getTransactionCount", [address, "latest"])
+                response = rpc_post(args.rpc_url, "eth_getTransactionCount", [address, current_block_hex])
                 if response and 'result' in response:
                     hex_nonce = response['result']
                     nonce = int(hex_nonce, 16)
