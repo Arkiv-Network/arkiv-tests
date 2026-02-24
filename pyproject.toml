@@ -24,6 +24,8 @@ locust = "^2.43.1"
 prometheus-client = "^0.22.1"
 testcontainers = "^4.12"
 influxdb-client = "^1.50.0"
+requests = "^2.31.0"
+eth-account = "^1.9.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = {version = "^0.14.6"}
@@ -31,4 +33,3 @@ ruff = {version = "^0.14.6"}
 [tool.locust]
 host = "http://localhost:8545"
 users = 5
-

@@ -23,8 +23,10 @@ def derive_addresses(mnemonic: str, count: int) -> list[str]:
     return addresses
 
 
-def rpc_post(rpc_url, method, params=[]):
+def rpc_post(rpc_url, method, params=None):
     """Helper function to send JSON-RPC POST requests"""
+    if params is None:
+        params = []
     headers = {'Content-Type': 'application/json'}
     payload = {
         "jsonrpc": "2.0",
@@ -67,16 +69,38 @@ def main():
             try:
                 response = rpc_post(args.rpc_url, "eth_getBalance", [address, "latest"])
 
-                if 'result' in response:
+                if response and 'result' in response:
                     hex_balance = response['result']
                     balance_wei = int(hex_balance, 16)
                     balance_eth = balance_wei / 10**18
                     print(f"{address} | {balance_eth} ETH")
-                elif 'error' in response:
+                elif response and 'error' in response:
                     print(f"{address} | RPC Error: {response['error']['message']}")
+                else:
+                    print(f"{address} | No response")
 
             except Exception as e:
                 print(f"{address} | Error: {str(e)}")
+
+        # Print nonces (transaction count) for each address
+        print("\nNonces (latest)")
+        print(f"{'Address':<45} | {'Nonce'}")
+        print("-" * 65)
+
+        for address in addresses:
+            try:
+                response = rpc_post(args.rpc_url, "eth_getTransactionCount", [address, "latest"])
+                if response and 'result' in response:
+                    hex_nonce = response['result']
+                    nonce = int(hex_nonce, 16)
+                    print(f"{address} | {nonce}")
+                elif response and 'error' in response:
+                    print(f"{address} | RPC Error: {response['error']['message']}")
+                else:
+                    print(f"{address} | No response")
+            except Exception as e:
+                print(f"{address} | Error: {str(e)}")
+
     else:
         raise ConnectionError(f"❌ Failed to connect to RPC at {args.rpc_url}")
 
