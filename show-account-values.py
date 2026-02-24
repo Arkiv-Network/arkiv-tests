@@ -65,6 +65,8 @@ def main():
                         help="Save account values to a JSON file (default: results.json)")
     parser.add_argument("--compare", type=str, default=None,
                         help="Compare current values against a previously saved JSON file")
+    parser.add_argument("--aggregate-only", action="store_true", default=False,
+                        help="Only write aggregated summary JSON to the save file and suppress other output")
     args = parser.parse_args()
 
     addresses = load_addresses()
@@ -84,15 +86,66 @@ def main():
     if not (connection_response and 'result' in connection_response):
         raise ConnectionError(f"❌ Failed to connect to RPC at {args.rpc_url}")
 
-    print(f"✅ Connected to RPC at {args.rpc_url}")
-    print(f"   Node Version: {connection_response['result']}")
-    print(f"   Current Block Number: {current_block}\n")
+    # Only print connection info when not running in aggregate-only mode
+    if not args.aggregate_only:
+        print(f"✅ Connected to RPC at {args.rpc_url}")
+        print(f"   Node Version: {connection_response['result']}")
+        print(f"   Current Block Number: {current_block}\n")
 
     accounts = fetch_account_values(args.rpc_url, addresses, current_block_hex)
 
-    # Save and merge with existing results.json by default
-    if args.save:
-        save_path = args.save
+    save_path = args.save
+    # If aggregate-only is requested, compute aggregates and write only the summary JSON
+    total_gas_used = 0
+    total_transactions = 0
+    accounts_with_tx = 0
+
+    # Compute aggregates either by comparing to saved file or by current accounts
+    if args.compare:
+        try:
+            with open(args.compare, "r") as f:
+                saved_accounts = json.load(f)
+        except Exception as e:
+            raise RuntimeError(f"Failed to read compare file {args.compare}: {e}")
+        for address in addresses:
+            if address in saved_accounts and address in accounts:
+                balance_before = saved_accounts[address]["balance"]
+                nonce_before = saved_accounts[address]["nonce"]
+                balance_after = accounts[address]["balance"]
+                nonce_after = accounts[address]["nonce"]
+                total_gas_used += balance_before - balance_after
+                total_transactions += nonce_after - nonce_before
+                if nonce_after > 0:
+                    accounts_with_tx += 1
+    else:
+        for address in addresses:
+            if address in accounts:
+                nonce = accounts[address]["nonce"]
+                total_transactions += nonce
+                if nonce > 0:
+                    accounts_with_tx += 1
+
+    aggregates = {
+        "rpc_url": args.rpc_url,
+        "block_number": current_block,
+        "num_addresses_checked": len(accounts),
+        "accounts_with_tx": accounts_with_tx,
+        "total_gas_used_wei": total_gas_used,
+        "total_transactions": total_transactions,
+    }
+
+    if args.aggregate_only:
+        # Write only the aggregates to the save file (overwrite)
+        try:
+            with open(save_path, "w") as f:
+                json.dump(aggregates, f, indent=2)
+        except Exception as e:
+            raise RuntimeError(f"❌ Failed to write aggregate file {save_path}: {e}")
+        # Exit without additional printing or per-address file merges
+        return
+
+    # Default behavior: merge account-level data into the save file (unchanged behavior)
+    if save_path:
         merged = {}
         if os.path.exists(save_path):
             try:
@@ -113,31 +166,7 @@ def main():
         except Exception as e:
             print(f"❌ Failed to write {save_path}: {e}")
 
-    total_gas_used = 0
-    total_transactions = 0
-    accounts_with_tx = 0
-
-    if args.compare:
-        with open(args.compare, "r") as f:
-            saved_accounts = json.load(f)
-        for address in addresses:
-            if address in saved_accounts and address in accounts:
-                balance_before = saved_accounts[address]["balance"]
-                nonce_before = saved_accounts[address]["nonce"]
-                balance_after = accounts[address]["balance"]
-                nonce_after = accounts[address]["nonce"]
-                total_gas_used += balance_before - balance_after
-                total_transactions += nonce_after - nonce_before
-                if nonce_after > 0:
-                    accounts_with_tx += 1
-    else:
-        for address in addresses:
-            if address in accounts:
-                nonce = accounts[address]["nonce"]
-                total_transactions += nonce
-                if nonce > 0:
-                    accounts_with_tx += 1
-
+    # When not aggregate-only, still print the account summary
     print("📊 Account Summary")
     print(f"   Number of accounts: {len(accounts)}")
     print(f"   Accounts with at least one tx: {accounts_with_tx}")
