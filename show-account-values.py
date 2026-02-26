@@ -61,7 +61,7 @@ def main():
     parser.add_argument("--rpc-url", type=str, default=os.environ.get("RPC_URL", "http://localhost:8545"),
                         help="RPC URL (default: http://localhost:8545)")
     parser.add_argument("--save", type=str, default=None,
-                        help="Save aggregated summary to a JSON file")
+                        help="Save strictly flat, numeric metrics to a JSON file for testing")
     parser.add_argument("--save-to-compare", type=str, default=os.environ.get("SAVE_FILE_COMPARE", "results_to_compare.json"),
                         help="Save raw account data for future comparison (default: results_to_compare.json)")
     parser.add_argument("--compare", type=str, default=None,
@@ -124,13 +124,13 @@ def main():
                 if nonce > 0:
                     accounts_with_tx += 1
 
-    aggregates = {
-        "rpc_url": args.rpc_url,
-        "block_number": current_block,
-        "num_addresses_checked": len(accounts),
-        "accounts_with_tx": accounts_with_tx,
-        "net_balance_decrease_wei": net_balance_decrease,
-        "total_transactions": total_transactions,
+    # STRICTLY FLAT, NUMERIC-ONLY DICTIONARY
+    test_metrics = {
+        "blockNumberArkiv": current_block,
+        "numAddressesChecked": len(accounts),
+        "accountsWithTx": accounts_with_tx,
+        "netBalanceDecreaseWei": net_balance_decrease,
+        "totalTransactions": total_transactions,
     }
 
     if args.save:
@@ -150,7 +150,7 @@ def main():
         try:
             with open(args.save, "w") as f:
                 json.dump(to_write, f, indent=2)
-            print(f"💾 Saved aggregated values to {args.save}")
+            print(f"💾 Saved flat test metrics to {args.save}")
         except Exception as e:
             print(f"❌ Failed to write {args.save}: {e}")
 

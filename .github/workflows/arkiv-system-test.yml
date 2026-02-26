@@ -605,7 +605,7 @@ jobs:
 
       - name: Show balances of main accounts
         run: |
-          poetry run python show-account-values.py --count 100 --rpc-url http://localhost:8645 --save-to-compare account-values.json
+          poetry run python show-account-values.py --rpc-url http://localhost:8645 --save-to-compare account-values.json
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
@@ -637,7 +637,7 @@ jobs:
 
       - name: Show balances of main accounts after tests
         run: |
-          poetry run python show-account-values.py --count 100 --rpc-url http://localhost:8645 --save results.json --compare account-values.json
+          poetry run python show-account-values.py -rpc-url http://localhost:8645 --save results.json --compare account-values.json
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
