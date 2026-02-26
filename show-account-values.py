@@ -3,12 +3,14 @@ import json
 import os
 import requests
 
+
 def load_addresses(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"❌ Accounts file not found: {file_path}")
     with open(file_path, "r") as f:
         # Filter out empty lines
         return [line.strip() for line in f.readlines() if line.strip()]
+
 
 def rpc_post(rpc_url, method, params=None):
     """Helper function to send JSON-RPC POST requests"""
@@ -27,6 +29,7 @@ def rpc_post(rpc_url, method, params=None):
         return response.json()
     except requests.exceptions.RequestException:
         return None
+
 
 def fetch_account_values(rpc_url, addresses, block_hex):
     """Fetch balances and nonces for all addresses at a given block."""
@@ -54,6 +57,7 @@ def fetch_account_values(rpc_url, addresses, block_hex):
         accounts[address] = {"balance": balance, "nonce": nonce}
     return accounts
 
+
 def main():
     parser = argparse.ArgumentParser(description="Fetch and aggregate Ethereum account balances and nonces.")
     parser.add_argument("--accounts-file", type=str, default="test-accounts.txt",
@@ -62,7 +66,8 @@ def main():
                         help="RPC URL (default: http://localhost:8545)")
     parser.add_argument("--save", type=str, default=None,
                         help="Save strictly flat, numeric metrics to a JSON file for testing")
-    parser.add_argument("--save-to-compare", type=str, default=os.environ.get("SAVE_FILE_COMPARE", "results_to_compare.json"),
+    parser.add_argument("--save-to-compare", type=str,
+                        default=os.environ.get("SAVE_FILE_COMPARE", "results_to_compare.json"),
                         help="Save raw account data for future comparison (default: results_to_compare.json)")
     parser.add_argument("--compare", type=str, default=None,
                         help="Compare current values against a previously saved JSON file")
@@ -126,11 +131,11 @@ def main():
 
     # STRICTLY FLAT, NUMERIC-ONLY DICTIONARY
     test_metrics = {
-        "blockNumberArkiv": current_block,
-        "numAddressesChecked": len(accounts),
-        "accountsWithTx": accounts_with_tx,
-        "netBalanceDecreaseWei": net_balance_decrease,
-        "totalTransactions": total_transactions,
+        "blockNumberArkiv": {"value": current_block},
+        "numAddressesChecked": {"value": len(accounts)},
+        "accountsWithTx": {"value": accounts_with_tx},
+        "netBalanceDecreaseWei": {"value": net_balance_decrease},
+        "totalTransactions": {"value": total_transactions},
     }
 
     if args.save:
@@ -168,6 +173,7 @@ def main():
     print(f"   Accounts with txs (in scope): {accounts_with_tx}")
     print(f"   Net balance decrease (wei): {net_balance_decrease}")
     print(f"   Total transactions (in scope): {total_transactions}")
+
 
 if __name__ == "__main__":
     main()
