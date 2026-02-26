@@ -101,19 +101,13 @@ if __name__ == "__main__":
 
     # Build structured results
     results = {
-        "sqlite_db_size_bytes": {
-            "sequencer": max_seq,
-            "validator": max_val
-        },
-        "sqlite_wal_size_bytes": {
-            "sequencer": max_wal_seq,
-            "validator": max_wal_val
-        },
-        "geth_db_size": {
-            "sequencer": max_geth_seq,
-            "validator": max_geth_val
-        },
-        "da_data_size": max_da_data
+        "sqliteDbSizeBytesSequencer": max_seq,
+        "sqliteDbSizeBytesValidator": max_val,
+        "gethDbSizeSequencer": max_geth_seq,
+        "gethDbSizeValidator": max_geth_val,
+        "sqliteWalSizeBytesSequencer": max_wal_seq,
+        "sqliteWalSizeBytesValidator": max_wal_val,
+        "daDataSize": max_da_data
     }
 
     # Print summary to stdout (best-effort)
@@ -123,13 +117,13 @@ if __name__ == "__main__":
         else:
             print(f"{name}: {entry['value']} bytes at {entry['time']}")
 
-    print_entry("Max SQLite DB Size for Sequencer", results["sqlite_db_size_bytes"]["sequencer"])
-    print_entry("Max SQLite DB Size for Validator", results["sqlite_db_size_bytes"]["validator"])
-    print_entry("Max SQLite WAL Size for Sequencer", results["sqlite_wal_size_bytes"]["sequencer"])
-    print_entry("Max SQLite WAL Size for Validator", results["sqlite_wal_size_bytes"]["validator"])
-    print_entry("Max Geth DB Size for Sequencer", results["geth_db_size"]["sequencer"])
-    print_entry("Max Geth DB Size for Validator", results["geth_db_size"]["validator"])
-    print_entry("DA data size", results["da_data_size"])
+    print_entry("Max SQLite DB Size for Sequencer", results["sqliteDbSizeBytesSequencer"])
+    print_entry("Max SQLite DB Size for Validator", results["sqliteDbSizeBytesValidator"])
+    print_entry("Max SQLite WAL Size for Sequencer", results["sqliteWalSizeBytesSequencer"])
+    print_entry("Max SQLite WAL Size for Validator", results["sqliteWalSizeBytesValidator"])
+    print_entry("Max Geth DB Size for Sequencer", results["gethDbSizeSequencer"])
+    print_entry("Max Geth DB Size for Validator", results["gethDbSizeValidator"])
+    print_entry("DA data size", results["daDataSize"])
 
     # Write results.json next to the script
     script_dir = os.path.dirname(__file__)
