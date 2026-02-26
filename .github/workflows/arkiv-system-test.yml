@@ -640,6 +640,8 @@ jobs:
               # 4. Run your commands using RELATIVE_TIME
               python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json"
               poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$RELATIVE_TIME.json" --compare account-values.json
+              TEST_NAME=${{ steps.test-name.outputs.val }}
+              curl -sS -X POST -F "file=@results-$RELATIVE_TIME.json" $TRACKER_BACKEND_URL/test/$TEST_NAME/upload/file
               
               # 5. Increment iteration for the next loop
               ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
@@ -652,6 +654,7 @@ jobs:
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
           IS_EXTERNAL: ${{ inputs.is-external }}
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
 
       - name: Start locust write only test
         if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' }}
