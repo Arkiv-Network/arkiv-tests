@@ -641,7 +641,7 @@ jobs:
               python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json"
               poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$RELATIVE_TIME.json" --compare account-values.json
               TEST_NAME=${{ steps.test-name.outputs.val }}
-              curl -sS -X POST -F "file=@results-$RELATIVE_TIME.json" $TRACKER_BACKEND_URL/test/$TEST_NAME/upload/file
+              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json"
               
               # 5. Increment iteration for the next loop
               ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
@@ -742,6 +742,6 @@ jobs:
         if: always()
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
-          curl -sS -X POST -F "file=@results-${{ inputs.test-length }}.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          python push-results.py --test-name $TEST_NAME --file "results-${{ inputs.test-length }}.json"
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
