@@ -134,13 +134,13 @@ def main():
     }
 
     if args.save:
-        to_write = aggregates
+        to_write = test_metrics
         if os.path.exists(args.save):
             try:
                 with open(args.save, "r") as f:
                     existing = json.load(f)
                 if isinstance(existing, dict):
-                    to_write = {**existing, **aggregates}
+                    to_write = {**existing, **test_metrics}
                     print(f"🔀 Updated existing save file {args.save} with current aggregates")
                 else:
                     print(f"⚠️  Existing save file {args.save} not a JSON object; overwriting.")
