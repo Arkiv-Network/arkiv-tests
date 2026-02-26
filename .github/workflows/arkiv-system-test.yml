@@ -637,19 +637,15 @@ jobs:
 
       - name: Show balances of main accounts after tests
         run: |
-          poetry run python show-account-values.py --rpc-url http://localhost:8645 --save results.json --compare account-values.json
+          python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save results-${{ inputs.test-length }}.json
+          poetry run python show-account-values.py --rpc-url http://localhost:8645 --save results-${{ inputs.test-length }}.json --compare account-values.json
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-
-      - name: Build test report
-        if: ${{ inputs.is-external == 'false' }}
-        run: |
-          python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }}
-        env:
           INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
           INFLUXDB_TOKEN: my-super-secret-auth-token
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
+          IS_EXTERNAL: ${{ inputs.is-external }}
 
       - name: Stop services
         if: ${{ inputs.is-external == 'false' }}
@@ -703,6 +699,6 @@ jobs:
         if: always()
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
-          curl -sS -X POST -F "file=@results.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@results-${{ inputs.test-length }}.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}

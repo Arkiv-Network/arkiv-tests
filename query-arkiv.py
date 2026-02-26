@@ -78,6 +78,8 @@ if __name__ == "__main__":
         default="260221T102531-LocustWriteOnly-int-zeus",
         help="Test name to filter by (e.g., \"260221T102531-LocustWriteOnly-int-zeus\")"
     )
+    parser.add_argument("--save", type=str, default=None,
+        help="Save strictly flat, numeric metrics to a JSON file for testing")
 
     args = parser.parse_args()
 
@@ -127,7 +129,7 @@ if __name__ == "__main__":
 
     # Write results.json next to the script
     script_dir = os.path.dirname(__file__)
-    out_path = os.path.join(script_dir, "results.json")
+    out_path = os.path.join(script_dir, args.save)
 
     # If a results.json already exists, read it and merge entries; otherwise write fresh.
     to_write = results
