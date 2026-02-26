@@ -613,6 +613,43 @@ jobs:
         run: |
           bun src/create_entity.ts
 
+      - name: Start snapshot loop
+        run: |
+          (
+            INTERVAL=60
+            while true; do
+              # Record the start time of this iteration
+              START_TIME=$(date +%s)
+              
+              # Run your commands
+              # Note: Use $(date +%s) for the filename to get actual Unix timestamps
+              TIMESTAMP=$(date +%s)
+              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$TIMESTAMP.json"
+              poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$TIMESTAMP.json" --compare account-values.json
+              
+              # Calculate how long the scripts took
+              END_TIME=$(date +%s)
+              ELAPSED=$(( END_TIME - START_TIME ))
+              
+              # Calculate remaining sleep time to hit exactly 60 seconds
+              SLEEP_TIME=$(( INTERVAL - ELAPSED ))
+              
+              # If the scripts took longer than 60s, don't sleep (or set a 1s buffer)
+              if [ "$SLEEP_TIME" -le 0 ]; then
+                SLEEP_TIME=1
+              fi
+              
+              sleep "$SLEEP_TIME"
+            done
+          ) > snapshot-loop.log 2>&1 &
+        env:
+          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+          INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+          INFLUXDB_TOKEN: my-super-secret-auth-token
+          INFLUXDB_ORG: arkiv-network
+          INFLUXDB_BUCKET: arkiv-tests
+          IS_EXTERNAL: ${{ inputs.is-external }}
+
       - name: Start locust write only test
         if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' }}
         run: |
@@ -637,8 +674,8 @@ jobs:
 
       - name: Show balances of main accounts after tests
         run: |
-          python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save results-${{ inputs.test-length }}.json
-          poetry run python show-account-values.py --rpc-url http://localhost:8645 --save results-${{ inputs.test-length }}.json --compare account-values.json
+          python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save results-finish-${{ inputs.test-length }}.json
+          poetry run python show-account-values.py --rpc-url http://localhost:8645 --save results-finish-${{ inputs.test-length }}.json --compare account-values.json
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
           INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
