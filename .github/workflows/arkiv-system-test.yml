@@ -631,17 +631,17 @@ jobs:
               
               # Sleep only if we haven't passed the target time (e.g. if scripts took > 60s)
               if [ "$SLEEP_TIME" -gt 0 ]; then
-              sleep "$SLEEP_TIME"
+                sleep "$SLEEP_TIME"
               fi
               
               # 3. Calculate exact interval string (60, 120, 180...) for the filenames
               RELATIVE_TIME=$(( ITERATION_NUMBER * INTERVAL ))
               
               # 4. Run your commands using RELATIVE_TIME
-              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json"
-              poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$RELATIVE_TIME.json" --compare account-values.json
+              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
+              poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$RELATIVE_TIME.json" --compare account-values.json  > snapshot-loop.log 2>&1 || true
               TEST_NAME=${{ steps.test-name.outputs.val }}
-              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json"
+              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
               
               # 5. Increment iteration for the next loop
               ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
