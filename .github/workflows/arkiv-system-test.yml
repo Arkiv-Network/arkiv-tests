@@ -617,29 +617,32 @@ jobs:
         run: |
           (
             INTERVAL=60
+            START_TIME=$(date +%s)
+            TARGET_TIME=$START_TIME
+            ITERATION_NUMBER=1
+          
             while true; do
-              # Record the start time of this iteration
-              START_TIME=$(date +%s)
+              # 1. Advance the absolute target time by exactly 60 seconds
+              TARGET_TIME=$(( TARGET_TIME + INTERVAL ))
               
-              # Run your commands
-              # Note: Use $(date +%s) for the filename to get actual Unix timestamps
-              TIMESTAMP=$(date +%s)
-              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$TIMESTAMP.json"
-              poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$TIMESTAMP.json" --compare account-values.json
+              # 2. Calculate remaining time to sleep to hit the exact target
+              CURRENT_TIME=$(date +%s)
+              SLEEP_TIME=$(( TARGET_TIME - CURRENT_TIME ))
               
-              # Calculate how long the scripts took
-              END_TIME=$(date +%s)
-              ELAPSED=$(( END_TIME - START_TIME ))
-              
-              # Calculate remaining sleep time to hit exactly 60 seconds
-              SLEEP_TIME=$(( INTERVAL - ELAPSED ))
-              
-              # If the scripts took longer than 60s, don't sleep (or set a 1s buffer)
-              if [ "$SLEEP_TIME" -le 0 ]; then
-                SLEEP_TIME=1
+              # Sleep only if we haven't passed the target time (e.g. if scripts took > 60s)
+              if [ "$SLEEP_TIME" -gt 0 ]; then
+              sleep "$SLEEP_TIME"
               fi
               
-              sleep "$SLEEP_TIME"
+              # 3. Calculate exact interval string (60, 120, 180...) for the filenames
+              RELATIVE_TIME=$(( ITERATION_NUMBER * INTERVAL ))
+              
+              # 4. Run your commands using RELATIVE_TIME
+              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json"
+              poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$RELATIVE_TIME.json" --compare account-values.json
+              
+              # 5. Increment iteration for the next loop
+              ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
             done
           ) > snapshot-loop.log 2>&1 &
         env:
