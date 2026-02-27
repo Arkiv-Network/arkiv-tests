@@ -610,6 +610,7 @@ jobs:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
       - name: Simple entity test
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           bun src/create_entity.ts
 
