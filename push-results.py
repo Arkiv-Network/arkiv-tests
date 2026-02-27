@@ -4,13 +4,13 @@ import os
 import requests
 
 
-def push_results(backend_url, test_name, results_file):
+def push_results(backend_url, test_name, results_file, seconds):
     """Read a flat results JSON file and POST it wrapped in {parameters: ...}."""
     with open(results_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     url = f"{backend_url}/test/{test_name}/results"
-    payload = {"parameters": data}
+    payload = {"parameters": data, "seconds": seconds}
 
     print(f"Posting results to: {url}")
     response = requests.post(url, json=payload)
@@ -25,6 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--url", help="Backend URL (defaults to TRACKER_BACKEND_URL env var)")
     parser.add_argument("--test-name", required=True, help="Test name")
     parser.add_argument("--file", required=True, help="Path to the results JSON file")
+    parser.add_argument("--seconds", type=int, required=True, help="How much time passed in tests")
 
     args = parser.parse_args()
     backend_url = args.url or os.getenv("TRACKER_BACKEND_URL")
@@ -33,4 +34,4 @@ if __name__ == "__main__":
         print("Error: Backend URL must be provided via --url or TRACKER_BACKEND_URL environment variable.")
         exit(1)
 
-    push_results(backend_url, args.test_name, args.file)
+    push_results(backend_url, args.test_name, args.file, args.seconds)

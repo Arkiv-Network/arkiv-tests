@@ -641,7 +641,7 @@ jobs:
               python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
               poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$RELATIVE_TIME.json" --compare account-values.json  > snapshot-loop.log 2>&1 || true
               TEST_NAME=${{ steps.test-name.outputs.val }}
-              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
+              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME > snapshot-loop.log 2>&1 || true
               
               # 5. Increment iteration for the next loop
               ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
@@ -677,18 +677,6 @@ jobs:
             --html "locust.html" > locust.log 2>&1 || true
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-
-      - name: Show balances of main accounts after tests
-        run: |
-          python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save results-finish-${{ inputs.test-length }}.json
-          poetry run python show-account-values.py --rpc-url http://localhost:8645 --save results-finish-${{ inputs.test-length }}.json --compare account-values.json
-        env:
-          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-          INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
-          INFLUXDB_TOKEN: my-super-secret-auth-token
-          INFLUXDB_ORG: arkiv-network
-          INFLUXDB_BUCKET: arkiv-tests
-          IS_EXTERNAL: ${{ inputs.is-external }}
 
       - name: Stop services
         if: ${{ inputs.is-external == 'false' }}
@@ -735,13 +723,5 @@ jobs:
         run: |
           TEST_NAME=${{ steps.test-name.outputs.val }}
           curl -sS -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
-        env:
-          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
-
-      - name: Upload results.json
-        if: always()
-        run: |
-          TEST_NAME=${{ steps.test-name.outputs.val }}
-          python push-results.py --test-name $TEST_NAME --file "results-${{ inputs.test-length }}.json"
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
