@@ -605,7 +605,7 @@ jobs:
 
       - name: Show balances of main accounts
         run: |
-          poetry run python show-account-values.py --rpc-url http://localhost:8645 --save-to-compare account-values.json
+          poetry run python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save-to-compare account-values.json
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
@@ -639,7 +639,7 @@ jobs:
               
               # 4. Run your commands using RELATIVE_TIME
               python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
-              poetry run python show-account-values.py --rpc-url http://localhost:8645 --save "results-$RELATIVE_TIME.json" --compare account-values.json  > snapshot-loop.log 2>&1 || true
+              poetry run python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json  > snapshot-loop.log 2>&1 || true
               TEST_NAME=${{ steps.test-name.outputs.val }}
               python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME > snapshot-loop.log 2>&1 || true
               
