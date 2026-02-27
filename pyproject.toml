@@ -25,7 +25,7 @@ prometheus-client = "^0.22.1"
 testcontainers = "^4.12"
 influxdb-client = "^1.50.0"
 requests = "^2.31.0"
-eth-account = "^1.9.0"
+eth-account = "^0.13.7"
 
 [tool.poetry.group.dev.dependencies]
 ruff = {version = "^0.14.6"}
