@@ -78,7 +78,7 @@ on:
       external-rpc-url:
         description: "RPC URL of external network, if is-external is true"
         required: false
-        default: "https://kaolin.hoodi.arkiv.network/rpc"
+        default: "https://v2test.hoodi.arkiv.network/rpc"
 
 jobs:
   arkiv-system-testing:
