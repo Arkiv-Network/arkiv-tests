@@ -60,6 +60,18 @@ def fetch_account_values(rpc_url, addresses, block_hex):
 # This is only proper way for formating decimal, using toString is dangerous and breaks things
 def wei_to_eth_str(wei):
     val = Web3.from_wei(wei, 'ether')
+    if val > 100:
+        return f"{val:.2f}"
+    if val > 10:
+        return f"{val:.3f}"
+    if val > 1:
+        return f"{val:.4f}"
+    if val > 0.1:
+        return f"{val:.5f}"
+    if val > 0.01:
+        return f"{val:.6f}"
+    if val > 0.001:
+        return f"{val:.7f}"
     return f"{val:f}"
 
 def main():
