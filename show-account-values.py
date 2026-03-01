@@ -125,17 +125,21 @@ def main():
 
     current_block_hex = hex(current_block)
 
-    # Fetch baseFeePerGas from the current block
+    # Fetch baseFeePerGas and gasLimit from the current block
     base_fee_per_gas = 0
+    gas_limit = 0
     block_response = rpc_post(args.rpc_url, "eth_getBlockByNumber", [current_block_hex, False])
     if block_response and 'result' in block_response and block_response['result']:
         raw = block_response['result'].get('baseFeePerGas', '0x0')
         base_fee_per_gas = int(raw, 16)
+        raw_gas_limit = block_response['result'].get('gasLimit', '0x0')
+        gas_limit = int(raw_gas_limit, 16)
 
     print(f"✅ Connected to RPC at {args.rpc_url}")
     print(f"   Node Version: {connection_response['result']}")
     print(f"   Current Block Number: {current_block}")
-    print(f"   Block Base Gas Price: {base_fee_per_gas} wei ({base_fee_per_gas / 10**9:.4f} Gwei)\n")
+    print(f"   Block Base Gas Price: {base_fee_per_gas} wei ({base_fee_per_gas / 10**9:.4f} Gwei)")
+    print(f"   Max Block Size (gas limit): {gas_limit}\n")
 
     accounts = fetch_account_values(args.rpc_url, addresses, current_block_hex)
 
@@ -175,6 +179,7 @@ def main():
     test_metrics = {
         "blockNumberArkiv": {"value": current_block},
         "blockBaseGasPrice": {"value": base_fee_per_gas, "display": wei_to_gwei_str(base_fee_per_gas)},
+        "maxBlockSize": {"value": gas_limit},
         "numAddressesChecked": {"value": len(accounts)},
         "accountsWithTx": {"value": accounts_with_tx},
         "gasSpent": {"value": net_balance_decrease, "display": wei_to_eth_str(net_balance_decrease)},
@@ -217,6 +222,7 @@ def main():
     print(f"   Net balance decrease (wei): {net_balance_decrease}")
     print(f"   Total transactions (in scope): {total_transactions}")
     print(f"   Block base gas price (wei): {base_fee_per_gas}")
+    print(f"   Max block size (gas limit): {gas_limit}")
 
 
 if __name__ == "__main__":
