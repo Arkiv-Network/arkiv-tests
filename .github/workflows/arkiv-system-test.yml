@@ -223,8 +223,12 @@ jobs:
           bun install
 
       - name: Setup python dependencies
+        id: poetry
         run: |
           poetry install
+          VENV_PATH=$(poetry env info --path)
+          VENV_PYTHON="$VENV_PATH/bin/python"
+          echo "python=$VENV_PYTHON" >> $GITHUB_OUTPUT
 
       - name: Run anvil
         if: ${{ inputs.is-external == 'false' }}
@@ -243,13 +247,13 @@ jobs:
           # Initialize the deployment intent
           set -x
           op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
-          L2_BLOCK_TIME=${{inputs.block-every-l2}} L2_GAS_LIMIT=${{inputs.block-limit}} python generate-intent-arkiv.py
+          L2_BLOCK_TIME=${{inputs.block-every-l2}} L2_GAS_LIMIT=${{inputs.block-limit}} $PYTHON_BIN generate-intent-arkiv.py
           echo "Contents of deploy-config/intent.toml:\n" && cat deploy-config/intent.toml
           op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
           op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
           op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
           
-          python patch-genesis.py 
+          $PYTHON_BIN patch-genesis.py 
           
           op-geth --datadir ./sequencer-data init --state.scheme=hash genesis.json > init_sequencer_genesis.log 2>&1
           op-geth --datadir ./validator-data init --state.scheme=hash genesis.json > init_validator_genesis.log 2>&1
@@ -296,6 +300,7 @@ jobs:
           curl -sS -X POST -F "file=@rollup.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
         env:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+          PYTHON_BIN: ${{ steps.poetry.outputs.python }}
 
       - name: Start da-server
         if: ${{ inputs.is-external == 'false' }}
@@ -633,10 +638,10 @@ jobs:
               RELATIVE_TIME=$(( ITERATION_NUMBER * INTERVAL ))
               
               # 4. Run your commands using RELATIVE_TIME
-              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" >> query-arkiv-loop.log 2>&1 || true
-              python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json >> show-accounts-arkiv-loop.log 2>&1 || true
+              $PYTHON_BIN query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" >> query-arkiv-loop.log 2>&1 || true
+              $PYTHON_BIN show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json >> show-accounts-arkiv-loop.log 2>&1 || true
               TEST_NAME=${{ steps.test-name.outputs.val }}
-              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME >> push-results-loop.log 2>&1 || true
+              $PYTHON_BIN push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME >> push-results-loop.log 2>&1 || true
               
               # 5. Increment iteration for the next loop
               ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
@@ -650,6 +655,7 @@ jobs:
           INFLUXDB_BUCKET: arkiv-tests
           IS_EXTERNAL: ${{ inputs.is-external }}
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+          PYTHON_BIN: ${{ steps.poetry.outputs.python }}
 
       - name: Start locust write only test
         if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' }}
