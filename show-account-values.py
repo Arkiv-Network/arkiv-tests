@@ -57,6 +57,10 @@ def fetch_account_values(rpc_url, addresses, block_hex):
         accounts[address] = {"balance": balance, "nonce": nonce}
     return accounts
 
+# This is only proper way for formating decimal, using toString is dangerous and breaks things
+def wei_to_eth_str(wei):
+    val = Web3.from_wei(wei, 'ether')
+    return f"{val:f}"
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch and aggregate Ethereum account balances and nonces.")
@@ -134,7 +138,7 @@ def main():
         "blockNumberArkiv": {"value": current_block},
         "numAddressesChecked": {"value": len(accounts)},
         "accountsWithTx": {"value": accounts_with_tx},
-        "gasSpent": {"value": net_balance_decrease, "display": Web3.from_wei(net_balance_decrease, 'ether')},
+        "gasSpent": {"value": net_balance_decrease, "display": wei_to_eth_str(net_balance_decrease)},
         "totalTransactions": {"value": total_transactions},
     }
 
@@ -176,4 +180,5 @@ def main():
 
 
 if __name__ == "__main__":
+    test_extreme_values()
     main()
