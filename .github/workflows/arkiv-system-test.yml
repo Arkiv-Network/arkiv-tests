@@ -103,6 +103,7 @@ jobs:
         run: |
           # hostname
           WORKER_NAME=$(hostname)
+          # here no poetry for faster start
           python notify-test-start.py \
             --parameters \
               testLength=${{ fromJSON(inputs.test-length) }} \
@@ -222,13 +223,7 @@ jobs:
         run: |
           bun install
 
-      - name: Install tests dependencies in background
-        if: ${{ inputs.is-external == 'false' }}
-        run: |
-          poetry install &
-
-      - name: Setup test
-        if: ${{ inputs.is-external == 'true' }}
+      - name: Setup python dependencies
         run: |
           poetry install
 
@@ -255,7 +250,7 @@ jobs:
           op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
           op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
           
-          python patch-genesis.py 
+          poetry run python patch-genesis.py 
           
           op-geth --datadir ./sequencer-data init --state.scheme=hash genesis.json > init_sequencer_genesis.log 2>&1
           op-geth --datadir ./validator-data init --state.scheme=hash genesis.json > init_validator_genesis.log 2>&1
@@ -496,7 +491,7 @@ jobs:
             > op-proposer.log 2>&1 & echo $! > op-proposer.pid
 
           # Wait up to 60 seconds for sequencer to produce blocks
-          python -u wait-for-blocks.py \
+          poetry run python -u wait-for-blocks.py \
             --l2-url http://localhost:8645 \
             --l1-url http://localhost:15900 \
             --timeout 60 \
@@ -574,7 +569,7 @@ jobs:
             > op-node-val.log 2>&1 & echo $! > op-node-val.pid
           
           # Wait up to 60 seconds for validator to produce blocks
-          python -u wait-for-blocks.py \
+          poetry run python -u wait-for-blocks.py \
             --l2-url http://localhost:8545 \
             --l1-url http://localhost:15900 \
             --timeout 60 \
@@ -588,7 +583,7 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
           export INSTANCE_NAME=$WORKER_NAME
-          python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
+          poetry run python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
         env:
           INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
           INFLUXDB_TOKEN: my-super-secret-auth-token
@@ -639,10 +634,10 @@ jobs:
               RELATIVE_TIME=$(( ITERATION_NUMBER * INTERVAL ))
               
               # 4. Run your commands using RELATIVE_TIME
-              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
+              poetry run python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
               poetry run python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json  > snapshot-loop.log 2>&1 || true
               TEST_NAME=${{ steps.test-name.outputs.val }}
-              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME > snapshot-loop.log 2>&1 || true
+              poetry run python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME > snapshot-loop.log 2>&1 || true
               
               # 5. Increment iteration for the next loop
               ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
