@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import requests
-
+from web3 import Web3
 
 def load_addresses(file_path):
     if not os.path.exists(file_path):
@@ -134,7 +134,7 @@ def main():
         "blockNumberArkiv": {"value": current_block},
         "numAddressesChecked": {"value": len(accounts)},
         "accountsWithTx": {"value": accounts_with_tx},
-        "netBalanceDecreaseWei": {"value": net_balance_decrease},
+        "gasSpent": {"value": net_balance_decrease, "display": Web3.from_wei(net_balance_decrease, 'ether')},
         "totalTransactions": {"value": total_transactions},
     }
 
