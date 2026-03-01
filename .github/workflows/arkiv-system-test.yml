@@ -633,15 +633,15 @@ jobs:
               RELATIVE_TIME=$(( ITERATION_NUMBER * INTERVAL ))
               
               # 4. Run your commands using RELATIVE_TIME
-              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" > snapshot-loop.log 2>&1 || true
-              python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json  > snapshot-loop.log 2>&1 || true
+              python query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" >> query-arkiv-loop.log 2>&1 || true
+              python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json >> show-accounts-arkiv-loop.log 2>&1 || true
               TEST_NAME=${{ steps.test-name.outputs.val }}
-              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME > snapshot-loop.log 2>&1 || true
+              python push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME >> push-results-loop.log 2>&1 || true
               
               # 5. Increment iteration for the next loop
               ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
             done
-          ) > snapshot-loop.log 2>&1 &
+          ) >> snapshot-loop.log 2>&1 &
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
           INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
