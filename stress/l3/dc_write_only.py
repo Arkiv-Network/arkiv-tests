@@ -57,10 +57,10 @@ Account.enable_unaudited_hdwallet_features()
 # =============================================================================
 
 DEFAULT_CREATOR_ADDRESS = "0x0000000000000000000000000000000000dc0001"
-DEFAULT_PAYLOAD_SIZE = os.getenv("DC_WRITE_ONLY_PAYLOAD_SIZE", 10000)
+DEFAULT_PAYLOAD_SIZE = int(os.getenv("DC_WRITE_ONLY_PAYLOAD_SIZE", "10000"))
 REAL_DC_PAYLOAD_CONTENT = False
 DEFAULT_DC_NUM = 1
-DEFAULT_WORKLOADS_PER_NODE = os.getenv("DC_WRITE_ONLY_WORKLOADS_PER_NODE", 5)
+DEFAULT_WORKLOADS_PER_NODE = int(os.getenv("DC_WRITE_ONLY_WORKLOADS_PER_NODE", "5"))
 DEFAULT_BLOCK = 1  # Starting block number (will be incremented per user)
 DEFAULT_BLOCK_DURATION_SECONDS = 2
 
