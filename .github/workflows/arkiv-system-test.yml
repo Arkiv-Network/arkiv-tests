@@ -328,6 +328,7 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
           
           op-geth-seq \
+            --miner.maxdatxsize 1000000 \
             --miner.maxdablocksize 1000000 \
             --datadir=./sequencer-data \
             --http \
@@ -515,6 +516,7 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
           
           op-geth-val \
+            --miner.maxdatxsize 1000000 \
             --miner.maxdablocksize 1000000 \
             --datadir=./validator-data \
             --http \
