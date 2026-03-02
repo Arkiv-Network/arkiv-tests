@@ -71,6 +71,10 @@ on:
         description: "Number of users to run"
         required: true
         default: "20"
+      dc-write-only-payload-size:
+        description: "Payload size for dc write only test"
+        required: true
+        default: "20000"
       is-external:
         description: "Whether test already deployed network"
         required: true
@@ -677,6 +681,7 @@ jobs:
             --print-stats \
             --html "locust.html" > locust.log 2>&1 || true
         env:
+          DC_WRITE_ONLY_PAYLOAD_SIZE: ${{ inputs.dc-write-only-payload-size }}
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
       - name: Stop services
