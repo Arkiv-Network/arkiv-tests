@@ -120,6 +120,7 @@ jobs:
               arkivOpProposer=${{ inputs.arkiv-op-proposer }} \
               arkivOpDaServer=${{ inputs.arkiv-op-da-server }} \
               blockLimit=${{ inputs.block-limit }} \
+              dcWriteOnlyPayloadSize=${{ inputs.dc-write-only-payload-size }} \
               testScenario=${{ inputs.test-scenario }} \
               testUsers=${{ inputs.test-users }} \
               isExternal=${{ inputs.is-external }} \
