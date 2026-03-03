@@ -74,9 +74,11 @@ def query_for_sum(test_name: str, measurement: str, start_time: str, end_time: s
     from(bucket: "arkiv-tests")
       |> range(start: {start_time}, stop: {end_time})
       |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+      |> filter(fn: (r) => r["_field"] == "sum")
       |> filter(fn: (r) => r["test"] == "{test_name}")
       {node_type_filter}
-      |> sum()
+      |> increase()
+      |> last()
     """
 
     with InfluxDBClient(url=INFLUXDB_URL, token=INFLUX_TOKEN, org=INFLUX_ORG) as client:
@@ -147,10 +149,8 @@ if __name__ == "__main__":
     max_wal_seq = safe_query("arkiv_sqlite_wal_size_bytes", "sequencer")
     max_wal_val = safe_query("arkiv_sqlite_wal_size_bytes", "validator")
     max_da_data = safe_query("arkiv_da_data_size", "")
-    gas_used_sequencer = safe_query("geth.chain/head/gas_used.gauge", "sequencer")
-    gas_used_validator = safe_query("geth.chain/head/gas_used.gauge", "validator")
 
-    # New: sum over gas_used_hist (chain/head/gas_used_hist)
+    # Sum over gas_used_hist (chain/head/gas_used_hist) using increase() + last()
     gas_used_hist_sequencer = safe_query_sum("chain/head/gas_used_hist", "sequencer")
     gas_used_hist_validator = safe_query_sum("chain/head/gas_used_hist", "validator")
 
@@ -164,8 +164,6 @@ if __name__ == "__main__":
         "sqliteWalSizeBytesSequencer": max_wal_seq,
         "sqliteWalSizeBytesValidator": max_wal_val,
         "daDataSize": max_da_data,
-        "gasUsedSequencer": gas_used_sequencer,
-        "gasUsedValidator": gas_used_validator,
         "gasUsedHistSequencer": gas_used_hist_sequencer,
         "gasUsedHistValidator": gas_used_hist_validator
     }
@@ -184,8 +182,6 @@ if __name__ == "__main__":
     print_entry("Max Geth DB Size for Sequencer", results["gethDbSizeSequencer"], "bytes")
     print_entry("Max Geth DB Size for Validator", results["gethDbSizeValidator"], "bytes")
     print_entry("DA data size", results["daDataSize"], "bytes")
-    print_entry("Gas Used at Sequencer Head", results["gasUsedSequencer"], "gas")
-    print_entry("Gas Used at Validator Head", results["gasUsedValidator"], "gas")
     print_entry("Gas Used (hist sum) at Sequencer Head", results["gasUsedHistSequencer"], "gas")
     print_entry("Gas Used (hist sum) at Validator Head", results["gasUsedHistValidator"], "gas")
 
