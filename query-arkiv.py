@@ -14,6 +14,7 @@ INFLUX_ORG = os.getenv("INFLUXDB_ORG", "arkiv-network")
 INFLUX_BUCKET = os.getenv("INFLUXDB_BUCKET", "arkiv-tests")
 
 
+
 # "260221T102531-LocustWriteOnly-int-zeus"
 def query_for_max(test_name: str, measurement: str, start_time: str, end_time: str, node_type: str):
     """
@@ -60,6 +61,43 @@ def query_for_max(test_name: str, measurement: str, start_time: str, end_time: s
 
 
 
+def query_for_sum(test_name: str, measurement: str, start_time: str, end_time: str, node_type: str):
+    """
+    Similar to query_for_max but computes the sum over the selected range.
+    Returns a tuple (time, value).
+    """
+    print(f"Querying (sum) InfluxDB from {start_time} to {end_time} for measurement '{measurement}', node='{node_type}'...\n")
+
+    node_type_filter = f'|> filter(fn: (r) => r["node"] == "{node_type}")' if node_type else ""
+
+    flux_query = f"""
+    from(bucket: "arkiv-tests")
+      |> range(start: {start_time}, stop: {end_time})
+      |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+      |> filter(fn: (r) => r["test"] == "{test_name}")
+      {node_type_filter}
+      |> sum()
+    """
+
+    with InfluxDBClient(url=INFLUXDB_URL, token=INFLUX_TOKEN, org=INFLUX_ORG) as client:
+        query_api = client.query_api()
+        result = query_api.query(org=INFLUX_ORG, query=flux_query)
+
+        time = None
+        value = None
+        record_count = 0
+        for table in result:
+            for record in table.records:
+                record_count += 1
+                time = record["_time"]
+                value = record["_value"]
+
+        if record_count != 1:
+            raise Exception(f"Expected exactly 1 record, but found {record_count} records in the sum result for measurement '{measurement}' and node '{node_type}'.")
+
+        return time, value
+
+
 if __name__ == "__main__":
     # Set up command-line arguments
     parser = argparse.ArgumentParser(description="Query InfluxDB with custom start and end times.")
@@ -93,6 +131,15 @@ if __name__ == "__main__":
         except Exception as e:
             return {"time": None, "value": None, "error": str(e)}
 
+    # Safe wrapper for sum queries
+    def safe_query_sum(measurement, node_type=""):
+        try:
+            t, v = query_for_sum(args.test_name, measurement, args.start, args.end, node_type)
+            t_s = str(t) if t is not None else None
+            return {"time": t_s, "value": v}
+        except Exception as e:
+            return {"time": None, "value": None, "error": str(e)}
+
     max_seq = safe_query("arkiv_sqlite_db_size_bytes", "sequencer")
     max_val = safe_query("arkiv_sqlite_db_size_bytes", "validator")
     max_geth_seq = safe_query("arkiv_geth_db_size", "sequencer")
@@ -102,6 +149,10 @@ if __name__ == "__main__":
     max_da_data = safe_query("arkiv_da_data_size", "")
     gas_used_sequencer = safe_query("geth.chain/head/gas_used.gauge", "sequencer")
     gas_used_validator = safe_query("geth.chain/head/gas_used.gauge", "validator")
+
+    # New: sum over gas_used_hist (chain/head/gas_used_hist)
+    gas_used_hist_sequencer = safe_query_sum("chain/head/gas_used_hist", "sequencer")
+    gas_used_hist_validator = safe_query_sum("chain/head/gas_used_hist", "validator")
 
 
     # Build structured results
@@ -114,25 +165,29 @@ if __name__ == "__main__":
         "sqliteWalSizeBytesValidator": max_wal_val,
         "daDataSize": max_da_data,
         "gasUsedSequencer": gas_used_sequencer,
-        "gasUsedValidator": gas_used_validator
+        "gasUsedValidator": gas_used_validator,
+        "gasUsedHistSequencer": gas_used_hist_sequencer,
+        "gasUsedHistValidator": gas_used_hist_validator
     }
 
     # Print summary to stdout (best-effort)
-    def print_entry(name, entry):
+    def print_entry(name, entry, unit="bytes"):
         if entry.get("error"):
             print(f"{name}: ERROR: {entry['error']}")
         else:
-            print(f"{name}: {entry['value']} bytes at {entry['time']}")
+            print(f"{name}: {entry['value']} {unit} at {entry['time']}")
 
-    print_entry("Max SQLite DB Size for Sequencer", results["sqliteDbSizeBytesSequencer"])
-    print_entry("Max SQLite DB Size for Validator", results["sqliteDbSizeBytesValidator"])
-    print_entry("Max SQLite WAL Size for Sequencer", results["sqliteWalSizeBytesSequencer"])
-    print_entry("Max SQLite WAL Size for Validator", results["sqliteWalSizeBytesValidator"])
-    print_entry("Max Geth DB Size for Sequencer", results["gethDbSizeSequencer"])
-    print_entry("Max Geth DB Size for Validator", results["gethDbSizeValidator"])
-    print_entry("DA data size", results["daDataSize"])
-    print_entry("Gas Used at Sequencer Head", results["gasUsedSequencer"])
-    print_entry("Gas Used at Validator Head", results["gasUsedValidator"])
+    print_entry("Max SQLite DB Size for Sequencer", results["sqliteDbSizeBytesSequencer"], "bytes")
+    print_entry("Max SQLite DB Size for Validator", results["sqliteDbSizeBytesValidator"], "bytes")
+    print_entry("Max SQLite WAL Size for Sequencer", results["sqliteWalSizeBytesSequencer"], "bytes")
+    print_entry("Max SQLite WAL Size for Validator", results["sqliteWalSizeBytesValidator"], "bytes")
+    print_entry("Max Geth DB Size for Sequencer", results["gethDbSizeSequencer"], "bytes")
+    print_entry("Max Geth DB Size for Validator", results["gethDbSizeValidator"], "bytes")
+    print_entry("DA data size", results["daDataSize"], "bytes")
+    print_entry("Gas Used at Sequencer Head", results["gasUsedSequencer"], "gas")
+    print_entry("Gas Used at Validator Head", results["gasUsedValidator"], "gas")
+    print_entry("Gas Used (hist sum) at Sequencer Head", results["gasUsedHistSequencer"], "gas")
+    print_entry("Gas Used (hist sum) at Validator Head", results["gasUsedHistValidator"], "gas")
 
     # Write results.json next to the script
     script_dir = os.path.dirname(__file__)
