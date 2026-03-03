@@ -14,7 +14,7 @@ on:
       arkiv-op-geth:
         description: "Arkiv op geth tag/commit used for tests"
         required: true
-        default: "v1.101605.0-2.1-da2"
+        default: "v1.101605.0-2.1-da3"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
@@ -74,7 +74,7 @@ on:
       dc-write-only-payload-size:
         description: "Payload size for dc write only test"
         required: true
-        default: "20000"
+        default: "30000"
       is-external:
         description: "Whether test already deployed network"
         required: true
