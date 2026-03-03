@@ -74,10 +74,9 @@ def query_for_sum(test_name: str, measurement: str, start_time: str, end_time: s
     from(bucket: "arkiv-tests")
       |> range(start: {start_time}, stop: {end_time})
       |> filter(fn: (r) => r["_measurement"] == "{measurement}")
-      |> filter(fn: (r) => r["_field"] == "sum")
       |> filter(fn: (r) => r["test"] == "{test_name}")
+      |> filter(fn: (r) => r["_field"] == "count")
       {node_type_filter}
-      |> increase()
       |> last()
     """
 
@@ -115,11 +114,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--test_name",
-        default="260221T102531-LocustWriteOnly-int-zeus",
+        default="260303T171720-LocustWriteOnly-int-luna",
         help="Test name to filter by (e.g., \"260221T102531-LocustWriteOnly-int-zeus\")"
     )
     parser.add_argument("--save", type=str, default=None,
-        help="Save strictly flat, numeric metrics to a JSON file for testing")
+                        help="Save strictly flat, numeric metrics to a JSON file for testing")
 
     args = parser.parse_args()
 
@@ -151,8 +150,8 @@ if __name__ == "__main__":
     max_da_data = safe_query("arkiv_da_data_size", "")
 
     # Sum over gas_used_hist (chain/head/gas_used_hist) using increase() + last()
-    gas_used_hist_sequencer = safe_query_sum("chain/head/gas_used_hist", "sequencer")
-    gas_used_hist_validator = safe_query_sum("chain/head/gas_used_hist", "validator")
+    gas_used_hist_sequencer = safe_query_sum("geth.chain/head/gas_used_hist.histogram", "sequencer")
+    gas_used_hist_validator = safe_query_sum("geth.chain/head/gas_used_hist.histogram", "validator")
 
 
     # Build structured results
