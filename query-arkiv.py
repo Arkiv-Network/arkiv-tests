@@ -100,6 +100,9 @@ if __name__ == "__main__":
     max_wal_seq = safe_query("arkiv_sqlite_wal_size_bytes", "sequencer")
     max_wal_val = safe_query("arkiv_sqlite_wal_size_bytes", "validator")
     max_da_data = safe_query("arkiv_da_data_size", "")
+    gas_used_sequencer = safe_query("geth.chain/head/gas_used.gauge", "sequencer")
+    gas_used_validator = safe_query("geth.chain/head/gas_used.gauge", "validator")
+
 
     # Build structured results
     results = {
@@ -109,7 +112,9 @@ if __name__ == "__main__":
         "gethDbSizeValidator": max_geth_val,
         "sqliteWalSizeBytesSequencer": max_wal_seq,
         "sqliteWalSizeBytesValidator": max_wal_val,
-        "daDataSize": max_da_data
+        "daDataSize": max_da_data,
+        "gasUsedSequencer": gas_used_sequencer,
+        "gasUsedValidator": gas_used_validator
     }
 
     # Print summary to stdout (best-effort)
@@ -126,6 +131,8 @@ if __name__ == "__main__":
     print_entry("Max Geth DB Size for Sequencer", results["gethDbSizeSequencer"])
     print_entry("Max Geth DB Size for Validator", results["gethDbSizeValidator"])
     print_entry("DA data size", results["daDataSize"])
+    print_entry("Gas Used at Sequencer Head", results["gasUsedSequencer"])
+    print_entry("Gas Used at Validator Head", results["gasUsedValidator"])
 
     # Write results.json next to the script
     script_dir = os.path.dirname(__file__)
