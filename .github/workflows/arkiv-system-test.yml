@@ -329,8 +329,6 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
           
           op-geth-seq \
-            --miner.maxdatxsize 1000000 \
-            --miner.maxdablocksize 1000000 \
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
@@ -424,6 +422,7 @@ jobs:
           # --throttle.unsafe-da-bytes-upper-threshold=80000000 
           # --max-l1-tx-size-bytes=1000001 
           op-batcher \
+            --throttle.block-size-upper-limit=${{inputs.altda-limit}} \
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
@@ -517,8 +516,6 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
           
           op-geth-val \
-            --miner.maxdatxsize 1000000 \
-            --miner.maxdablocksize 1000000 \
             --datadir=./validator-data \
             --http \
             --http.port=8545 \
