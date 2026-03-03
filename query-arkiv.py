@@ -172,19 +172,19 @@ if __name__ == "__main__":
             return {"time": None, "value": None, "error": str(e)}
 
     # Safe wrapper for sum queries
-    def safe_query_mean(measurement, node_type=""):
+    def safe_query_mean_int(measurement, node_type=""):
         try:
             t, v = query_for_mean(args.test_name, measurement, args.start, args.end, node_type)
             t_s = str(t) if t is not None else None
-            return {"time": t_s, "value": v}
+            return {"time": t_s, "value": int(v)}
         except Exception as e:
             return {"time": None, "value": None, "error": str(e)}
 
-    def safe_query_moving_average(measurement, node_type="", period=60):
+    def safe_query_moving_average_int(measurement, node_type="", period=60):
         try:
             t, v = query_for_moving_average(args.test_name, measurement, args.start, args.end, node_type, period)
             t_s = str(t) if t is not None else None
-            return {"time": t_s, "value": v}
+            return {"time": t_s, "value": int(v)}
         except Exception as e:
             return {"time": None, "value": None, "error": str(e)}
 
@@ -197,12 +197,12 @@ if __name__ == "__main__":
     max_da_data = safe_query("arkiv_da_data_size", "")
 
     # Sum over gas_used_hist (chain/head/gas_used_hist) using increase() + last()
-    gas_used_hist_sequencer = safe_query_mean("geth.chain/head/gas_used_hist.histogram", "sequencer")
-    gas_used_hist_validator = safe_query_mean("geth.chain/head/gas_used_hist.histogram", "validator")
+    gas_used_hist_sequencer = safe_query_mean_int("geth.chain/head/gas_used_hist.histogram", "sequencer")
+    gas_used_hist_validator = safe_query_mean_int("geth.chain/head/gas_used_hist.histogram", "validator")
 
     ma_period_seconds = 60
-    gas_used_ma_sequencer = safe_query_moving_average("geth.chain/head/gas_used.gauge", "sequencer", ma_period_seconds)
-    gas_used_ma_validator = safe_query_moving_average("geth.chain/head/gas_used.gauge", "validator", ma_period_seconds)
+    gas_used_ma_sequencer = safe_query_moving_average_int("geth.chain/head/gas_used.gauge", "sequencer", ma_period_seconds)
+    gas_used_ma_validator = safe_query_moving_average_int("geth.chain/head/gas_used.gauge", "validator", ma_period_seconds)
 
     # Build structured results
     results = {
