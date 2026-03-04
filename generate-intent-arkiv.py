@@ -39,8 +39,8 @@ sequencerWindowSize = 3600*12
 l1ChainID = 31337
 l2ChainID = 42069
 l2BlockTime = os.getenv("L2_BLOCK_TIME", "2")  # Default to 2 seconds if not set
-gas_limit = os.getenv("L2_GAS_LIMIT", "60000000")
-l2GenesisBlockGasLimit = 200000000
+gas_limit = int(os.getenv("L2_GAS_LIMIT", "60000000"))
+l2GenesisBlockGasLimit = gas_limit
 
 # 3. Define the Intent Content
 intent_content = f'''configType = "custom"

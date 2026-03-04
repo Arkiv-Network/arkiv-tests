@@ -75,6 +75,10 @@ on:
         description: "Payload size for dc write only test"
         required: true
         default: "30000"
+      arkiv-sdk-js:
+        description: "Arkiv SDK Tag/commit used for tests"
+        required: true
+        default: "48a4fd2"
       is-external:
         description: "Whether test already deployed network"
         required: true
@@ -216,6 +220,13 @@ jobs:
           op-batcher --version
           op-proposer --version
           da-server --version
+
+      - name: Download arkiv-sdk-js
+        run: |
+          (cd packages && git clone https://github.com/Arkiv-Network/arkiv-sdk-js)
+          (cd packages/arkiv-sdk-js && git checkout ${{ inputs.arkiv-sdk-js }})
+          bun install
+          bun --filter '@arkiv-network/sdk' run build
 
       - name: Install javascript dependencies in background
         if: ${{ inputs.is-external == 'false' }}

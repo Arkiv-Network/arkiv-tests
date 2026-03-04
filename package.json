@@ -6,8 +6,12 @@
   "author": "",
   "type": "module",
   "main": "write_example.ts",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "dependencies": {
-    "@arkiv-network/sdk": "*"
+    "@arkiv-network/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.5.6",
