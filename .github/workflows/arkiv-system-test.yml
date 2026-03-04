@@ -221,23 +221,13 @@ jobs:
           op-proposer --version
           da-server --version
 
-      - name: Download arkiv-sdk-js
+      - name: Download arkiv-sdk-js and prepare bun monorepo
         run: |
           (cd packages && git clone https://github.com/Arkiv-Network/arkiv-sdk-js)
           (cd packages/arkiv-sdk-js && git checkout ${{ inputs.arkiv-sdk-js }})
+          
           bun install
-          bun pm ls --all
-          bun --filter '@arkiv-network/sdk' run build
-
-      - name: Install javascript dependencies in background
-        if: ${{ inputs.is-external == 'false' }}
-        run: |
-          bun install&
-
-      - name: Install javascript dependencies
-        if: ${{ inputs.is-external == 'true' }}
-        run: |
-          bun install
+          bun run --filter @arkiv-network/sdk build
 
       - name: Setup python dependencies
         id: poetry
