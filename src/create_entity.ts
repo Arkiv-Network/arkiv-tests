@@ -68,6 +68,18 @@ async function main() {
 
   const newEntity = await publicClient.getEntity(entityKey);
   console.log("Entity:", newEntity.toJson());
+
+  publicClient.buildQuery()
+    .ownedBy(account.address)
+    .createdBy(account.address)
+    .fetch()
+    .then(qr => {
+      console.log("Queried entities:", qr.entities.map(e => e.toJson()));
+    })
+    .catch(error => {
+      console.error("Error querying entities:", error);
+    });
+
 }
 
 main()
