@@ -74,7 +74,11 @@ async function main() {
   const res = await builder
     .ownedBy(account.address)
     .fetch();
-  console.log("Query result:", res.entities.map(e => e.toJson()));
+  console.log("Query builder result:", res.entities.map(e => e.toJson()));
+
+  const query = await publicClient.query(`$owner=${account.address}`);
+  console.log("Raw query result:", query.entities.map(e => e.toJson()));
+
 }
 
 main()
