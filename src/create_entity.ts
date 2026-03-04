@@ -71,7 +71,6 @@ async function main() {
 
   const res = await publicClient.buildQuery()
     .ownedBy(account.address)
-    .createdBy(account.address)
     .fetch();
   console.log("Query result:", res.entities.map(e => e.toJson()));
 }
