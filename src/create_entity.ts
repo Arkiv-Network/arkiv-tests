@@ -72,7 +72,7 @@ async function main() {
 
   const builder = new QueryBuilder(publicClient)
   const res = await builder
-    .where(eq("1", "1"))
+    .where(eq("category", "documentation"))
     .ownedBy(account.address)
     .fetch();
   console.log("Query builder result:", res.entities.map(e => e.toJson()));
