@@ -1,14 +1,18 @@
-# Note for random readers: 
+## Note for external collaborators: 
 
 this is only part of greater system which is not yet fully public.
 
 Use this only as a reference. 
 
+## Test tracker is the place to go:
+
+[Test Tracker - Main page](https://tracker.arkiv-global.net)
+
+## Visual overview of the system
+
 ![Overview](Overview.png)
 
-Tracker:
-
-https://tracker.arkiv-global.net
+## Other stuff
 
 # useful greps for op batcher logs debugging
 
