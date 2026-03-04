@@ -240,6 +240,10 @@ jobs:
           # Build deps for root tests
           bun install
 
+      - name: Run js-sdk library tests
+        run: |
+          (cd arkiv-sdk-js/test && bun run test)
+
       - name: Setup python dependencies
         id: poetry
         run: |
