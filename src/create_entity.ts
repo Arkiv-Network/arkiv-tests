@@ -6,6 +6,7 @@ import {
 } from "@arkiv-network/sdk";
 import { privateKeyToAccount } from "@arkiv-network/sdk/accounts";
 import { ExpirationTime, jsonToPayload } from "@arkiv-network/sdk/utils";
+import {QueryBuilder} from "@arkiv-network/sdk/query";
 
 
 async function main() {
@@ -69,7 +70,8 @@ async function main() {
   const newEntity = await publicClient.getEntity(entityKey);
   console.log("Entity:", newEntity.toJson());
 
-  const res = await publicClient.buildQuery()
+  const builder = new QueryBuilder(publicClient)
+  const res = await builder
     .ownedBy(account.address)
     .fetch();
   console.log("Query result:", res.entities.map(e => e.toJson()));
