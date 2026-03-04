@@ -7,11 +7,8 @@
   "type": "module",
   "main": "write_example.ts",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "dependencies": {
-    "@arkiv-network/sdk": "workspace:*"
+    "@arkiv-network/sdk": "file:arkiv-sdk-js/arkiv-network-sdk-latest.tgz"
   },
   "devDependencies": {
     "@types/node": "^20.5.6",

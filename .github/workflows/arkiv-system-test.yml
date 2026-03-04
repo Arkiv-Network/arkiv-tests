@@ -221,13 +221,23 @@ jobs:
           op-proposer --version
           da-server --version
 
-      - name: Download arkiv-sdk-js and prepare bun monorepo
+      - name: Download arkiv-sdk-js and build package
         run: |
-          (cd packages && git clone https://github.com/Arkiv-Network/arkiv-sdk-js)
-          (cd packages/arkiv-sdk-js && git checkout ${{ inputs.arkiv-sdk-js }})
-          
+          git clone https://github.com/Arkiv-Network/arkiv-sdk-js
+          cd arkiv-sdk-js && {
+            git checkout ${{ inputs.arkiv-sdk-js }}
+            bun install
+            bun run package:test
+            if [ ! -f arkiv-network-sdk-latest.tgz ]; then
+              echo "Error: arkiv-network-sdk-latest.tgz not found!"
+              exit 1
+            fi
+            ls -lha arkiv-network-sdk-latest.tgz
+          }
+          # Build arkiv-sdk-js tests
+          (cd arkiv-sdk-js/test && bun install)
+          # Build main package for tests
           bun install
-          bun run --filter @arkiv-network/sdk build
 
       - name: Setup python dependencies
         id: poetry
