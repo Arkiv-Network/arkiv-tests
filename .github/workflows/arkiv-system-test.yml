@@ -244,7 +244,7 @@ jobs:
         run: |
           (cd arkiv-sdk-js/test && bun run test)
         env:
-          PRIVATE_KEY: "6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
+          PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
 
       - name: Setup python dependencies
         id: poetry
