@@ -7,6 +7,7 @@ import {
 import { privateKeyToAccount } from "@arkiv-network/sdk/accounts";
 import { ExpirationTime, jsonToPayload } from "@arkiv-network/sdk/utils";
 import {eq, QueryBuilder} from "@arkiv-network/sdk/query";
+import {Hex} from "viem";
 
 
 async function main() {
@@ -61,7 +62,7 @@ async function main() {
       {key: "category", value: "documentation"},
       {key: "version", value: "1.0"},
     ],
-    expiresIn: ExpirationTime.fromDays(30), // Entity expires in 30 days
+    expiresIn: ExpirationTime.fromMinutes(10), // Entity expires in 30 days
   });
 
   console.log("Created entity:", entityKey);
@@ -84,8 +85,28 @@ async function main() {
       metadata: true,
     }
   });
-  console.log("Raw query result:", query.entities.map(e => e.toJson()));
+  if (query.entities.length === 0) {
+    throw Error("No entities found for the query");
+  }
+  if (query.entities.length > 1) {
+    throw Error("More than 1 entity found for the query, expected only 1");
+  }
+  const ent = query.entities[0];
 
+  console.log("  Hex: ", ent.key);
+  console.log("  Content Type: ", ent.contentType);
+  console.log("  Creator: ", ent.creator);
+  console.log("  Owner: ", ent.owner);
+  console.log("  Expires At Block: ", ent.expiresAtBlock);
+  console.log("  Created At Block: ", ent.createdAtBlock);
+  console.log("  Last Modified At Block: ", ent.lastModifiedAtBlock);
+  console.log("  Transaction Index In Block: ", ent.transactionIndexInBlock);
+  console.log("  Operation Index In Transaction: ", ent.operationIndexInTransaction);
+  console.log(`  Attributes: (${ent.attributes.length})`);
+  for (const attr of ent.attributes) {
+    console.log(`    - ${attr.key}: ${attr.value}`);
+  }
+  console.log("Entity payload:", ent.toJson());
 }
 
 main()
