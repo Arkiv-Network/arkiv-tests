@@ -77,7 +77,13 @@ async function main() {
     .fetch();
   console.log("Query builder result:", res.entities.map(e => e.toJson()));
 
-  const query = await publicClient.query(`$owner=${account.address} && $creator=${account.address}`);
+  const query = await publicClient.query(`$owner=${account.address} && $creator=${account.address}`, {
+    includeData: {
+      attributes: true,
+      payload: true,
+      metadata: true,
+    }
+  });
   console.log("Raw query result:", query.entities.map(e => e.toJson()));
 
 }
