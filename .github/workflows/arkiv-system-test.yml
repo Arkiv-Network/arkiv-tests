@@ -78,7 +78,7 @@ on:
       arkiv-sdk-js:
         description: "Arkiv SDK Tag/commit used for tests"
         required: true
-        default: "creator-field"
+        default: "develop"
       is-external:
         description: "Whether test already deployed network"
         required: true
