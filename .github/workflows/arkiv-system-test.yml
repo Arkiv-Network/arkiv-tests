@@ -245,13 +245,16 @@ jobs:
           MNEMONIC: ${{ secrets.CELESTIA_MNEMONIC  }}
         run: |
           set -x
-          mkdir keyring && mkdir keyring/keyring-test
-          celestia-appd keys add my_celes_key --keyring-backend test --home keyring/keyring-test --recover <<< "$MNEMONIC"
+          mkdir -p keyring/keyring-home
+          celestia-appd keys add my_celes_key --keyring-backend test --home keyring/keyring-home --recover <<< "$MNEMONIC"
+          mv keyring/keyring-home/keyring-test keyring/keyring-test
+          rm -r keyring/keyring-home
+          
           ls -la keyring/keyring-test/
           # make sure there is exactly one key in the keyring
           KEY_COUNT=$(ls -1 keyring/keyring-test/ | wc -l)
-          if [ "$KEY_COUNT" -ne 2 ]; then
-              echo "Error: Expected two files, but found $KEY_COUNT"
+          if [ "$KEY_COUNT" -ne 1 ]; then
+              echo "Error: Expected exactly one key in the keyring, but found $KEY_COUNT"
               exit 1
           fi
 
