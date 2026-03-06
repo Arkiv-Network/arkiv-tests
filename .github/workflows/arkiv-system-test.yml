@@ -54,7 +54,7 @@ on:
       altda-limit:
         description: "Alt-da limit"
         required: true
-        default: "500000"
+        default: "130000"
       min-unsafe-limit:
         description: "Min threshold for unsafe da bytes to trigger throttling"
         required: true
