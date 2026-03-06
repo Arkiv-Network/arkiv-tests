@@ -239,6 +239,26 @@ jobs:
           
           celestia-appd version
 
+      - name: Recover Celestia keyring
+        if: ${{ inputs.use-celestia == 'true' }}
+        env:
+          MNEMONIC: ${{ secrets.CELESTIA_MNEMONIC  }}
+        run: |
+          set -x
+          # uninstall previous versions
+          rm -f /usr/local/bin/celestia-appd
+          
+          celestia-appd keys add my_celes_key --keyring-backend test --home /tmp/keyring-home --recover <<< "$MNEMONIC"
+          mkdir -p keyring/keyring-test
+          cp -r /tmp/keyring-home/keyring-test/* keyring/keyring-test/
+          ls -la keyring/keyring-test/
+          # make sure there is exactly one key in the keyring
+          KEY_COUNT=$(ls -1 keyring/keyring-test/ | wc -l)
+          if [ "$KEY_COUNT" -ne 1 ]; then
+              echo "Error: Expected exactly one key in the keyring, but found $KEY_COUNT"
+              exit 1
+          fi
+
       - name: Download arkiv-sdk-js and build package
         run: |
           git clone https://github.com/Arkiv-Network/arkiv-sdk-js
