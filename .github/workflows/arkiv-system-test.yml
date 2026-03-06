@@ -396,13 +396,13 @@ jobs:
             --celestia.compact-blobid \
             --celestia.server=https://wiser-proportionate-bird.celestia-mocha.quiknode.pro \
             --celestia.tls-enabled \
-            --celestia.auth-token=$(CELESTIA_QUICKNODE_AUTH_TOKEN) \
+            --celestia.auth-token=$CELESTIA_QUICKNODE_AUTH_TOKEN \
             --celestia.tx-client.keyring-path=keyring \
             --celestia.tx-client.key-name=my_celes_key \
             --celestia.tx-client.p2p-network=mocha-4 \
             --celestia.tx-client.core-grpc.addr=wiser-proportionate-bird.celestia-mocha.quiknode.pro:9090 \
             --celestia.tx-client.core-grpc.tls-enabled \
-            --celestia.tx-client.core-grpc.auth-token=$(CELESTIA_QUICKNODE_AUTH_TOKEN) \
+            --celestia.tx-client.core-grpc.auth-token=$CELESTIA_QUICKNODE_AUTH_TOKEN \
             > da-server.log 2>&1 & echo $! > da-server.pid
         env:
           CELESTIA_QUICKNODE_AUTH_TOKEN: ${{ secrets.CELESTIA_QUICKNODE_AUTH_TOKEN }}
