@@ -54,7 +54,7 @@ on:
       altda-limit:
         description: "Alt-da limit"
         required: true
-        default: "5000000"
+        default: "500000"
       min-unsafe-limit:
         description: "Min threshold for unsafe da bytes to trigger throttling"
         required: true
@@ -74,7 +74,7 @@ on:
       dc-write-only-payload-size:
         description: "Payload size for dc write only test"
         required: true
-        default: "30000"
+        default: "3000"
       arkiv-sdk-js:
         description: "Arkiv SDK Tag/commit used for tests"
         required: true
