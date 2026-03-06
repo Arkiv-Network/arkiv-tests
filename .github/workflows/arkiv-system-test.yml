@@ -83,6 +83,10 @@ on:
         description: "Whether test already deployed network"
         required: true
         default: "false"
+      use-celestia:
+        description: "Whether to use Celestia for data availability instead of the da-server"
+        required: true
+        default: "true"
       external-rpc-url:
         description: "RPC URL of external network, if is-external is true"
         required: false
@@ -185,7 +189,6 @@ jobs:
           rm -f /usr/local/bin/op-batcher
           rm -f /usr/local/bin/op-proposer
           rm -f /usr/local/bin/da-server
-          rm -f /usr/local/bin/celestia-appd
           
           ARKIV_GETH_TAG=${{ inputs.arkiv-op-geth }}
           OP_NODE_TAG=${{ inputs.arkiv-op-node }}
@@ -206,9 +209,7 @@ jobs:
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv da-server /usr/local/bin/ \
             && curl -sL https://github.com/arkiv-network/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv op-geth /usr/local/bin/ \
-            && curl -sL https://github.com/celestiaorg/celestia-app/releases/download/v6.4.10/celestia-app_Linux_x86_64.tar.gz | tar -xz \
-            && mv celestia-appd /usr/local/bin/
+            && mv op-geth /usr/local/bin/
           
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
           cp /usr/local/bin/op-geth /usr/local/bin/op-geth-seq
@@ -223,6 +224,19 @@ jobs:
           op-batcher --version
           op-proposer --version
           da-server --version
+
+      - name: Get celestia-appd binary
+        if: ${{ inputs.use-celestia == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          # uninstall previous versions
+          rm -f /usr/local/bin/celestia-appd
+          
+          curl -sL https://github.com/celestiaorg/celestia-app/releases/download/v6.4.10/celestia-app_Linux_x86_64.tar.gz | tar -xz \
+            && mv celestia-appd /usr/local/bin/
+          
           celestia-appd version
 
       - name: Download arkiv-sdk-js and build package
