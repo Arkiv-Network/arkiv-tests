@@ -245,9 +245,6 @@ jobs:
           MNEMONIC: ${{ secrets.CELESTIA_MNEMONIC  }}
         run: |
           set -x
-          # uninstall previous versions
-          rm -f /usr/local/bin/celestia-appd
-          
           celestia-appd keys add my_celes_key --keyring-backend test --home /tmp/keyring-home --recover <<< "$MNEMONIC"
           mkdir -p keyring/keyring-test
           cp -r /tmp/keyring-home/keyring-test/* keyring/keyring-test/
