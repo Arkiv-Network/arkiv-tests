@@ -255,9 +255,9 @@ jobs:
           
           ls -la keyring/keyring-test/
           # make sure there is exactly one key in the keyring
-          KEY_COUNT=$(ls -1 keyring/keyring-test/ | wc -l)
-          if [ "$KEY_COUNT" -ne 1 ]; then
-              echo "Error: Expected exactly one key in the keyring, but found $KEY_COUNT"
+          FILE_COUNT=$(ls -1 keyring/keyring-test/ | wc -l)
+          if [ "$FILE_COUNT" -ne 2 ]; then
+              echo "Error: Expected exactly two files in the keyring, but found $FILE_COUNT"
               exit 1
           fi
 
