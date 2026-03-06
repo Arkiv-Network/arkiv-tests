@@ -86,7 +86,7 @@ on:
       use-celestia:
         description: "Whether to use Celestia for data availability instead of the da-server"
         required: true
-        default: "true"
+        default: "false"
       external-rpc-url:
         description: "RPC URL of external network, if is-external is true"
         required: false
