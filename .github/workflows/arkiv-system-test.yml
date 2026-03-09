@@ -173,7 +173,7 @@ jobs:
         run: |
           set -x
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-          sudo mv forge cast anvil chisel $HOME/bin/
+          mv forge cast anvil chisel $HOME/bin/
           forge --version
           chisel --version
           cast --version
