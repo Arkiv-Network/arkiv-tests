@@ -278,7 +278,9 @@ jobs:
 
       - name: Run js-sdk library tests
         run: |
-          (cd arkiv-sdk-js/test && bun run test)
+          (cd arkiv-sdk-js/test && bun run test:component)
+        env:
+          PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
 
       - name: Setup python dependencies
         id: poetry
