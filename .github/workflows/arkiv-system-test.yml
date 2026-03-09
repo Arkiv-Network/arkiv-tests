@@ -161,16 +161,20 @@ jobs:
       #- name: Install bun
       #  uses: oven-sh/setup-bun@v2
 
-      # Already installed on custom runners
-      #- name: Get foundry cli
-      #  run: |
-      #    set -x
-      #    curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-      #    sudo mv forge cast anvil chisel $HOME/bin/
-      #    forge --version
-      #    chisel --version
-      #    cast --version
-      #    anvil --version
+      - name: Register binary folders in PATH
+        run: |
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Get foundry cli
+        run: |
+          set -x
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
+          sudo mv forge cast anvil chisel $HOME/bin/
+          forge --version
+          chisel --version
+          cast --version
+          anvil --version
 
       - name: Get op-geth, op-node and op-deployer binaries
         if: ${{ inputs.is-external == 'false' }}
@@ -178,7 +182,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -x
-          BIN_PATH=${{ github.workspace }}/binaries
+          BIN_PATH=${{ github.workspace }}/bin
           # Directory should not exist
           mkdir $BIN_PATH
           
