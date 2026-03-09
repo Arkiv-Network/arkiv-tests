@@ -260,7 +260,7 @@ jobs:
       - name: Download arkiv-sdk-js and build package
         run: |
           git clone https://github.com/Arkiv-Network/arkiv-sdk-js
-          
+          git checkout copilot/add-alternative-test-possibility
           # Prepare package as a tarball
           (
             cd arkiv-sdk-js
@@ -280,6 +280,8 @@ jobs:
         run: |
           (cd arkiv-sdk-js/test && bun run test:component)
         env:
+          ARKIV_SDK_TEST_RPC_URL: http://localhost:8645
+          ARKIV_SDK_TEST_WS_URL: http://localhost:8647
           PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
 
       - name: Setup python dependencies
