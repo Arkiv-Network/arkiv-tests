@@ -106,9 +106,9 @@ jobs:
       - name: Cleanup after previous runs
         run: |
           # cleanup op-deployer caches
-          rm -rf ~/.op-deployer
+          rm -rf $HOME/.op-deployer
           # clean up anvil data and logs
-          rm -rf ~/.foundry
+          rm -rf $HOME/.foundry
 
       - name: Set test name
         id: test-name
@@ -166,7 +166,7 @@ jobs:
       #  run: |
       #    set -x
       #    curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-      #    sudo mv forge cast anvil chisel ~/bin/
+      #    sudo mv forge cast anvil chisel $HOME/bin/
       #    forge --version
       #    chisel --version
       #    cast --version
@@ -178,18 +178,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -x
-          # uninstall previous versions
-          mkdir -p ~/bin
-          rm -f ~/bin/op-geth
-          rm -f ~/bin/op-geth-seq
-          rm -f ~/bin/op-geth-val
-          rm -f ~/bin/op-node
-          rm -f ~/bin/op-node-seq
-          rm -f ~/bin/op-node-val
-          rm -f ~/bin/op-deployer
-          rm -f ~/bin/op-batcher
-          rm -f ~/bin/op-proposer
-          rm -f ~/bin/da-server
+          $BIN_PATH=${{ github.workspace }}/binaries
+          
+          echo "$BIN_PATH" >> $GITHUB_PATH          
           
           ARKIV_GETH_TAG=${{ inputs.arkiv-op-geth }}
           OP_NODE_TAG=${{ inputs.arkiv-op-node }}
@@ -198,28 +189,27 @@ jobs:
           OP_PROPOSER_TAG=${{ inputs.arkiv-op-proposer }}
           OP_DA_SERVER_TAG=${{ inputs.arkiv-op-da-server }}
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
-            && mv forge cast anvil chisel ~/bin/ \
+            && mv forge cast anvil chisel $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv op-node ~/bin/ \
+            && mv op-node $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv op-batcher ~/bin/ \
+            && mv op-batcher $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv op-proposer ~/bin/ \
+            && mv op-proposer $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv op-deployer ~/bin/ \
+            && mv op-deployer $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv da-server ~/bin/ \
+            && mv da-server $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv op-geth ~/bin/
+            && mv op-geth $BIN_PATH/
           
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
-          cp ~/bin/op-geth ~/bin/op-geth-seq
-          cp ~/bin/op-geth ~/bin/op-geth-val
+          cp $BIN_PATH/op-geth $BIN_PATH/op-geth-seq
+          cp $BIN_PATH/op-geth $BIN_PATH/op-geth-val
           
-          cp ~/bin/op-node ~/bin/op-node-seq
-          cp ~/bin/op-node ~/bin/op-node-val
+          cp $BIN_PATH/op-node $BIN_PATH/op-node-seq
+          cp $BIN_PATH/op-node $BIN_PATH/op-node-val
           
-          export PATH="$HOME/bin:$PATH"  
           op-node --version
           op-deployer --version
           op-geth version
@@ -233,13 +223,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -x
-          # uninstall previous versions
-          rm -f ~/bin/celestia-appd
+          $BIN_PATH=${{ github.workspace }}/binaries
           
           curl -sL https://github.com/celestiaorg/celestia-app/releases/download/v6.4.10/celestia-app_Linux_x86_64.tar.gz | tar -xz \
-            && mv celestia-appd ~/bin/
+            && mv celestia-appd $BIN_PATH/
           curl -sL https://github.com/celestiaorg/op-alt-da/releases/download/v0.13.0-mocha/op-alt-da_0.13.0-mocha_linux_amd64.tar.gz | tar -xz \
-            && mv op-alt-da ~/bin/celestia-alt-da
+            && mv op-alt-da $BIN_PATH/celestia-alt-da
           
           celestia-appd version
           celestia-alt-da --version
