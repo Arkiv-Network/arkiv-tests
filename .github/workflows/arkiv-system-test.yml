@@ -186,11 +186,7 @@ jobs:
         run: |
           set -x
           BIN_PATH=${{ github.workspace }}/bin
-          # Directory should not exist
-          mkdir $BIN_PATH
-          
-          echo "$BIN_PATH" >> $GITHUB_PATH          
-          
+
           ARKIV_GETH_TAG=${{ inputs.arkiv-op-geth }}
           OP_NODE_TAG=${{ inputs.arkiv-op-node }}
           OP_BATCHER_TAG=${{ inputs.arkiv-op-batcher }}
