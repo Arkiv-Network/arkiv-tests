@@ -277,7 +277,6 @@ jobs:
           bun install
 
       - name: Run js-sdk library tests
-        if: false
         run: |
           (cd arkiv-sdk-js/test && bun run test)
         env:
