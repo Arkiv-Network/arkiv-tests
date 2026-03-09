@@ -179,6 +179,7 @@ jobs:
         run: |
           set -x
           $BIN_PATH=${{ github.workspace }}/binaries
+          # Directory should not exist
           mkdir $BIN_PATH
           
           echo "$BIN_PATH" >> $GITHUB_PATH          
