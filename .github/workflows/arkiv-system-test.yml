@@ -179,6 +179,7 @@ jobs:
         run: |
           set -x
           $BIN_PATH=${{ github.workspace }}/binaries
+          mkdir $BIN_PATH
           
           echo "$BIN_PATH" >> $GITHUB_PATH          
           
