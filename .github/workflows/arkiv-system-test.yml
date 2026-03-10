@@ -408,6 +408,11 @@ jobs:
             --http.addr=0.0.0.0 \
             --http.vhosts="*" \
             --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
+            --ws \
+            --ws.addr=0.0.0.0 \
+            --ws.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
+            --ws.origins="*" \
+            --ws.port=8646 \
             --authrpc.addr=0.0.0.0 \
             --authrpc.port=8651 \
             --authrpc.vhosts="*" \
@@ -663,7 +668,7 @@ jobs:
           (cd arkiv-sdk-js/test && bun run test:component)
         env:
           ARKIV_SDK_TEST_RPC_URL: http://localhost:8645
-          ARKIV_SDK_TEST_WS_URL: http://localhost:8647
+          ARKIV_SDK_TEST_WS_URL: ws://localhost:8646
           PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
 
       - name: Gather metrics
