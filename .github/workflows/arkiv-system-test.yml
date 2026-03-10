@@ -366,6 +366,9 @@ jobs:
             --port 3100 \
             --file.path ./da-data \
             --generic-commitment \
+            --metrics.enabled=true \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=7385 \
             > da-server.log 2>&1 & echo $! > da-server.pid
 
       - name: Start Celestia da-server
@@ -389,6 +392,9 @@ jobs:
             --celestia.tx-client.core-grpc.addr=wiser-proportionate-bird.celestia-mocha.quiknode.pro:9090 \
             --celestia.tx-client.core-grpc.tls-enabled \
             --celestia.tx-client.core-grpc.auth-token=$CELESTIA_QUICKNODE_AUTH_TOKEN \
+            --metrics.enabled=true \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=7385 \
             > da-server.log 2>&1 & echo $! > da-server.pid
         env:
           CELESTIA_QUICKNODE_AUTH_TOKEN: ${{ secrets.CELESTIA_QUICKNODE_AUTH_TOKEN }}
