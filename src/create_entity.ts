@@ -59,7 +59,7 @@ async function main() {
     }),
     contentType: "application/json",
     attributes: [
-      {key: "category", value: "documentation"},
+      {key: "category", value: "simple-test"},
       {key: "version", value: "1.0"},
     ],
     expiresIn: ExpirationTime.fromMinutes(10), // Entity expires in 30 days
@@ -73,12 +73,12 @@ async function main() {
 
   const builder = new QueryBuilder(publicClient)
   const res = await builder
-    .where(eq("category", "documentation"))
+    .where(eq("category", "simple-test"))
     .ownedBy(account.address)
     .fetch();
   console.log("Query builder result:", res.entities.map(e => e.toJson()));
 
-  const query = await publicClient.query(`$owner=${account.address} && $creator=${account.address}`, {
+  const query = await publicClient.query(`$owner=${account.address} && $creator=${account.address} && category="simple-test"`, {
     includeData: {
       attributes: true,
       payload: true,
