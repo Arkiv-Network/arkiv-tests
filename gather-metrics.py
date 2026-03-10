@@ -125,8 +125,13 @@ def create_point(measurement, value, tags=None):
 
 
 def scrape_prometheus_target(target_name, url):
-    response = requests.get(url, timeout=5)
-    response.raise_for_status()
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Unable to fetch Prometheus metrics for {target_name} from {url}"
+        ) from exc
 
     points = []
     for family in text_string_to_metric_families(response.text):
@@ -143,7 +148,11 @@ def scrape_prometheus_target(target_name, url):
 
 
 async def collect_scraped_metrics_points():
-    scrape_target_items = [(target_name, url) for target_name, url in SCRAPE_TARGETS.items() if url]
+    scrape_target_items = [
+        (target_name, url)
+        for target_name, url in SCRAPE_TARGETS.items()
+        if url and url.strip()
+    ]
     if not scrape_target_items:
         return []
 
@@ -156,7 +165,7 @@ async def collect_scraped_metrics_points():
     )
 
     points = []
-    for (target_name, _), result in zip(scrape_target_items, results, strict=False):
+    for (target_name, _), result in zip(scrape_target_items, results, strict=True):
         if isinstance(result, Exception):
             print(f"Failed to scrape {target_name} metrics: {result}")
             continue
