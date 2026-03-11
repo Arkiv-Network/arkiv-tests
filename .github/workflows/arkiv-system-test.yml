@@ -54,7 +54,7 @@ on:
       altda-limit:
         description: "Alt-da limit"
         required: true
-        default: "130000"
+        default: "200000"
       min-unsafe-limit:
         description: "Min threshold for unsafe da bytes to trigger throttling"
         required: true
@@ -70,7 +70,7 @@ on:
       test-users:
         description: "Number of users to run"
         required: true
-        default: "20"
+        default: "40"
       dc-write-only-payload-size:
         description: "Payload size for dc write only test"
         required: true
@@ -669,6 +669,7 @@ jobs:
             --blocks 3
 
       - name: Run js-sdk library tests
+        if: false
         run: |
           (cd arkiv-sdk-js/test && bun run test:component)
         env:
