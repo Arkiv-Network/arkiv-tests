@@ -693,6 +693,8 @@ jobs:
           INFLUXDB_TOKEN: my-super-secret-auth-token
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
+          OP_BATCHER_METRICS_URL: http://127.0.0.1:7365/metrics
+          OP_PROPOSER_METRICS_URL: http://127.0.0.1:7375/metrics
 
       - name: Notify that the test is starting
         run: |
