@@ -393,7 +393,6 @@ jobs:
             --celestia.tx-client.core-grpc.tls-enabled \
             --celestia.tx-client.core-grpc.auth-token=$CELESTIA_QUICKNODE_AUTH_TOKEN \
             --metrics.enabled=true \
-            --metrics.addr=0.0.0.0 \
             --metrics.port=7385 \
             > da-server.log 2>&1 & echo $! > da-server.pid
         env:
