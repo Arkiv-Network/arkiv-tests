@@ -241,7 +241,7 @@ jobs:
       - name: Recover Celestia keyring
         if: ${{ inputs.use-celestia == 'true' }}
         env:
-          MNEMONIC: ${{ secrets.CELESTIA_MNEMONIC  }}
+          MNEMONIC: ${{ secrets.CELESTIA_SCX_MNEMONIC  }}
         run: |
           set -x
           mkdir -p keyring/keyring-home
@@ -385,11 +385,11 @@ jobs:
             --port 3100 \
             --celestia.namespace=000000000000000000000000000000000000007323c069f0a07b3e8e12 \
             --celestia.compact-blobid \
-            --celestia.server=https://wiser-proportionate-bird.celestia-mocha.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN \
+            --celestia.server=https://wiser-proportionate-bird.celestia-mainnet.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN \
             --celestia.tx-client.keyring-path=keyring \
             --celestia.tx-client.key-name=my_celes_key \
             --celestia.tx-client.p2p-network=mocha-4 \
-            --celestia.tx-client.core-grpc.addr=wiser-proportionate-bird.celestia-mocha.quiknode.pro:9090 \
+            --celestia.tx-client.core-grpc.addr=wiser-proportionate-bird.celestia-mainnet.quiknode.pro:9090 \
             --celestia.tx-client.core-grpc.tls-enabled \
             --celestia.tx-client.core-grpc.auth-token=$CELESTIA_QUICKNODE_AUTH_TOKEN \
             --metrics.enabled=true \
