@@ -246,6 +246,11 @@ jobs:
           set -x
           mkdir -p keyring/keyring-home
           celestia-appd keys add my_celes_key --keyring-backend test --home keyring/keyring-home --recover <<< "$MNEMONIC"
+          
+          # Extract the address and add it to the GitHub environment
+          CELESTIA_ADDRESS=$(celestia-appd keys show my_celes_key -a --keyring-backend test --home keyring/keyring-home)
+          echo "CELESTIA_ADDRESS=$CELESTIA_ADDRESS" >> $GITHUB_ENV
+    
           mv keyring/keyring-home/keyring-test keyring/keyring-test
           rm -r keyring/keyring-home
           
