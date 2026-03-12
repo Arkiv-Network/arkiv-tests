@@ -1,4 +1,5 @@
 import asyncio
+import json
 import math
 import os
 import socket
@@ -12,6 +13,8 @@ from prometheus_client.parser import text_string_to_metric_families
 JOB_NAME = os.getenv("JOB_NAME", "geth-metrics-job")
 INSTANCE_NAME = os.getenv("INSTANCE_NAME", socket.gethostname())
 PUSH_INTERVAL_SECONDS = float(os.getenv("METRICS_PUSH_INTERVAL_SECONDS", "1"))
+CELESTIA_ADDRESS = os.getenv("CELESTIA_ADDRESS", "").strip()
+CELESTIA_RPC_ADDR = os.getenv("CELESTIA_RPC_ADDR", "").strip()
 
 SCRAPE_TARGETS = {
     "op-batcher": os.getenv(
@@ -123,6 +126,45 @@ def create_point(measurement, value, tags=None):
     return point.field("value", float(value))
 
 
+async def collect_celestia_balance_points():
+    if not CELESTIA_ADDRESS or not CELESTIA_RPC_ADDR:
+        return []
+
+    process = await asyncio.create_subprocess_exec(
+        "celestia-appd",
+        "query",
+        "bank",
+        "balances",
+        CELESTIA_ADDRESS,
+        "--node",
+        CELESTIA_RPC_ADDR,
+        "--output",
+        "json",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await process.communicate()
+    if process.returncode != 0:
+        raise RuntimeError(
+            "Unable to fetch Celestia account balance: "
+            f"{stderr.decode().strip() or stdout.decode().strip()}"
+        )
+
+    response = json.loads(stdout)
+    utia_balance = 0
+    for balance in response.get("balances", []):
+        if balance.get("denom") == "utia":
+            utia_balance = int(balance.get("amount", 0))
+            break
+
+    return [
+        create_point(
+            "arkiv_celestia_account_balance",
+            utia_balance,
+            {"address": CELESTIA_ADDRESS, "denom": "utia"},
+        )
+    ]
+
 
 def scrape_prometheus_target(target_name, url):
     try:
@@ -227,6 +269,11 @@ async def run_infinite_loop():
                             points.append(create_point(key, size, {"node": node_type}))
                     else:
                         points.append(create_point(key, val))
+
+                try:
+                    points.extend(await collect_celestia_balance_points())
+                except Exception as exc:
+                    print(f"Failed to fetch Celestia account balance: {exc}")
 
                 points.extend(await collect_scraped_metrics_points())
 
