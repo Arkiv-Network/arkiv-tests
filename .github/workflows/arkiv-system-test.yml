@@ -599,7 +599,6 @@ jobs:
             --blocks 3
 
       - name: Start validator node
-        if: ${{ inputs.is-external == 'false' }}
         run: |
           echo "Starting validator node op-geth..."
 
