@@ -74,6 +74,7 @@ async function main() {
   const builder = new QueryBuilder(publicClient)
   const res = await builder
     .where(eq("category", "simple-test"))
+    .createdBy(account.address)
     .ownedBy(account.address)
     .fetch();
   console.log("Query builder result:", res.entities.map(e => e.toJson()));
