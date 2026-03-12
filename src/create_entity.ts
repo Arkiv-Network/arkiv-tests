@@ -77,7 +77,7 @@ async function main() {
     .createdBy(account.address)
     .ownedBy(account.address)
     .fetch();
-  console.log("Query builder result:", res.entities.map(e => e.toJson()));
+  console.log("Query builder result:", res.entities.map(e => e.key));
 
   const query = await publicClient.query(`$owner=${account.address} && $creator=${account.address} && category="simple-test"`, {
     includeData: {

@@ -720,7 +720,8 @@ jobs:
       - name: Simple entity test
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          export DEBUG=arkiv:*
+          # Uncomment to debug entity creation test
+          # export DEBUG=arkiv:*
           bun src/create_entity.ts
 
       - name: Start snapshot loop
