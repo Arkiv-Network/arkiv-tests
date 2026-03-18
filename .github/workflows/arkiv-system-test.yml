@@ -38,7 +38,7 @@ on:
       test-length:
         description: "Test length in seconds"
         required: true
-        default: "180"
+        default: "3600"
       block-every-l1:
         description: "Block time in seconds L1"
         required: true
@@ -54,7 +54,7 @@ on:
       altda-limit:
         description: "Alt-da limit"
         required: true
-        default: "200000"
+        default: "1000000"
       min-unsafe-limit:
         description: "Min threshold for unsafe da bytes to trigger throttling"
         required: true
