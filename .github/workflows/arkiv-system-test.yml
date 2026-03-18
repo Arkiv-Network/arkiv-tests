@@ -374,9 +374,6 @@ jobs:
             --port 3100 \
             --file.path ./da-data \
             --generic-commitment \
-            --metrics.enabled=true \
-            --metrics.addr=0.0.0.0 \
-            --metrics.port=7385 \
             > da-server.log 2>&1 & echo $! > da-server.pid
 
       - name: Start Celestia da-server
