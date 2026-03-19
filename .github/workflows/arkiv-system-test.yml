@@ -135,6 +135,7 @@ jobs:
               githubRunId=${{ github.run_id }} \
               gitref=${{ github.ref }} \
               altDaLimit=${{ inputs.altda-limit }} \
+              arkiv-sdk-js=${{ inputs.arkiv-sdk-js }} \
               minUnsafeLimit=${{ inputs.min-unsafe-limit }} \
               maxUnsafeLimit=${{ inputs.max-unsafe-limit }} 
           
