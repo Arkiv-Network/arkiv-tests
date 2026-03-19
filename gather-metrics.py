@@ -41,7 +41,7 @@ metrics_state = {
     "arkiv_da_data_size": 0,
     "arkiv_geth_db_size": {"sequencer": 0, "validator": 0},
     "arkiv_sqlite_db_size_bytes": {"sequencer": 0, "validator": 0},
-    "arkiv_golem_base_db_dir_size_bytes": {"sequencer": 0, "validator": 0},
+    "arkiv_pebble_db_size": {"sequencer": 0, "validator": 0},
     "arkiv_sqlite_wal_size_bytes": {"sequencer": 0, "validator": 0},
 }
 
