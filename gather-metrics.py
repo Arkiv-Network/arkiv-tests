@@ -41,7 +41,7 @@ metrics_state = {
     "arkiv_da_data_size": 0,
     "arkiv_geth_db_size": {"sequencer": 0, "validator": 0},
     "arkiv_sqlite_db_size_bytes": {"sequencer": 0, "validator": 0},
-    "arkiv_sqlite_data_dir_size_bytes": {"sequencer": 0, "validator": 0},
+    "arkiv_golem_base_db_dir_size_bytes": {"sequencer": 0, "validator": 0},
     "arkiv_sqlite_wal_size_bytes": {"sequencer": 0, "validator": 0},
 }
 
@@ -231,12 +231,12 @@ async def run_infinite_loop():
     )
     asyncio.create_task(
         get_path_size_async_loop(
-            "sequencer-data", "arkiv_sqlite_data_dir_size_bytes", "sequencer"
+            "sequencer-data", "arkiv_golem_base_db_dir_size_bytes", "sequencer"
         )
     )
     asyncio.create_task(
         get_path_size_async_loop(
-            "validator-data", "arkiv_sqlite_data_dir_size_bytes", "validator"
+            "validator-data", "arkiv_golem_base_db_dir_size_bytes", "validator"
         )
     )
     asyncio.create_task(get_path_size_async_loop("da-data", "arkiv_da_data_size"))
