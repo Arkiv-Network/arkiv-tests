@@ -142,5 +142,52 @@ class GatherMetricsTests(unittest.TestCase):
         )
 
 
+    def test_collect_mainnet_gas_metrics_returns_gas_price(self):
+        self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
+
+        def fake_rpc(url, method, params):
+            if method == "eth_gasPrice":
+                return "0x3b9aca00"  # 1 gwei
+            raise ValueError(f"Unexpected call: {method}")
+
+        self.module.call_json_rpc = fake_rpc
+
+        points = self.module.collect_mainnet_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertIn("arkiv_mainnet_gas_price", measurements)
+        gas_price_point = next(
+            p for p in points if p.measurement == "arkiv_mainnet_gas_price"
+        )
+        self.assertEqual(gas_price_point.fields["value"], 1_000_000_000.0)
+
+    def test_collect_mainnet_gas_metrics_computes_simulated_eth_spend(self):
+        self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
+        self.module.l1_tx_metrics_state["gas_used_total"]["op-node"] = 21000
+
+        def fake_rpc(url, method, params):
+            if method == "eth_gasPrice":
+                return "0x3b9aca00"  # 1 gwei
+            raise ValueError(f"Unexpected call: {method}")
+
+        self.module.call_json_rpc = fake_rpc
+
+        points = self.module.collect_mainnet_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertIn("arkiv_simulated_eth_spend", measurements)
+        spend_point = next(
+            p for p in points if p.measurement == "arkiv_simulated_eth_spend"
+        )
+        self.assertEqual(spend_point.tags["component"], "op-node")
+        # 21000 gas * 1 gwei (1e9 wei) / 1e18 = 21000 * 1e-9 = 0.000021 ETH
+        self.assertAlmostEqual(spend_point.fields["value"], 0.000021)
+
+    def test_collect_mainnet_gas_metrics_empty_when_no_url(self):
+        self.module.GAS_BASE_NETWORK = ""
+        points = self.module.collect_mainnet_gas_metrics_sync()
+        self.assertEqual(points, [])
+
+
 if __name__ == "__main__":
     unittest.main()
