@@ -416,7 +416,9 @@ def build_simulated_mainnet_spending_points(gas_price_wei):
         )
 
     if l1_tx_metrics_state["gas_used_total"]:
-        points.append(create_point("arkiv_simulated_eth_spend", total_simulated_eth_spend))
+        points.append(
+            create_point("arkiv_simulated_eth_spend", total_simulated_eth_spend, {})
+        )
 
     return points
 
