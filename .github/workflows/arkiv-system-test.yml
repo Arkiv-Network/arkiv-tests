@@ -700,7 +700,6 @@ jobs:
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
           OP_NODE_L1_RPC_URL: http://127.0.0.1:15900
-          OP_NODE_L1_ADDRESS: ${{ env.OP_NODE_L1_ADDRESS }}
           OP_BATCHER_L1_ADDRESS: ${{ env.OP_BATCHER_L1_ADDRESS }}
           OP_PROPOSER_L1_ADDRESS: ${{ env.OP_PROPOSER_L1_ADDRESS }}
           OP_BATCHER_METRICS_URL: http://127.0.0.1:7365/metrics

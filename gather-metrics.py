@@ -20,6 +20,7 @@ OP_NODE_L1_ADDRESS = os.getenv("OP_NODE_L1_ADDRESS", "").strip()
 OP_BATCHER_L1_ADDRESS = os.getenv("OP_BATCHER_L1_ADDRESS", "").strip()
 OP_PROPOSER_L1_ADDRESS = os.getenv("OP_PROPOSER_L1_ADDRESS", "").strip()
 OP_NODE_L1_START_BLOCK = max(int(os.getenv("OP_NODE_L1_START_BLOCK", "0")), 0)
+MAX_L1_LOGGED_SENDERS = 5
 GAS_BASE_NETWORK = os.getenv(
     "GAS_BASE_NETWORK", "https://mainnet.rpc-node.dev.golem.network/"
 ).strip()
@@ -350,13 +351,15 @@ def collect_l1_sender_points_sync():
         transactions = block.get("transactions", [])
         matching_transactions = []
         seen_senders = []
+        seen_sender_set = set()
 
         for transaction in transactions:
             sender = normalize_eth_address(transaction.get("from"))
             tx_hash = transaction.get("hash")
             if not tx_hash:
                 continue
-            if sender and sender not in seen_senders:
+            if sender and sender not in seen_sender_set:
+                seen_sender_set.add(sender)
                 seen_senders.append(sender)
 
             for component, tracked_sender in tracked_senders.items():
@@ -376,7 +379,7 @@ def collect_l1_sender_points_sync():
             print(
                 f"[l1-tracker] block {block_number}: scanned {len(transactions)} transaction(s) "
                 f"but found no matches. tracked={tracked_sender_summary}; "
-                f"seen_from={', '.join(seen_senders[:5]) or 'none'}"
+                f"seen_from={', '.join(seen_senders[:MAX_L1_LOGGED_SENDERS]) or 'none'}"
             )
 
         receipts_by_hash = {}
