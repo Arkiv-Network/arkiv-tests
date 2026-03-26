@@ -22,7 +22,7 @@ class PushResultsTests(unittest.TestCase):
     def setUp(self):
         self.module = load_push_results_module()
 
-    def test_collect_l1_result_metrics_returns_transaction_count_and_spend(self):
+    def test_collect_l1_metrics_with_valid_data(self):
         values = {
             "arkiv_l1_transactions_total": 3,
             "arkiv_l1_gas_used_total": 21000,
@@ -44,7 +44,45 @@ class PushResultsTests(unittest.TestCase):
             {"value": 21_000_000_000_000, "display": "0.000021"},
         )
 
-    def test_push_results_merges_optional_l1_metrics_into_payload(self):
+    def test_query_last_metric_total_escapes_flux_strings(self):
+        captured = {}
+
+        class FakeRecord(dict):
+            pass
+
+        class FakeTable:
+            records = [FakeRecord(_value=5)]
+
+        class FakeQueryApi:
+            def query(self, org, query):
+                captured["org"] = org
+                captured["query"] = query
+                return [FakeTable()]
+
+        class FakeInfluxDBClient:
+            def __init__(self, url, token, org):
+                captured["client_args"] = {"url": url, "token": token, "org": org}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def query_api(self):
+                return FakeQueryApi()
+
+        with mock.patch.object(self.module, "InfluxDBClient", FakeInfluxDBClient):
+            value = self.module.query_last_metric_total(
+                'sample"test\nname', 'metric"value'
+            )
+
+        self.assertEqual(value, 5)
+        self.assertEqual(captured["org"], self.module.INFLUX_ORG)
+        self.assertIn('r["_measurement"] == "metric\\"value"', captured["query"])
+        self.assertIn('r["test"] == "sample\\"test\\nname"', captured["query"])
+
+    def test_push_results_merges_l1_metrics(self):
         with tempfile.NamedTemporaryFile("w+", suffix=".json", delete=False) as results_file:
             json.dump({"existingMetric": {"value": 7}}, results_file)
             results_file_path = results_file.name

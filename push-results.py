@@ -18,6 +18,10 @@ INFLUX_BUCKET = os.getenv("INFLUXDB_BUCKET", "arkiv-tests")
 
 
 def wei_to_eth_str(wei):
+    """Format a Wei amount as an ETH string with magnitude-based precision and sign preservation."""
+    if wei < 0:
+        return f"-{wei_to_eth_str(-wei)}"
+
     val = Decimal(wei) / Decimal(10**18)
     if val > 100:
         return f"{val:.2f}"
@@ -34,23 +38,47 @@ def wei_to_eth_str(wei):
     return f"{val:f}"
 
 
+def escape_flux_string(value):
+    """Escape a string value before interpolating it into a Flux query."""
+    return (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
+
+
 def query_last_metric_total(test_name, measurement):
+    """Return the latest total value for a metric in InfluxDB, or None if unavailable."""
     if InfluxDBClient is None:
         return None
 
+    escaped_bucket = escape_flux_string(INFLUX_BUCKET)
+    escaped_measurement = escape_flux_string(measurement)
+    escaped_test_name = escape_flux_string(test_name)
+
     flux_query = f"""
-    from(bucket: "{INFLUX_BUCKET}")
+    from(bucket: "{escaped_bucket}")
       |> range(start: 0)
-      |> filter(fn: (r) => r["_measurement"] == "{measurement}")
-      |> filter(fn: (r) => r["test"] == "{test_name}")
+      |> filter(fn: (r) => r["_measurement"] == "{escaped_measurement}")
+      |> filter(fn: (r) => r["test"] == "{escaped_test_name}")
       |> last()
       |> group()
       |> sum()
     """
 
-    with InfluxDBClient(url=INFLUXDB_URL, token=INFLUX_TOKEN, org=INFLUX_ORG) as client:
-        query_api = client.query_api()
-        result = query_api.query(org=INFLUX_ORG, query=flux_query)
+    try:
+        with InfluxDBClient(
+            url=INFLUXDB_URL, token=INFLUX_TOKEN, org=INFLUX_ORG
+        ) as client:
+            query_api = client.query_api()
+            result = query_api.query(org=INFLUX_ORG, query=flux_query)
+    except Exception as exc:
+        raise RuntimeError(
+            f"Unable to query InfluxDB for measurement {measurement!r} and test {test_name!r}"
+        ) from exc
 
     value = None
     for table in result:
@@ -61,11 +89,12 @@ def query_last_metric_total(test_name, measurement):
 
 
 def collect_l1_result_metrics(test_name):
+    """Collect optional L1 result metrics for the tracker payload."""
     try:
         transactions_total = query_last_metric_total(test_name, "arkiv_l1_transactions_total")
         gas_used_total = query_last_metric_total(test_name, "arkiv_l1_gas_used_total")
         gas_price_wei = query_last_metric_total(test_name, "arkiv_mainnet_gas_price")
-    except Exception as exc:
+    except RuntimeError as exc:
         print(f"Warning: unable to fetch optional L1 metrics from InfluxDB: {exc}")
         return {}
 
