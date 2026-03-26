@@ -194,6 +194,43 @@ class GatherMetricsTests(unittest.TestCase):
             {"op-batcher", "op-proposer"},
         )
 
+    def test_collect_l1_sender_points_logs_matched_transactions_and_points(self):
+        transaction_hash = "0x" + ("12" * 32)
+        other_address = "0x" + ("cd" * 20)
+        responses = {
+            ("eth_blockNumber", ()): "0x1",
+            ("eth_getBlockByNumber", ("0x0", True)): {"transactions": []},
+            ("eth_getBlockByNumber", ("0x1", True)): {
+                "transactions": [
+                    {"hash": transaction_hash, "from": self.sender_address, "to": other_address},
+                ]
+            },
+            ("eth_getBlockReceipts", ("0x1",)): [
+                {"transactionHash": transaction_hash, "gasUsed": "0x5208"},
+            ],
+        }
+
+        def fake_rpc(url, method, params):
+            return responses[(method, tuple(params))]
+
+        self.module.call_json_rpc = fake_rpc
+
+        with io.StringIO() as stdout, contextlib.redirect_stdout(stdout):
+            self.module.collect_l1_sender_points_sync()
+            output = stdout.getvalue()
+
+        self.assertIn(
+            f"[l1-tracker] block 1: fetching receipts for {transaction_hash}",
+            output,
+        )
+        self.assertIn(
+            f"[l1-tracker] tx {transaction_hash}: component=op-node sender={self.sender_address}",
+            output,
+        )
+        self.assertIn("cumulative_transactions=1 cumulative_gas_used=21000", output)
+        self.assertIn("queued arkiv_l1_transaction_gas_used", output)
+        self.assertIn("queued arkiv_l1_transactions_total", output)
+
     def test_collect_l1_sender_points_logs_unmatched_transaction_senders(self):
         other_address = "0x" + ("cd" * 20)
         self.module.OP_BATCHER_L1_ADDRESS = self.batcher_address
@@ -220,6 +257,24 @@ class GatherMetricsTests(unittest.TestCase):
         self.assertIn("[l1-tracker] block 1: scanned 1 transaction(s) but found no matches.", output)
         self.assertIn(f"tracked=op-batcher={self.batcher_address}", output)
         self.assertIn(f"seen_from={other_address}", output)
+
+    def test_log_prepared_l1_points_logs_summary_and_queued_points(self):
+        point = self.module.create_point(
+            "arkiv_l1_transactions_total",
+            2,
+            {"component": "op-batcher", "sender": self.batcher_address},
+        )
+
+        with io.StringIO() as stdout, contextlib.redirect_stdout(stdout):
+            self.module.log_prepared_l1_points(61, [point])
+            output = stdout.getvalue()
+
+        self.assertIn(
+            "[l1-tracker] iteration 61: prepared 1 L1 point(s) for InfluxDB write.",
+            output,
+        )
+        self.assertIn("measurements=arkiv_l1_transactions_total=1", output)
+        self.assertIn("queued arkiv_l1_transactions_total", output)
 
 
     def test_collect_mainnet_gas_metrics_returns_gas_price(self):
