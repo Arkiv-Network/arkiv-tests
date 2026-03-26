@@ -309,6 +309,119 @@ def get_receipts_for_block(url, block_number, transaction_hashes):
     }
 
 
+def get_next_l1_block_to_scan():
+    last_scanned_block = l1_tx_metrics_state["last_scanned_block"]
+    if last_scanned_block is None:
+        return OP_NODE_L1_START_BLOCK
+
+    return last_scanned_block + 1
+
+
+def find_matching_l1_transactions(transactions, tracked_senders):
+    matching_transactions = []
+    seen_senders = []
+    seen_sender_set = set()
+
+    for transaction in transactions:
+        tx_hash = transaction.get("hash")
+        if not tx_hash:
+            continue
+
+        sender = normalize_eth_address(transaction.get("from"))
+        if sender and sender not in seen_sender_set:
+            seen_sender_set.add(sender)
+            seen_senders.append(sender)
+
+        component = next(
+            (
+                tracked_component
+                for tracked_component, tracked_sender in tracked_senders.items()
+                if sender == tracked_sender
+            ),
+            "",
+        )
+        if component:
+            matching_transactions.append((component, tracked_senders[component], transaction))
+
+    return matching_transactions, seen_senders
+
+
+def increment_l1_sender_totals(component, gas_used):
+    l1_tx_metrics_state["transactions_total"][component] = (
+        l1_tx_metrics_state["transactions_total"].get(component, 0) + 1
+    )
+    l1_tx_metrics_state["gas_used_total"][component] = (
+        l1_tx_metrics_state["gas_used_total"].get(component, 0) + gas_used
+    )
+
+
+def build_l1_sender_total_points(tracked_senders):
+    points = []
+    last_scanned_block = l1_tx_metrics_state["last_scanned_block"]
+    if last_scanned_block is None:
+        last_scanned_block = OP_NODE_L1_START_BLOCK
+
+    for component, tracked_sender in tracked_senders.items():
+        transaction_total = l1_tx_metrics_state["transactions_total"].get(component, 0)
+        gas_used_total = l1_tx_metrics_state["gas_used_total"].get(component, 0)
+        common_tags = {"component": component, "sender": tracked_sender}
+
+        transactions_total_point = create_point(
+            "arkiv_l1_transactions_total",
+            transaction_total,
+            common_tags,
+        )
+        gas_used_total_point = create_point(
+            "arkiv_l1_gas_used_total",
+            gas_used_total,
+            common_tags,
+        )
+        last_scanned_block_point = create_point(
+            "arkiv_l1_last_scanned_block",
+            last_scanned_block,
+            common_tags,
+        )
+        points.extend(
+            [transactions_total_point, gas_used_total_point, last_scanned_block_point]
+        )
+        print(
+            f"[l1-tracker] component={component}: totals transaction_count={transaction_total} "
+            f"gas_used_total={gas_used_total} last_scanned_block={last_scanned_block}"
+        )
+        print(
+            f"[l1-tracker] queued {describe_point_for_log(transactions_total_point)}"
+        )
+        print(f"[l1-tracker] queued {describe_point_for_log(gas_used_total_point)}")
+        print(
+            f"[l1-tracker] queued {describe_point_for_log(last_scanned_block_point)}"
+        )
+
+    return points
+
+
+def build_simulated_mainnet_spending_points(gas_price_wei):
+    points = []
+
+    for component, gas_used in sorted(l1_tx_metrics_state["gas_used_total"].items()):
+        simulated_spending_wei = gas_used * gas_price_wei
+        points.append(
+            create_point(
+                "arkiv_simulated_mainnet_spending",
+                simulated_spending_wei,
+                {"component": component},
+            )
+        )
+        points.append(
+            create_point(
+                "arkiv_simulated_eth_spend",
+                simulated_spending_wei / 1e18,
+                {"component": component},
+            )
+        )
+
+    return points
+
+
 async def collect_celestia_balance_points():
     if not CELESTIA_ADDRESS or not CELESTIA_RPC_ADDR:
         return []
@@ -406,10 +519,7 @@ def collect_l1_sender_points_sync():
         return []
 
     latest_block = hex_to_int(call_json_rpc(OP_NODE_L1_RPC_URL, "eth_blockNumber", []))
-    if l1_tx_metrics_state["last_scanned_block"] is None:
-        next_block = OP_NODE_L1_START_BLOCK
-    else:
-        next_block = l1_tx_metrics_state["last_scanned_block"] + 1
+    next_block = get_next_l1_block_to_scan()
     new_points = []
     tracked_sender_summary = ", ".join(
         f"{component}={tracked_sender}"
@@ -426,25 +536,9 @@ def collect_l1_sender_points_sync():
         )
         scanned_blocks += 1
         transactions = block.get("transactions", [])
-        matching_transactions = []
-        seen_senders = []
-        seen_sender_set = set()
-
-        for transaction in transactions:
-            sender = normalize_eth_address(transaction.get("from"))
-            tx_hash = transaction.get("hash")
-            if not tx_hash:
-                continue
-            if sender and sender not in seen_sender_set:
-                seen_sender_set.add(sender)
-                seen_senders.append(sender)
-
-            for component, tracked_sender in tracked_senders.items():
-                if sender != tracked_sender:
-                    continue
-
-                matching_transactions.append((component, tracked_sender, transaction))
-                break
+        matching_transactions, seen_senders = find_matching_l1_transactions(
+            transactions, tracked_senders
+        )
 
         if matching_transactions:
             matched_transactions_total += len(matching_transactions)
@@ -474,12 +568,7 @@ def collect_l1_sender_points_sync():
         for component, tracked_sender, transaction in matching_transactions:
             receipt = receipts_by_hash.get(transaction["hash"], {})
             gas_used = hex_to_int(receipt.get("gasUsed"))
-            l1_tx_metrics_state["transactions_total"][component] = (
-                l1_tx_metrics_state["transactions_total"].get(component, 0) + 1
-            )
-            l1_tx_metrics_state["gas_used_total"][component] = (
-                l1_tx_metrics_state["gas_used_total"].get(component, 0) + gas_used
-            )
+            increment_l1_sender_totals(component, gas_used)
             point = create_point(
                 "arkiv_l1_transaction_gas_used",
                 gas_used,
@@ -513,42 +602,7 @@ def collect_l1_sender_points_sync():
             f"tracked={tracked_sender_summary}; totals={cumulative_totals_summary}"
         )
 
-    for component, tracked_sender in tracked_senders.items():
-        last_scanned_block = l1_tx_metrics_state["last_scanned_block"]
-        if last_scanned_block is None:
-            last_scanned_block = OP_NODE_L1_START_BLOCK
-
-        transactions_total_point = create_point(
-            "arkiv_l1_transactions_total",
-            l1_tx_metrics_state["transactions_total"].get(component, 0),
-            {"component": component, "sender": tracked_sender},
-        )
-        gas_used_total_point = create_point(
-            "arkiv_l1_gas_used_total",
-            l1_tx_metrics_state["gas_used_total"].get(component, 0),
-            {"component": component, "sender": tracked_sender},
-        )
-        last_scanned_block_point = create_point(
-            "arkiv_l1_last_scanned_block",
-            last_scanned_block,
-            {"component": component, "sender": tracked_sender},
-        )
-        new_points.extend(
-            [transactions_total_point, gas_used_total_point, last_scanned_block_point]
-        )
-        print(
-            f"[l1-tracker] component={component}: totals transaction_count="
-            f"{l1_tx_metrics_state['transactions_total'].get(component, 0)} "
-            f"gas_used_total={l1_tx_metrics_state['gas_used_total'].get(component, 0)} "
-            f"last_scanned_block={last_scanned_block}"
-        )
-        print(
-            f"[l1-tracker] queued {describe_point_for_log(transactions_total_point)}"
-        )
-        print(f"[l1-tracker] queued {describe_point_for_log(gas_used_total_point)}")
-        print(
-            f"[l1-tracker] queued {describe_point_for_log(last_scanned_block_point)}"
-        )
+    new_points.extend(build_l1_sender_total_points(tracked_senders))
 
     return new_points
 
@@ -562,16 +616,7 @@ def collect_mainnet_gas_metrics_sync():
     points = [
         create_point("arkiv_mainnet_gas_price", gas_price_wei),
     ]
-
-    for component, gas_used in l1_tx_metrics_state["gas_used_total"].items():
-        simulated_spend_eth = gas_used * gas_price_wei / 1e18
-        points.append(
-            create_point(
-                "arkiv_simulated_eth_spend",
-                simulated_spend_eth,
-                {"component": component},
-            )
-        )
+    points.extend(build_simulated_mainnet_spending_points(gas_price_wei))
 
     return points
 
