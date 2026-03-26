@@ -636,11 +636,10 @@ def collect_mainnet_gas_metrics_sync():
     if not GAS_BASE_NETWORK:
         return []
 
+    gas_price_wei = hex_to_int(call_json_rpc(GAS_BASE_NETWORK, "eth_gasPrice", []))
+
     points = [
-        create_point(
-            "arkiv_mainnet_gas_price",
-            l1_tx_metrics_state.get("simulated_eth_spend_wei_total", 0),
-        ),
+        create_point("arkiv_mainnet_gas_price", gas_price_wei),
     ]
     points.extend(build_simulated_mainnet_spending_points())
 
