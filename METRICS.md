@@ -53,7 +53,7 @@ These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector f
 | --- | --- | --- |
 | `arkiv_mainnet_gas_price` | Current gas price returned by the configured mainnet RPC, in wei. | none beyond base tags |
 | `arkiv_simulated_mainnet_spending` | Estimated L1 spend in wei, computed as `arkiv_l1_gas_used_total * arkiv_mainnet_gas_price`. | `component` |
-| `arkiv_simulated_eth_spend` | Estimated ETH spend computed as `arkiv_l1_gas_used_total * arkiv_mainnet_gas_price / 1e18`. | `component` |
+| `arkiv_simulated_eth_spend` | Aggregated estimated ETH spend across all tracked L1 components, computed as `sum(arkiv_l1_gas_used_total) * arkiv_mainnet_gas_price / 1e18`. | none beyond base tags |
 
 ## Scraped Prometheus metrics
 
