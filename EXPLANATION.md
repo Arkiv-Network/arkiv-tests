@@ -79,6 +79,7 @@ This repository contains a mix of helpers for local network setup, test orchestr
 ### `push-results.py`
 - Reads a JSON results file and posts it to the tracker backend at `/test/<name>/results`.
 - Wraps the file content inside a payload containing `parameters` and total runtime in `seconds`.
+- When InfluxDB data is available for the same test name, it also enriches the payload with L1 transaction count and estimated L1 spend using the metrics emitted by `gather-metrics.py`.
 - Use this after a run is complete so the tracker can store the final metrics or assertions.
 
 ## Small utility script
