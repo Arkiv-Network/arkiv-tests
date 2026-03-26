@@ -1,13 +1,94 @@
 import argparse
 import json
 import os
+from decimal import Decimal
+
 import requests
+
+try:
+    from influxdb_client import InfluxDBClient
+except ImportError:  # pragma: no cover - exercised in unit tests via patching
+    InfluxDBClient = None
+
+
+INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://localhost:8086")
+INFLUX_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-auth-token")
+INFLUX_ORG = os.getenv("INFLUXDB_ORG", "arkiv-network")
+INFLUX_BUCKET = os.getenv("INFLUXDB_BUCKET", "arkiv-tests")
+
+
+def wei_to_eth_str(wei):
+    val = Decimal(wei) / Decimal(10**18)
+    if val > 100:
+        return f"{val:.2f}"
+    if val > 10:
+        return f"{val:.3f}"
+    if val > 1:
+        return f"{val:.4f}"
+    if val > Decimal("0.1"):
+        return f"{val:.5f}"
+    if val > Decimal("0.01"):
+        return f"{val:.6f}"
+    if val > Decimal("0.001"):
+        return f"{val:.7f}"
+    return f"{val:f}"
+
+
+def query_last_metric_total(test_name, measurement):
+    if InfluxDBClient is None:
+        return None
+
+    flux_query = f"""
+    from(bucket: "{INFLUX_BUCKET}")
+      |> range(start: 0)
+      |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+      |> filter(fn: (r) => r["test"] == "{test_name}")
+      |> last()
+      |> group()
+      |> sum()
+    """
+
+    with InfluxDBClient(url=INFLUXDB_URL, token=INFLUX_TOKEN, org=INFLUX_ORG) as client:
+        query_api = client.query_api()
+        result = query_api.query(org=INFLUX_ORG, query=flux_query)
+
+    value = None
+    for table in result:
+        for record in table.records:
+            value = record["_value"]
+
+    return value
+
+
+def collect_l1_result_metrics(test_name):
+    try:
+        transactions_total = query_last_metric_total(test_name, "arkiv_l1_transactions_total")
+        gas_used_total = query_last_metric_total(test_name, "arkiv_l1_gas_used_total")
+        gas_price_wei = query_last_metric_total(test_name, "arkiv_mainnet_gas_price")
+    except Exception as exc:
+        print(f"Warning: unable to fetch optional L1 metrics from InfluxDB: {exc}")
+        return {}
+
+    result_metrics = {}
+    if transactions_total is not None:
+        result_metrics["totalTransactionsL1"] = {"value": int(transactions_total)}
+
+    if gas_used_total is not None and gas_price_wei is not None:
+        estimated_spend_wei = int(gas_used_total) * int(gas_price_wei)
+        result_metrics["gasSpentL1"] = {
+            "value": estimated_spend_wei,
+            "display": wei_to_eth_str(estimated_spend_wei),
+        }
+
+    return result_metrics
 
 
 def push_results(backend_url, test_name, results_file, seconds):
     """Read a flat results JSON file and POST it wrapped in {parameters: ...}."""
     with open(results_file, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    data.update(collect_l1_result_metrics(test_name))
 
     url = f"{backend_url}/test/{test_name}/results"
     payload = {"parameters": data, "seconds": seconds}
