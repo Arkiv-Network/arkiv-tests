@@ -296,7 +296,7 @@ class GatherMetricsTests(unittest.TestCase):
         )
         self.assertEqual(gas_price_point.fields["value"], 1_000_000_000.0)
 
-    def test_collect_mainnet_gas_metrics_computes_simulated_eth_spend(self):
+    def test_collect_mainnet_gas_metrics_computes_simulated_spending_metrics(self):
         self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
         self.module.l1_tx_metrics_state["gas_used_total"]["op-node"] = 21000
 
@@ -310,13 +310,42 @@ class GatherMetricsTests(unittest.TestCase):
         points = self.module.collect_mainnet_gas_metrics_sync()
         measurements = [point.measurement for point in points]
 
+        self.assertIn("arkiv_simulated_mainnet_spending", measurements)
         self.assertIn("arkiv_simulated_eth_spend", measurements)
+        spend_wei_point = next(
+            p for p in points if p.measurement == "arkiv_simulated_mainnet_spending"
+        )
         spend_point = next(
             p for p in points if p.measurement == "arkiv_simulated_eth_spend"
         )
+        self.assertEqual(spend_wei_point.tags["component"], "op-node")
+        self.assertEqual(spend_wei_point.fields["value"], 21_000_000_000_000.0)
         self.assertEqual(spend_point.tags["component"], "op-node")
         # 21000 gas * 1 gwei (1e9 wei) / 1e18 = 21000 * 1e-9 = 0.000021 ETH
         self.assertAlmostEqual(spend_point.fields["value"], 0.000021)
+
+    def test_collect_mainnet_gas_metrics_emits_simulated_spending_for_batcher_and_proposer(self):
+        self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
+        self.module.l1_tx_metrics_state["gas_used_total"]["op-batcher"] = 21000
+        self.module.l1_tx_metrics_state["gas_used_total"]["op-proposer"] = 30000
+
+        def fake_rpc(url, method, params):
+            if method == "eth_gasPrice":
+                return "0x3b9aca00"  # 1 gwei
+            raise ValueError(f"Unexpected call: {method}")
+
+        self.module.call_json_rpc = fake_rpc
+
+        points = self.module.collect_mainnet_gas_metrics_sync()
+        spend_points = {
+            point.tags["component"]: point
+            for point in points
+            if point.measurement == "arkiv_simulated_mainnet_spending"
+        }
+
+        self.assertEqual(set(spend_points), {"op-batcher", "op-proposer"})
+        self.assertEqual(spend_points["op-batcher"].fields["value"], 21_000_000_000_000.0)
+        self.assertEqual(spend_points["op-proposer"].fields["value"], 30_000_000_000_000.0)
 
     def test_collect_mainnet_gas_metrics_empty_when_no_url(self):
         self.module.GAS_BASE_NETWORK = ""
