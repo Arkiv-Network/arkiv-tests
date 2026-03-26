@@ -459,6 +459,7 @@ jobs:
           fi
           SEQUENCER_ADDRESS=$(cast wallet address "$SEQUENCER_PRIVATE_KEY")
           echo "Sequencer address: $SEQUENCER_ADDRESS"
+          echo "OP_NODE_L1_ADDRESS=$SEQUENCER_ADDRESS" >> "$GITHUB_ENV"
           
           op-node-seq \
             --log.level=debug \
@@ -697,6 +698,8 @@ jobs:
           INFLUXDB_TOKEN: my-super-secret-auth-token
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
+          OP_NODE_L1_RPC_URL: http://127.0.0.1:15900
+          OP_NODE_L1_ADDRESS: ${{ env.OP_NODE_L1_ADDRESS }}
           OP_BATCHER_METRICS_URL: http://127.0.0.1:7365/metrics
           OP_PROPOSER_METRICS_URL: http://127.0.0.1:7375/metrics
 
