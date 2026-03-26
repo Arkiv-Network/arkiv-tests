@@ -64,20 +64,54 @@ def get_point_measurement(point):
     return getattr(point, "measurement", "")
 
 
+def escape_log_value(value):
+    return str(value).replace("\\", "\\\\").replace(",", "\\,").replace("=", "\\=")
+
+
 def format_log_mapping(mapping):
     if not mapping:
         return "-"
 
-    return ",".join(f"{key}={mapping[key]}" for key in sorted(mapping))
+    return ",".join(
+        f"{escape_log_value(key)}={escape_log_value(mapping[key])}"
+        for key in sorted(mapping)
+    )
+
+
+def format_seen_senders(senders):
+    if not senders:
+        return "none"
+
+    visible_senders = senders[:MAX_L1_LOGGED_SENDERS]
+    hidden_sender_count = len(senders) - len(visible_senders)
+    formatted_senders = ", ".join(visible_senders)
+    if hidden_sender_count > 0:
+        return f"{formatted_senders}, ... (+{hidden_sender_count} more)"
+
+    return formatted_senders
 
 
 def describe_point_for_log(point):
     measurement = get_point_measurement(point) or "<unknown>"
     tags = getattr(point, "tags", {})
     fields = getattr(point, "fields", {})
+    warnings = []
+
+    if not hasattr(point, "measurement"):
+        warnings.append("missing_measurement")
+    if not isinstance(tags, dict):
+        warnings.append("invalid_tags")
+        tags = {}
+    if not isinstance(fields, dict):
+        warnings.append("invalid_fields")
+        fields = {}
+
+    warning_suffix = ""
+    if warnings:
+        warning_suffix = f" warnings[{','.join(warnings)}]"
     return (
         f"{measurement} tags[{format_log_mapping(tags)}] "
-        f"fields[{format_log_mapping(fields)}]"
+        f"fields[{format_log_mapping(fields)}]{warning_suffix}"
     )
 
 
@@ -426,7 +460,7 @@ def collect_l1_sender_points_sync():
             print(
                 f"[l1-tracker] block {block_number}: scanned {len(transactions)} transaction(s) "
                 f"but found no matches. tracked={tracked_sender_summary}; "
-                f"seen_from={', '.join(seen_senders[:MAX_L1_LOGGED_SENDERS]) or 'none'}"
+                f"seen_from={format_seen_senders(seen_senders)}"
             )
 
         receipts_by_hash = {}
