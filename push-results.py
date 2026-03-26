@@ -92,8 +92,7 @@ def collect_l1_result_metrics(test_name):
     """Collect optional L1 result metrics for the tracker payload."""
     try:
         transactions_total = query_last_metric_total(test_name, "arkiv_l1_transactions_total")
-        gas_used_total = query_last_metric_total(test_name, "arkiv_l1_gas_used_total")
-        gas_price_wei = query_last_metric_total(test_name, "arkiv_mainnet_gas_price")
+        simulated_spend_wei = query_last_metric_total(test_name, "arkiv_mainnet_gas_price")
     except RuntimeError as exc:
         print(f"Warning: unable to fetch optional L1 metrics from InfluxDB: {exc}")
         return {}
@@ -102,8 +101,8 @@ def collect_l1_result_metrics(test_name):
     if transactions_total is not None:
         result_metrics["totalTransactionsL1"] = {"value": int(transactions_total)}
 
-    if gas_used_total is not None and gas_price_wei is not None:
-        estimated_spend_wei = int(gas_used_total) * int(gas_price_wei)
+    if simulated_spend_wei is not None:
+        estimated_spend_wei = int(simulated_spend_wei)
         result_metrics["gasSpentL1"] = {
             "value": estimated_spend_wei,
             "display": wei_to_eth_str(estimated_spend_wei),

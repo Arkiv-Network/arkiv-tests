@@ -57,6 +57,8 @@ l1_tx_metrics_state = {
     "last_scanned_block": None,
     "transactions_total": {},
     "gas_used_total": {},
+    "simulated_mainnet_spending": {},
+    "simulated_eth_spend_wei_total": 0,
 }
 
 
@@ -356,6 +358,23 @@ def increment_l1_sender_totals(component, gas_used):
     )
 
 
+def increment_l1_simulated_gas_usage_total(component, gas_used, gas_price_wei):
+    if gas_price_wei is None:
+        return
+
+    simulated_mainnet_spending = l1_tx_metrics_state.setdefault(
+        "simulated_mainnet_spending", {}
+    )
+    simulated_spending_wei = gas_used * gas_price_wei
+    simulated_mainnet_spending[component] = (
+        simulated_mainnet_spending.get(component, 0) + simulated_spending_wei
+    )
+    l1_tx_metrics_state["simulated_eth_spend_wei_total"] = (
+        l1_tx_metrics_state.get("simulated_eth_spend_wei_total", 0)
+        + simulated_spending_wei
+    )
+
+
 def build_l1_sender_total_points(tracked_senders):
     points = []
     last_scanned_block = l1_tx_metrics_state["last_scanned_block"]
@@ -400,13 +419,12 @@ def build_l1_sender_total_points(tracked_senders):
     return points
 
 
-def build_simulated_mainnet_spending_points(gas_price_wei):
+def build_simulated_mainnet_spending_points():
     points = []
-    total_simulated_eth_spend = 0
+    total_simulated_spend_wei = l1_tx_metrics_state.get("simulated_eth_spend_wei_total", 0)
+    simulated_mainnet_spending = l1_tx_metrics_state.get("simulated_mainnet_spending", {})
 
-    for component, gas_used in l1_tx_metrics_state["gas_used_total"].items():
-        simulated_spending_wei = gas_used * gas_price_wei
-        total_simulated_eth_spend += simulated_spending_wei / 1e18
+    for component, simulated_spending_wei in simulated_mainnet_spending.items():
         points.append(
             create_point(
                 "arkiv_simulated_mainnet_spending",
@@ -415,9 +433,9 @@ def build_simulated_mainnet_spending_points(gas_price_wei):
             )
         )
 
-    if l1_tx_metrics_state["gas_used_total"]:
+    if total_simulated_spend_wei:
         points.append(
-            create_point("arkiv_simulated_eth_spend", total_simulated_eth_spend, {})
+            create_point("arkiv_simulated_eth_spend", total_simulated_spend_wei / 1e18, {})
         )
 
     return points
@@ -522,6 +540,7 @@ def collect_l1_sender_points_sync():
     latest_block = hex_to_int(call_json_rpc(OP_NODE_L1_RPC_URL, "eth_blockNumber", []))
     next_block = get_next_l1_block_to_scan()
     new_points = []
+    gas_price_wei = None
     tracked_sender_summary = ", ".join(
         f"{component}={tracked_sender}"
         for component, tracked_sender in sorted(tracked_senders.items())
@@ -570,6 +589,11 @@ def collect_l1_sender_points_sync():
             receipt = receipts_by_hash.get(transaction["hash"], {})
             gas_used = hex_to_int(receipt.get("gasUsed"))
             increment_l1_sender_totals(component, gas_used)
+            if gas_price_wei is None and GAS_BASE_NETWORK:
+                gas_price_wei = hex_to_int(
+                    call_json_rpc(GAS_BASE_NETWORK, "eth_gasPrice", [])
+                )
+            increment_l1_simulated_gas_usage_total(component, gas_used, gas_price_wei)
             point = create_point(
                 "arkiv_l1_transaction_gas_used",
                 gas_used,
@@ -612,12 +636,13 @@ def collect_mainnet_gas_metrics_sync():
     if not GAS_BASE_NETWORK:
         return []
 
-    gas_price_wei = hex_to_int(call_json_rpc(GAS_BASE_NETWORK, "eth_gasPrice", []))
-
     points = [
-        create_point("arkiv_mainnet_gas_price", gas_price_wei),
+        create_point(
+            "arkiv_mainnet_gas_price",
+            l1_tx_metrics_state.get("simulated_eth_spend_wei_total", 0),
+        ),
     ]
-    points.extend(build_simulated_mainnet_spending_points(gas_price_wei))
+    points.extend(build_simulated_mainnet_spending_points())
 
     return points
 
