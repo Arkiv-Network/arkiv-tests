@@ -84,6 +84,8 @@ class GatherMetricsTests(unittest.TestCase):
             "last_scanned_block": None,
             "transactions_total": {},
             "gas_used_total": {},
+            "simulated_mainnet_spending": {},
+            "simulated_eth_spend_wei_total": 0,
         }
 
     def test_normalize_eth_address_lowercases_valid_addresses(self):
@@ -96,6 +98,7 @@ class GatherMetricsTests(unittest.TestCase):
     def test_collect_l1_sender_points_tracks_transactions_and_gas(self):
         other_address = "0x" + ("cd" * 20)
         transaction_hash = "0x" + ("12" * 32)
+        self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
 
         responses = {
             ("eth_blockNumber", ()): "0x2",
@@ -110,6 +113,7 @@ class GatherMetricsTests(unittest.TestCase):
             ("eth_getBlockReceipts", ("0x1",)): [
                 {"transactionHash": transaction_hash, "gasUsed": "0x5208"},
             ],
+            ("eth_gasPrice", ()): "0x3b9aca00",
         }
 
         def fake_rpc(url, method, params):
@@ -122,6 +126,14 @@ class GatherMetricsTests(unittest.TestCase):
 
         self.assertEqual(self.module.l1_tx_metrics_state["transactions_total"]["op-node"], 1)
         self.assertEqual(self.module.l1_tx_metrics_state["gas_used_total"]["op-node"], 21000)
+        self.assertEqual(
+            self.module.l1_tx_metrics_state["simulated_mainnet_spending"]["op-node"],
+            21_000_000_000_000,
+        )
+        self.assertEqual(
+            self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"],
+            21_000_000_000_000,
+        )
         self.assertEqual(self.module.l1_tx_metrics_state["last_scanned_block"], 2)
         self.assertIn("arkiv_l1_transaction_gas_used", measurements)
         self.assertIn("arkiv_l1_transactions_total", measurements)
@@ -153,6 +165,7 @@ class GatherMetricsTests(unittest.TestCase):
         self.module.OP_NODE_L1_ADDRESS = ""
         self.module.OP_BATCHER_L1_ADDRESS = self.batcher_address
         self.module.OP_PROPOSER_L1_ADDRESS = self.proposer_address
+        self.module.GAS_BASE_NETWORK = ""
 
         responses = {
             ("eth_blockNumber", ()): "0x1",
@@ -180,6 +193,7 @@ class GatherMetricsTests(unittest.TestCase):
         self.assertEqual(self.module.l1_tx_metrics_state["transactions_total"]["op-proposer"], 1)
         self.assertEqual(self.module.l1_tx_metrics_state["gas_used_total"]["op-batcher"], 21000)
         self.assertEqual(self.module.l1_tx_metrics_state["gas_used_total"]["op-proposer"], 30000)
+        self.assertEqual(self.module.l1_tx_metrics_state["simulated_mainnet_spending"], {})
 
         transaction_points = [
             point for point in points if point.measurement == "arkiv_l1_transaction_gas_used"
@@ -197,6 +211,7 @@ class GatherMetricsTests(unittest.TestCase):
     def test_collect_l1_sender_points_logs_matched_transactions_and_points(self):
         transaction_hash = "0x" + ("12" * 32)
         other_address = "0x" + ("cd" * 20)
+        self.module.GAS_BASE_NETWORK = ""
         responses = {
             ("eth_blockNumber", ()): "0x1",
             ("eth_getBlockByNumber", ("0x0", True)): {"transactions": []},
@@ -277,15 +292,9 @@ class GatherMetricsTests(unittest.TestCase):
         self.assertIn("queued arkiv_l1_transactions_total", output)
 
 
-    def test_collect_mainnet_gas_metrics_returns_gas_price(self):
+    def test_collect_mainnet_gas_metrics_returns_total_spend(self):
         self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
-
-        def fake_rpc(url, method, params):
-            if method == "eth_gasPrice":
-                return "0x3b9aca00"  # 1 gwei
-            raise ValueError(f"Unexpected call: {method}")
-
-        self.module.call_json_rpc = fake_rpc
+        self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = 21_000_000_000_000
 
         points = self.module.collect_mainnet_gas_metrics_sync()
         measurements = [point.measurement for point in points]
@@ -294,18 +303,16 @@ class GatherMetricsTests(unittest.TestCase):
         gas_price_point = next(
             p for p in points if p.measurement == "arkiv_mainnet_gas_price"
         )
-        self.assertEqual(gas_price_point.fields["value"], 1_000_000_000.0)
+        self.assertEqual(gas_price_point.fields["value"], 21_000_000_000_000.0)
 
     def test_collect_mainnet_gas_metrics_computes_simulated_spending_metrics(self):
         self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
-        self.module.l1_tx_metrics_state["gas_used_total"]["op-node"] = 21000
-
-        def fake_rpc(url, method, params):
-            if method == "eth_gasPrice":
-                return "0x3b9aca00"  # 1 gwei
-            raise ValueError(f"Unexpected call: {method}")
-
-        self.module.call_json_rpc = fake_rpc
+        self.module.l1_tx_metrics_state["simulated_mainnet_spending"]["op-node"] = (
+            21_000_000_000_000
+        )
+        self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = (
+            21_000_000_000_000
+        )
 
         points = self.module.collect_mainnet_gas_metrics_sync()
         measurements = [point.measurement for point in points]
@@ -326,15 +333,15 @@ class GatherMetricsTests(unittest.TestCase):
 
     def test_collect_mainnet_gas_metrics_emits_simulated_spending_for_batcher_and_proposer(self):
         self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
-        self.module.l1_tx_metrics_state["gas_used_total"]["op-batcher"] = 21000
-        self.module.l1_tx_metrics_state["gas_used_total"]["op-proposer"] = 30000
-
-        def fake_rpc(url, method, params):
-            if method == "eth_gasPrice":
-                return "0x3b9aca00"  # 1 gwei
-            raise ValueError(f"Unexpected call: {method}")
-
-        self.module.call_json_rpc = fake_rpc
+        self.module.l1_tx_metrics_state["simulated_mainnet_spending"]["op-batcher"] = (
+            21_000_000_000_000
+        )
+        self.module.l1_tx_metrics_state["simulated_mainnet_spending"]["op-proposer"] = (
+            30_000_000_000_000
+        )
+        self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = (
+            51_000_000_000_000
+        )
 
         points = self.module.collect_mainnet_gas_metrics_sync()
         spend_points = {

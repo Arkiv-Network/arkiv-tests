@@ -25,8 +25,7 @@ class PushResultsTests(unittest.TestCase):
     def test_collect_l1_metrics_with_valid_data(self):
         values = {
             "arkiv_l1_transactions_total": 3,
-            "arkiv_l1_gas_used_total": 21000,
-            "arkiv_mainnet_gas_price": 1_000_000_000,
+            "arkiv_mainnet_gas_price": 21_000_000_000_000,
         }
 
         def fake_query(test_name, measurement):
