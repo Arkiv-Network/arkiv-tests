@@ -696,18 +696,18 @@ async def run_infinite_loop():
                     print(f"Failed to fetch Celestia account balance: {exc}")
 
                 try:
-                    l1_points = await collect_l1_sender_points()
-                    points.extend(l1_points)
-                    log_prepared_l1_points(loop_count, l1_points)
-                except Exception as exc:
-                    print(f"Failed to collect L1 sender metrics: {exc}")
-
-                try:
                     points.extend(
                         await asyncio.to_thread(collect_mainnet_gas_metrics_sync)
                     )
                 except Exception as exc:
                     print(f"Failed to collect mainnet gas metrics: {exc}")
+
+                try:
+                    l1_points = await collect_l1_sender_points()
+                    points.extend(l1_points)
+                    log_prepared_l1_points(loop_count, l1_points)
+                except Exception as exc:
+                    print(f"Failed to collect L1 sender metrics: {exc}")
 
                 points.extend(await collect_scraped_metrics_points())
 
