@@ -459,7 +459,6 @@ jobs:
           fi
           SEQUENCER_ADDRESS=$(cast wallet address "$SEQUENCER_PRIVATE_KEY")
           echo "Sequencer address: $SEQUENCER_ADDRESS"
-          echo "OP_NODE_L1_ADDRESS=$SEQUENCER_ADDRESS" >> "$GITHUB_ENV"
           
           op-node-seq \
             --log.level=debug \
@@ -498,6 +497,7 @@ jobs:
           fi
           BATCHER_ADDRESS=$(cast wallet address "$BATCHER_PRIVATE_KEY")
           echo "Batcher address: $BATCHER_ADDRESS"
+          echo "OP_BATCHER_L1_ADDRESS=$BATCHER_ADDRESS" >> "$GITHUB_ENV"
 
           # Fund the batcher address on L1 (anvil) so it can pay for batch submission txs
           cast send --rpc-url http://localhost:15900 \
@@ -553,6 +553,7 @@ jobs:
           fi
           PROPOSER_ADDRESS=$(cast wallet address "$PROPOSER_PRIVATE_KEY")
           echo "Proposer address: $PROPOSER_ADDRESS"
+          echo "OP_PROPOSER_L1_ADDRESS=$PROPOSER_ADDRESS" >> "$GITHUB_ENV"
 
           # Fund the proposer address on L1 (anvil)
           cast send --rpc-url http://localhost:15900 \
@@ -699,7 +700,8 @@ jobs:
           INFLUXDB_ORG: arkiv-network
           INFLUXDB_BUCKET: arkiv-tests
           OP_NODE_L1_RPC_URL: http://127.0.0.1:15900
-          OP_NODE_L1_ADDRESS: ${{ env.OP_NODE_L1_ADDRESS }}
+          OP_BATCHER_L1_ADDRESS: ${{ env.OP_BATCHER_L1_ADDRESS }}
+          OP_PROPOSER_L1_ADDRESS: ${{ env.OP_PROPOSER_L1_ADDRESS }}
           OP_BATCHER_METRICS_URL: http://127.0.0.1:7365/metrics
           OP_PROPOSER_METRICS_URL: http://127.0.0.1:7375/metrics
 

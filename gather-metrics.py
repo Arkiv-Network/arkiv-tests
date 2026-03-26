@@ -17,7 +17,10 @@ CELESTIA_ADDRESS = os.getenv("CELESTIA_ADDRESS", "").strip()
 CELESTIA_RPC_ADDR = os.getenv("CELESTIA_RPC_ADDR", "").strip()
 OP_NODE_L1_RPC_URL = os.getenv("OP_NODE_L1_RPC_URL", "").strip()
 OP_NODE_L1_ADDRESS = os.getenv("OP_NODE_L1_ADDRESS", "").strip()
+OP_BATCHER_L1_ADDRESS = os.getenv("OP_BATCHER_L1_ADDRESS", "").strip()
+OP_PROPOSER_L1_ADDRESS = os.getenv("OP_PROPOSER_L1_ADDRESS", "").strip()
 OP_NODE_L1_START_BLOCK = max(int(os.getenv("OP_NODE_L1_START_BLOCK", "0")), 0)
+MAX_L1_LOGGED_SENDERS = 5
 GAS_BASE_NETWORK = os.getenv(
     "GAS_BASE_NETWORK", "https://mainnet.rpc-node.dev.golem.network/"
 ).strip()
@@ -57,6 +60,83 @@ l1_tx_metrics_state = {
 }
 
 
+def get_point_measurement(point):
+    return getattr(point, "measurement", "")
+
+
+def escape_log_value(value):
+    return str(value).replace("\\", "\\\\").replace(",", "\\,").replace("=", "\\=")
+
+
+def format_log_mapping(mapping):
+    if not mapping:
+        return "-"
+
+    return ",".join(
+        f"{escape_log_value(key)}={escape_log_value(mapping[key])}"
+        for key in sorted(mapping)
+    )
+
+
+def format_seen_senders(senders):
+    if not senders:
+        return "none"
+
+    visible_senders = senders[:MAX_L1_LOGGED_SENDERS]
+    hidden_sender_count = len(senders) - len(visible_senders)
+    formatted_senders = ", ".join(visible_senders)
+    if hidden_sender_count > 0:
+        return f"{formatted_senders}, ... (+{hidden_sender_count} more)"
+
+    return formatted_senders
+
+
+def describe_point_for_log(point):
+    measurement = get_point_measurement(point) or "<unknown>"
+    tags = getattr(point, "tags", {})
+    fields = getattr(point, "fields", {})
+    warnings = []
+
+    if not hasattr(point, "measurement"):
+        warnings.append("missing_measurement")
+    if not isinstance(tags, dict):
+        warnings.append("invalid_tags")
+        tags = {}
+    if not isinstance(fields, dict):
+        warnings.append("invalid_fields")
+        fields = {}
+
+    warning_suffix = ""
+    if warnings:
+        warning_suffix = f" warnings[{','.join(warnings)}]"
+    return (
+        f"{measurement} tags[{format_log_mapping(tags)}] "
+        f"fields[{format_log_mapping(fields)}]{warning_suffix}"
+    )
+
+
+def log_prepared_l1_points(loop_count, points):
+    l1_points = [
+        point for point in points if get_point_measurement(point).startswith("arkiv_l1_")
+    ]
+    if not l1_points:
+        return
+
+    measurement_counts = {}
+    for point in l1_points:
+        measurement = get_point_measurement(point)
+        measurement_counts[measurement] = measurement_counts.get(measurement, 0) + 1
+
+    print(
+        f"[l1-tracker] iteration {loop_count}: prepared {len(l1_points)} L1 point(s) "
+        f"for InfluxDB write. measurements={format_log_mapping(measurement_counts)}"
+    )
+    for point in l1_points:
+        print(
+            f"[l1-tracker] iteration {loop_count}: queued {describe_point_for_log(point)}"
+        )
+
+
 def normalize_eth_address(address):
     if not isinstance(address, str):
         return ""
@@ -91,6 +171,14 @@ def get_tracked_l1_senders():
     op_node_address = normalize_eth_address(OP_NODE_L1_ADDRESS)
     if op_node_address:
         tracked_senders["op-node"] = op_node_address
+
+    op_batcher_address = normalize_eth_address(OP_BATCHER_L1_ADDRESS)
+    if op_batcher_address:
+        tracked_senders["op-batcher"] = op_batcher_address
+
+    op_proposer_address = normalize_eth_address(OP_PROPOSER_L1_ADDRESS)
+    if op_proposer_address:
+        tracked_senders["op-proposer"] = op_proposer_address
 
     return tracked_senders
 
@@ -323,6 +411,12 @@ def collect_l1_sender_points_sync():
     else:
         next_block = l1_tx_metrics_state["last_scanned_block"] + 1
     new_points = []
+    tracked_sender_summary = ", ".join(
+        f"{component}={tracked_sender}"
+        for component, tracked_sender in sorted(tracked_senders.items())
+    )
+    scanned_blocks = 0
+    matched_transactions_total = 0
 
     for block_number in range(next_block, latest_block + 1):
         block = call_json_rpc(
@@ -330,13 +424,20 @@ def collect_l1_sender_points_sync():
             "eth_getBlockByNumber",
             [hex(block_number), True],
         )
+        scanned_blocks += 1
+        transactions = block.get("transactions", [])
         matching_transactions = []
+        seen_senders = []
+        seen_sender_set = set()
 
-        for transaction in block.get("transactions", []):
+        for transaction in transactions:
             sender = normalize_eth_address(transaction.get("from"))
             tx_hash = transaction.get("hash")
             if not tx_hash:
                 continue
+            if sender and sender not in seen_sender_set:
+                seen_sender_set.add(sender)
+                seen_senders.append(sender)
 
             for component, tracked_sender in tracked_senders.items():
                 if sender != tracked_sender:
@@ -344,6 +445,23 @@ def collect_l1_sender_points_sync():
 
                 matching_transactions.append((component, tracked_sender, transaction))
                 break
+
+        if matching_transactions:
+            matched_transactions_total += len(matching_transactions)
+            print(
+                f"[l1-tracker] block {block_number}: matched {len(matching_transactions)} "
+                f"transaction(s) for {', '.join(component for component, _, _ in matching_transactions)}"
+            )
+            print(
+                f"[l1-tracker] block {block_number}: fetching receipts for "
+                f"{', '.join(transaction['hash'] for _, _, transaction in matching_transactions)}"
+            )
+        elif transactions:
+            print(
+                f"[l1-tracker] block {block_number}: scanned {len(transactions)} transaction(s) "
+                f"but found no matches. tracked={tracked_sender_summary}; "
+                f"seen_from={format_seen_senders(seen_senders)}"
+            )
 
         receipts_by_hash = {}
         if matching_transactions:
@@ -362,47 +480,74 @@ def collect_l1_sender_points_sync():
             l1_tx_metrics_state["gas_used_total"][component] = (
                 l1_tx_metrics_state["gas_used_total"].get(component, 0) + gas_used
             )
-            new_points.append(
-                create_point(
-                    "arkiv_l1_transaction_gas_used",
-                    gas_used,
-                    {
-                        "component": component,
-                        "sender": tracked_sender,
-                        "tx_hash": transaction["hash"],
-                        "block_number": block_number,
-                        "to": transaction.get("to") or "",
-                    },
-                )
+            point = create_point(
+                "arkiv_l1_transaction_gas_used",
+                gas_used,
+                {
+                    "component": component,
+                    "sender": tracked_sender,
+                    "tx_hash": transaction["hash"],
+                    "block_number": block_number,
+                    "to": transaction.get("to") or "",
+                },
             )
+            new_points.append(point)
+            print(
+                f"[l1-tracker] tx {transaction['hash']}: component={component} "
+                f"sender={tracked_sender} to={transaction.get('to') or ''} gas_used={gas_used} "
+                f"cumulative_transactions={l1_tx_metrics_state['transactions_total'][component]} "
+                f"cumulative_gas_used={l1_tx_metrics_state['gas_used_total'][component]}"
+            )
+            print(f"[l1-tracker] queued {describe_point_for_log(point)}")
 
         l1_tx_metrics_state["last_scanned_block"] = block_number
+
+    if scanned_blocks:
+        cumulative_totals_summary = ", ".join(
+            f"{component}={l1_tx_metrics_state['transactions_total'].get(component, 0)}"
+            for component in sorted(tracked_senders)
+        )
+        print(
+            f"[l1-tracker] scanned {scanned_blocks} block(s) from {next_block} to {latest_block}; "
+            f"matched {matched_transactions_total} tracked transaction(s). "
+            f"tracked={tracked_sender_summary}; totals={cumulative_totals_summary}"
+        )
 
     for component, tracked_sender in tracked_senders.items():
         last_scanned_block = l1_tx_metrics_state["last_scanned_block"]
         if last_scanned_block is None:
             last_scanned_block = OP_NODE_L1_START_BLOCK
 
-        new_points.append(
-            create_point(
-                "arkiv_l1_transactions_total",
-                l1_tx_metrics_state["transactions_total"].get(component, 0),
-                {"component": component, "sender": tracked_sender},
-            )
+        transactions_total_point = create_point(
+            "arkiv_l1_transactions_total",
+            l1_tx_metrics_state["transactions_total"].get(component, 0),
+            {"component": component, "sender": tracked_sender},
         )
-        new_points.append(
-            create_point(
-                "arkiv_l1_gas_used_total",
-                l1_tx_metrics_state["gas_used_total"].get(component, 0),
-                {"component": component, "sender": tracked_sender},
-            )
+        gas_used_total_point = create_point(
+            "arkiv_l1_gas_used_total",
+            l1_tx_metrics_state["gas_used_total"].get(component, 0),
+            {"component": component, "sender": tracked_sender},
         )
-        new_points.append(
-            create_point(
-                "arkiv_l1_last_scanned_block",
-                last_scanned_block,
-                {"component": component, "sender": tracked_sender},
-            )
+        last_scanned_block_point = create_point(
+            "arkiv_l1_last_scanned_block",
+            last_scanned_block,
+            {"component": component, "sender": tracked_sender},
+        )
+        new_points.extend(
+            [transactions_total_point, gas_used_total_point, last_scanned_block_point]
+        )
+        print(
+            f"[l1-tracker] component={component}: totals transaction_count="
+            f"{l1_tx_metrics_state['transactions_total'].get(component, 0)} "
+            f"gas_used_total={l1_tx_metrics_state['gas_used_total'].get(component, 0)} "
+            f"last_scanned_block={last_scanned_block}"
+        )
+        print(
+            f"[l1-tracker] queued {describe_point_for_log(transactions_total_point)}"
+        )
+        print(f"[l1-tracker] queued {describe_point_for_log(gas_used_total_point)}")
+        print(
+            f"[l1-tracker] queued {describe_point_for_log(last_scanned_block_point)}"
         )
 
     return new_points
@@ -489,6 +634,7 @@ async def run_infinite_loop():
 
                 # --- Build InfluxDB Points ---
                 points = []
+                l1_points = []
 
                 # Translate our state dictionary into InfluxDB Points
                 for key, val in metrics_state.items():
@@ -504,7 +650,9 @@ async def run_infinite_loop():
                     print(f"Failed to fetch Celestia account balance: {exc}")
 
                 try:
-                    points.extend(await collect_l1_sender_points())
+                    l1_points = await collect_l1_sender_points()
+                    points.extend(l1_points)
+                    log_prepared_l1_points(loop_count, l1_points)
                 except Exception as exc:
                     print(f"Failed to collect L1 sender metrics: {exc}")
 
@@ -518,7 +666,17 @@ async def run_infinite_loop():
                 points.extend(await collect_scraped_metrics_points())
 
                 # --- Push to InfluxDB ---
+                if l1_points:
+                    print(
+                        f"[l1-tracker] iteration {loop_count}: writing {len(l1_points)} "
+                        f"L1 point(s) to bucket={INFLUX_BUCKET} url={INFLUXDB_URL}"
+                    )
                 await write_api.write(bucket=INFLUX_BUCKET, record=points)
+                if l1_points:
+                    print(
+                        f"[l1-tracker] iteration {loop_count}: write completed for "
+                        f"{len(l1_points)} L1 point(s)"
+                    )
 
                 print(f"Pushed iteration: {loop_count}")
                 await asyncio.sleep(PUSH_INTERVAL_SECONDS)
