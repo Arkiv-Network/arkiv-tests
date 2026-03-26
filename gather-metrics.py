@@ -17,6 +17,8 @@ CELESTIA_ADDRESS = os.getenv("CELESTIA_ADDRESS", "").strip()
 CELESTIA_RPC_ADDR = os.getenv("CELESTIA_RPC_ADDR", "").strip()
 OP_NODE_L1_RPC_URL = os.getenv("OP_NODE_L1_RPC_URL", "").strip()
 OP_NODE_L1_ADDRESS = os.getenv("OP_NODE_L1_ADDRESS", "").strip()
+OP_BATCHER_L1_ADDRESS = os.getenv("OP_BATCHER_L1_ADDRESS", "").strip()
+OP_PROPOSER_L1_ADDRESS = os.getenv("OP_PROPOSER_L1_ADDRESS", "").strip()
 OP_NODE_L1_START_BLOCK = max(int(os.getenv("OP_NODE_L1_START_BLOCK", "0")), 0)
 GAS_BASE_NETWORK = os.getenv(
     "GAS_BASE_NETWORK", "https://mainnet.rpc-node.dev.golem.network/"
@@ -91,6 +93,14 @@ def get_tracked_l1_senders():
     op_node_address = normalize_eth_address(OP_NODE_L1_ADDRESS)
     if op_node_address:
         tracked_senders["op-node"] = op_node_address
+
+    op_batcher_address = normalize_eth_address(OP_BATCHER_L1_ADDRESS)
+    if op_batcher_address:
+        tracked_senders["op-batcher"] = op_batcher_address
+
+    op_proposer_address = normalize_eth_address(OP_PROPOSER_L1_ADDRESS)
+    if op_proposer_address:
+        tracked_senders["op-proposer"] = op_proposer_address
 
     return tracked_senders
 
@@ -323,6 +333,12 @@ def collect_l1_sender_points_sync():
     else:
         next_block = l1_tx_metrics_state["last_scanned_block"] + 1
     new_points = []
+    tracked_sender_summary = ", ".join(
+        f"{component}={tracked_sender}"
+        for component, tracked_sender in sorted(tracked_senders.items())
+    )
+    scanned_blocks = 0
+    matched_transactions_total = 0
 
     for block_number in range(next_block, latest_block + 1):
         block = call_json_rpc(
@@ -330,13 +346,18 @@ def collect_l1_sender_points_sync():
             "eth_getBlockByNumber",
             [hex(block_number), True],
         )
+        scanned_blocks += 1
+        transactions = block.get("transactions", [])
         matching_transactions = []
+        seen_senders = []
 
-        for transaction in block.get("transactions", []):
+        for transaction in transactions:
             sender = normalize_eth_address(transaction.get("from"))
             tx_hash = transaction.get("hash")
             if not tx_hash:
                 continue
+            if sender and sender not in seen_senders:
+                seen_senders.append(sender)
 
             for component, tracked_sender in tracked_senders.items():
                 if sender != tracked_sender:
@@ -344,6 +365,19 @@ def collect_l1_sender_points_sync():
 
                 matching_transactions.append((component, tracked_sender, transaction))
                 break
+
+        if matching_transactions:
+            matched_transactions_total += len(matching_transactions)
+            print(
+                f"[l1-tracker] block {block_number}: matched {len(matching_transactions)} "
+                f"transaction(s) for {', '.join(component for component, _, _ in matching_transactions)}"
+            )
+        elif transactions:
+            print(
+                f"[l1-tracker] block {block_number}: scanned {len(transactions)} transaction(s) "
+                f"but found no matches. tracked={tracked_sender_summary}; "
+                f"seen_from={', '.join(seen_senders[:5]) or 'none'}"
+            )
 
         receipts_by_hash = {}
         if matching_transactions:
@@ -377,6 +411,17 @@ def collect_l1_sender_points_sync():
             )
 
         l1_tx_metrics_state["last_scanned_block"] = block_number
+
+    if scanned_blocks:
+        cumulative_totals_summary = ", ".join(
+            f"{component}={l1_tx_metrics_state['transactions_total'].get(component, 0)}"
+            for component in sorted(tracked_senders)
+        )
+        print(
+            f"[l1-tracker] scanned {scanned_blocks} block(s) from {next_block} to {latest_block}; "
+            f"matched {matched_transactions_total} tracked transaction(s). "
+            f"tracked={tracked_sender_summary}; totals={cumulative_totals_summary}"
+        )
 
     for component, tracked_sender in tracked_senders.items():
         last_scanned_block = l1_tx_metrics_state["last_scanned_block"]

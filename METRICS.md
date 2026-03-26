@@ -34,7 +34,7 @@ This metric is only emitted when both `CELESTIA_ADDRESS` and `CELESTIA_RPC_ADDR`
 
 ## Optional L1 sender tracking metrics
 
-These metrics are emitted when both `OP_NODE_L1_RPC_URL` and `OP_NODE_L1_ADDRESS` are configured. The collector scans L1 blocks, finds transactions sent by the tracked address, and emits both per-transaction and cumulative measurements.
+These metrics are emitted when `OP_NODE_L1_RPC_URL` is configured together with at least one tracked sender address such as `OP_NODE_L1_ADDRESS`, `OP_BATCHER_L1_ADDRESS`, or `OP_PROPOSER_L1_ADDRESS`. The collector scans L1 blocks, finds transactions sent by those addresses, and emits both per-transaction and cumulative measurements.
 
 | Measurement | Meaning | Typical tags |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ These metrics are emitted when both `OP_NODE_L1_RPC_URL` and `OP_NODE_L1_ADDRESS
 | `arkiv_l1_gas_used_total` | Running total of gas used by matching L1 transactions. | `component`, `sender` |
 | `arkiv_l1_last_scanned_block` | Highest L1 block number scanned by the collector. | `component`, `sender` |
 
-At the moment the tracked sender map is populated for `component=op-node`.
+At the moment the tracked sender map can include `component=op-node`, `component=op-batcher`, and `component=op-proposer`.
 
 ## Mainnet gas price and simulated spend metrics
 
