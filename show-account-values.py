@@ -182,8 +182,8 @@ def main():
         "maxBlockSize": {"value": gas_limit},
         "numAddressesChecked": {"value": len(accounts)},
         "accountsWithTx": {"value": accounts_with_tx},
-        "gasSpent": {"value": net_balance_decrease, "display": wei_to_eth_str(net_balance_decrease)},
-        "totalTransactions": {"value": total_transactions},
+        "gasSpentL2": {"value": net_balance_decrease, "display": wei_to_eth_str(net_balance_decrease)},
+        "totalTransactionsL2": {"value": total_transactions},
     }
 
     if args.save:
