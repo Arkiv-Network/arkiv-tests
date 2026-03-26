@@ -332,16 +332,17 @@ def find_matching_l1_transactions(transactions, tracked_senders):
             seen_sender_set.add(sender)
             seen_senders.append(sender)
 
-        component = next(
+        match = next(
             (
-                tracked_component
+                (tracked_component, tracked_sender)
                 for tracked_component, tracked_sender in tracked_senders.items()
                 if sender == tracked_sender
             ),
-            "",
+            None,
         )
-        if component:
-            matching_transactions.append((component, tracked_senders[component], transaction))
+        if match:
+            component, tracked_sender = match
+            matching_transactions.append((component, tracked_sender, transaction))
 
     return matching_transactions, seen_senders
 
@@ -402,7 +403,7 @@ def build_l1_sender_total_points(tracked_senders):
 def build_simulated_mainnet_spending_points(gas_price_wei):
     points = []
 
-    for component, gas_used in sorted(l1_tx_metrics_state["gas_used_total"].items()):
+    for component, gas_used in l1_tx_metrics_state["gas_used_total"].items():
         simulated_spending_wei = gas_used * gas_price_wei
         points.append(
             create_point(
