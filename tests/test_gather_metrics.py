@@ -320,7 +320,7 @@ class GatherMetricsTests(unittest.TestCase):
         )
         self.assertEqual(spend_wei_point.tags["component"], "op-node")
         self.assertEqual(spend_wei_point.fields["value"], 21_000_000_000_000.0)
-        self.assertEqual(spend_point.tags["component"], "op-node")
+        self.assertEqual(spend_point.tags.get("component"), None)
         # 21000 gas * 1 gwei (1e9 wei) / 1e18 = 21000 * 1e-9 = 0.000021 ETH
         self.assertAlmostEqual(spend_point.fields["value"], 0.000021)
 
@@ -346,6 +346,12 @@ class GatherMetricsTests(unittest.TestCase):
         self.assertEqual(set(spend_points), {"op-batcher", "op-proposer"})
         self.assertEqual(spend_points["op-batcher"].fields["value"], 21_000_000_000_000.0)
         self.assertEqual(spend_points["op-proposer"].fields["value"], 30_000_000_000_000.0)
+        eth_spend_points = [
+            point for point in points if point.measurement == "arkiv_simulated_eth_spend"
+        ]
+        self.assertEqual(len(eth_spend_points), 1)
+        self.assertEqual(eth_spend_points[0].tags.get("component"), None)
+        self.assertAlmostEqual(eth_spend_points[0].fields["value"], 0.000051)
 
     def test_collect_mainnet_gas_metrics_empty_when_no_url(self):
         self.module.GAS_BASE_NETWORK = ""
