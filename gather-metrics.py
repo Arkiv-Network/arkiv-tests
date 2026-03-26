@@ -57,6 +57,8 @@ l1_tx_metrics_state = {
     "last_scanned_block": None,
     "transactions_total": {},
     "gas_used_total": {},
+    "priced_gas_used_total": {},
+    "simulated_spending_total_wei": {},
 }
 
 
@@ -402,11 +404,21 @@ def build_l1_sender_total_points(tracked_senders):
 
 def build_simulated_mainnet_spending_points(gas_price_wei):
     points = []
-    total_simulated_eth_spend = 0
+    total_simulated_spending_wei = 0
+    priced_gas_used_total = l1_tx_metrics_state["priced_gas_used_total"]
+    simulated_spending_total_wei = l1_tx_metrics_state["simulated_spending_total_wei"]
 
     for component, gas_used in l1_tx_metrics_state["gas_used_total"].items():
-        simulated_spending_wei = gas_used * gas_price_wei
-        total_simulated_eth_spend += simulated_spending_wei / 1e18
+        new_gas_used = max(gas_used - priced_gas_used_total.get(component, 0), 0)
+        if new_gas_used:
+            simulated_spending_total_wei[component] = (
+                simulated_spending_total_wei.get(component, 0)
+                + (new_gas_used * gas_price_wei)
+            )
+            priced_gas_used_total[component] = gas_used
+
+        simulated_spending_wei = simulated_spending_total_wei.get(component, 0)
+        total_simulated_spending_wei += simulated_spending_wei
         points.append(
             create_point(
                 "arkiv_simulated_mainnet_spending",
@@ -417,7 +429,9 @@ def build_simulated_mainnet_spending_points(gas_price_wei):
 
     if l1_tx_metrics_state["gas_used_total"]:
         points.append(
-            create_point("arkiv_simulated_eth_spend", total_simulated_eth_spend, {})
+            create_point(
+                "arkiv_simulated_eth_spend", total_simulated_spending_wei / 1e18, {}
+            )
         )
 
     return points

@@ -84,6 +84,8 @@ class GatherMetricsTests(unittest.TestCase):
             "last_scanned_block": None,
             "transactions_total": {},
             "gas_used_total": {},
+            "priced_gas_used_total": {},
+            "simulated_spending_total_wei": {},
         }
 
     def test_normalize_eth_address_lowercases_valid_addresses(self):
@@ -352,6 +354,42 @@ class GatherMetricsTests(unittest.TestCase):
         self.assertEqual(len(eth_spend_points), 1)
         self.assertEqual(eth_spend_points[0].tags.get("component"), None)
         self.assertAlmostEqual(eth_spend_points[0].fields["value"], 0.000051)
+
+    def test_collect_mainnet_gas_metrics_accumulates_only_new_gas_at_current_price(self):
+        self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
+        self.module.l1_tx_metrics_state["gas_used_total"]["op-node"] = 21000
+        gas_prices = iter(["0x77359400", "0x3b9aca00"])
+
+        def fake_rpc(url, method, params):
+            if method == "eth_gasPrice":
+                return next(gas_prices)
+            raise ValueError(f"Unexpected call: {method}")
+
+        self.module.call_json_rpc = fake_rpc
+
+        first_points = self.module.collect_mainnet_gas_metrics_sync()
+        first_component_spend = next(
+            p for p in first_points if p.measurement == "arkiv_simulated_mainnet_spending"
+        )
+        first_total_spend = next(
+            p for p in first_points if p.measurement == "arkiv_simulated_eth_spend"
+        )
+        self.assertEqual(first_component_spend.fields["value"], 42_000_000_000_000.0)
+        self.assertAlmostEqual(first_total_spend.fields["value"], 0.000042)
+
+        self.module.l1_tx_metrics_state["gas_used_total"]["op-node"] = 22000
+
+        second_points = self.module.collect_mainnet_gas_metrics_sync()
+        second_component_spend = next(
+            p
+            for p in second_points
+            if p.measurement == "arkiv_simulated_mainnet_spending"
+        )
+        second_total_spend = next(
+            p for p in second_points if p.measurement == "arkiv_simulated_eth_spend"
+        )
+        self.assertEqual(second_component_spend.fields["value"], 43_000_000_000_000.0)
+        self.assertAlmostEqual(second_total_spend.fields["value"], 0.000043)
 
     def test_collect_mainnet_gas_metrics_empty_when_no_url(self):
         self.module.GAS_BASE_NETWORK = ""

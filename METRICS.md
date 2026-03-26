@@ -47,13 +47,13 @@ At the moment the tracked sender map can include `component=op-node`, `component
 
 ## Mainnet gas price and simulated spend metrics
 
-These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector fetches `eth_gasPrice` from the configured network and combines it with the cumulative L1 gas totals.
+These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector fetches `eth_gasPrice` from the configured network and prices each newly observed increment of L1 gas at the current mainnet gas price before adding it to the running totals.
 
 | Measurement | Meaning | Typical tags |
 | --- | --- | --- |
 | `arkiv_mainnet_gas_price` | Current gas price returned by the configured mainnet RPC, in wei. | none beyond base tags |
-| `arkiv_simulated_mainnet_spending` | Estimated L1 spend in wei, computed as `arkiv_l1_gas_used_total * arkiv_mainnet_gas_price`. | `component` |
-| `arkiv_simulated_eth_spend` | Aggregated estimated ETH spend across all tracked L1 components, computed as `sum(arkiv_l1_gas_used_total) * arkiv_mainnet_gas_price / 1e18`. | none beyond base tags |
+| `arkiv_simulated_mainnet_spending` | Running simulated L1 spend in wei for each tracked component. Each new gas increment is multiplied by the current `arkiv_mainnet_gas_price` when it is first observed and added to the total. | `component` |
+| `arkiv_simulated_eth_spend` | Aggregated running simulated ETH spend across all tracked L1 components, equal to the sum of `arkiv_simulated_mainnet_spending` values divided by `1e18`. | none beyond base tags |
 
 ## Scraped Prometheus metrics
 
