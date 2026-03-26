@@ -12,6 +12,11 @@ Use this only as a reference.
 
 ![Overview](Overview.png)
 
+## Documentation
+
+- [Script explanation](EXPLANATION.md)
+- [Metrics reference](METRICS.md)
+
 ## Other stuff
 
 ### useful greps for op batcher logs debugging
