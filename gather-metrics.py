@@ -18,6 +18,9 @@ CELESTIA_RPC_ADDR = os.getenv("CELESTIA_RPC_ADDR", "").strip()
 OP_NODE_L1_RPC_URL = os.getenv("OP_NODE_L1_RPC_URL", "").strip()
 OP_NODE_L1_ADDRESS = os.getenv("OP_NODE_L1_ADDRESS", "").strip()
 OP_NODE_L1_START_BLOCK = max(int(os.getenv("OP_NODE_L1_START_BLOCK", "0")), 0)
+GAS_BASE_NETWORK = os.getenv(
+    "GAS_BASE_NETWORK", "https://mainnet.rpc-node.dev.golem.network/"
+).strip()
 
 SCRAPE_TARGETS = {
     "op-batcher": os.getenv(
@@ -405,6 +408,29 @@ def collect_l1_sender_points_sync():
     return new_points
 
 
+def collect_mainnet_gas_metrics_sync():
+    if not GAS_BASE_NETWORK:
+        return []
+
+    gas_price_wei = hex_to_int(call_json_rpc(GAS_BASE_NETWORK, "eth_gasPrice", []))
+
+    points = [
+        create_point("arkiv_mainnet_gas_price", gas_price_wei),
+    ]
+
+    for component, gas_used in l1_tx_metrics_state["gas_used_total"].items():
+        simulated_spend_eth = gas_used * gas_price_wei / 1e18
+        points.append(
+            create_point(
+                "arkiv_simulated_eth_spend",
+                simulated_spend_eth,
+                {"component": component},
+            )
+        )
+
+    return points
+
+
 async def collect_l1_sender_points():
     return await asyncio.to_thread(collect_l1_sender_points_sync)
 
@@ -481,6 +507,13 @@ async def run_infinite_loop():
                     points.extend(await collect_l1_sender_points())
                 except Exception as exc:
                     print(f"Failed to collect L1 sender metrics: {exc}")
+
+                try:
+                    points.extend(
+                        await asyncio.to_thread(collect_mainnet_gas_metrics_sync)
+                    )
+                except Exception as exc:
+                    print(f"Failed to collect mainnet gas metrics: {exc}")
 
                 points.extend(await collect_scraped_metrics_points())
 
