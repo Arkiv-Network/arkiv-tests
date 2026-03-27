@@ -57,7 +57,7 @@ These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector f
 
 ## Celenium gas price and simulated DA spend metrics
 
-These metrics are emitted when `CELENIUM_GAS_PRICE_URL` is configured. The collector fetches the median gas price from the Celenium API and monitors changes in `arkiv_da_data_size`. On each positive size increase, it calls `CELENIUM_GAS_ESTIMATE_URL?sizes=<delta_bytes>` and increments the cumulative simulated DA spend by `estimate_for_pfb * median_gas_price`.
+These metrics are emitted when `CELENIUM_GAS_PRICE_URL` is configured. The collector fetches the median gas price from the Celenium API at most once per minute, reuses the last successful value between refreshes, and keeps using the cached value if a refresh fails. It monitors changes in `arkiv_da_data_size` and, on each positive size increase, increments the cumulative simulated DA spend by `(90000 + 8.5 * delta_bytes) * median_gas_price`.
 
 | Measurement | Meaning | Typical tags |
 | --- | --- | --- |

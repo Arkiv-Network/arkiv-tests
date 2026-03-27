@@ -91,6 +91,8 @@ class GatherMetricsTests(unittest.TestCase):
         self.module.da_metrics_state = {
             "last_da_data_size": None,
             "simulated_da_spending_total": Decimal("0"),
+            "gas_price": None,
+            "gas_price_fetched_at": None,
         }
 
     def test_normalize_eth_address_lowercases_valid_addresses(self):
@@ -373,6 +375,8 @@ class GatherMetricsTests(unittest.TestCase):
         self.module.da_metrics_state = {
             "last_da_data_size": 1000,
             "simulated_da_spending_total": Decimal("1.5"),
+            "gas_price": None,
+            "gas_price_fetched_at": None,
         }
         captured_calls = []
 
@@ -380,9 +384,6 @@ class GatherMetricsTests(unittest.TestCase):
             captured_calls.append((url, params))
             if url == self.module.CELENIUM_GAS_PRICE_URL:
                 return {"slow": "0.004001", "median": "0.004001", "fast": "0.004001"}
-            if url == self.module.CELENIUM_GAS_ESTIMATE_URL:
-                self.assertEqual(params, {"sizes": 600})
-                return "2.5"
             raise AssertionError(f"Unexpected URL: {url}")
 
         self.module.call_json_api = fake_json_api
@@ -394,7 +395,6 @@ class GatherMetricsTests(unittest.TestCase):
             captured_calls,
             [
                 (self.module.CELENIUM_GAS_PRICE_URL, None),
-                (self.module.CELENIUM_GAS_ESTIMATE_URL, {"sizes": 600}),
             ],
         )
         self.assertIn("arkiv_celenium_gas_price", measurements)
@@ -406,11 +406,11 @@ class GatherMetricsTests(unittest.TestCase):
             point for point in points if point.measurement == "arkiv_simulated_da_spending"
         )
         self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
-        self.assertAlmostEqual(spend_point.fields["value"], 1.5100025)
+        self.assertAlmostEqual(spend_point.fields["value"], 381.9951)
         self.assertEqual(self.module.da_metrics_state["last_da_data_size"], 1600)
         self.assertEqual(
             self.module.da_metrics_state["simulated_da_spending_total"],
-            Decimal("1.5100025"),
+            Decimal("381.9951"),
         )
 
     def test_collect_celenium_gas_metrics_initializes_da_size_without_spend(self):
@@ -436,6 +436,63 @@ class GatherMetricsTests(unittest.TestCase):
         self.assertEqual(
             self.module.da_metrics_state["simulated_da_spending_total"], Decimal("0")
         )
+
+    def test_collect_celenium_gas_metrics_reuses_cached_price_within_one_minute(self):
+        self.module.metrics_state["arkiv_da_data_size"] = 1010
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": Decimal("0"),
+            "gas_price": Decimal("0.004001"),
+            "gas_price_fetched_at": 100.0,
+        }
+
+        self.module.time.time = lambda: 120.0
+        self.module.call_json_api = lambda url, params=None: self.fail(
+            "gas price endpoint should not be called while cache is fresh"
+        )
+
+        points = self.module.collect_celenium_gas_metrics_sync()
+
+        gas_price_point = next(
+            point for point in points if point.measurement == "arkiv_celenium_gas_price"
+        )
+        spend_point = next(
+            point for point in points if point.measurement == "arkiv_simulated_da_spending"
+        )
+        self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
+        self.assertAlmostEqual(spend_point.fields["value"], 360.430085)
+        self.assertEqual(
+            self.module.da_metrics_state["simulated_da_spending_total"], Decimal("360.430085")
+        )
+
+    def test_collect_celenium_gas_metrics_uses_old_price_when_refresh_fails(self):
+        self.module.metrics_state["arkiv_da_data_size"] = 1020
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": Decimal("0"),
+            "gas_price": Decimal("0.004001"),
+            "gas_price_fetched_at": 100.0,
+        }
+
+        self.module.time.time = lambda: 161.0
+
+        def failing_json_api(url, params=None):
+            raise RuntimeError("boom")
+
+        self.module.call_json_api = failing_json_api
+
+        points = self.module.collect_celenium_gas_metrics_sync()
+
+        gas_price_point = next(
+            point for point in points if point.measurement == "arkiv_celenium_gas_price"
+        )
+        spend_point = next(
+            point for point in points if point.measurement == "arkiv_simulated_da_spending"
+        )
+        self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
+        self.assertAlmostEqual(spend_point.fields["value"], 360.77017)
+        self.assertEqual(self.module.da_metrics_state["gas_price"], Decimal("0.004001"))
+        self.assertEqual(self.module.da_metrics_state["gas_price_fetched_at"], 100.0)
 
     def test_collect_mainnet_gas_metrics_empty_when_no_url(self):
         self.module.GAS_BASE_NETWORK = ""

@@ -3,6 +3,7 @@ import json
 import math
 import os
 import socket
+import time
 from decimal import Decimal
 
 import requests
@@ -28,10 +29,9 @@ GAS_BASE_NETWORK = os.getenv(
 CELENIUM_GAS_PRICE_URL = os.getenv(
     "CELENIUM_GAS_PRICE_URL", "https://api-mainnet.celenium.io/v1/gas/price"
 ).strip()
-CELENIUM_GAS_ESTIMATE_URL = os.getenv(
-    "CELENIUM_GAS_ESTIMATE_URL",
-    "https://api-mainnet.celenium.io/v1/gas/estimate_for_pfb",
-).strip()
+CELENIUM_GAS_PRICE_CACHE_SECONDS = 60
+CELENIUM_PFB_BASE_GAS = Decimal("90000")
+CELENIUM_PFB_GAS_PER_BYTE = Decimal("8.5")
 
 SCRAPE_TARGETS = {
     "op-batcher": os.getenv(
@@ -71,6 +71,8 @@ l1_tx_metrics_state = {
 da_metrics_state = {
     "last_da_data_size": None,
     "simulated_da_spending_total": Decimal("0"),
+    "gas_price": None,
+    "gas_price_fetched_at": None,
 }
 
 
@@ -474,13 +476,8 @@ def build_simulated_mainnet_spending_points():
     return points
 
 
-def extract_celenium_pfb_gas_estimate(payload):
-    if isinstance(payload, dict):
-        for key in ("estimate", "value", "gas", "median"):
-            if key in payload:
-                return parse_decimal(payload[key])
-
-    return parse_decimal(payload)
+def estimate_celenium_pfb_gas(da_diff_size):
+    return CELENIUM_PFB_BASE_GAS + (CELENIUM_PFB_GAS_PER_BYTE * Decimal(da_diff_size))
 
 
 def update_simulated_da_spending_total(current_da_data_size, gas_price):
@@ -490,24 +487,51 @@ def update_simulated_da_spending_total(current_da_data_size, gas_price):
         return
 
     da_diff_size = current_da_data_size - last_da_data_size
-    if da_diff_size <= 0 or not CELENIUM_GAS_ESTIMATE_URL:
+    if da_diff_size <= 0 or gas_price is None:
         return
 
-    estimated_pfb_gas = extract_celenium_pfb_gas_estimate(
-        call_json_api(CELENIUM_GAS_ESTIMATE_URL, {"sizes": da_diff_size})
-    )
+    estimated_pfb_gas = estimate_celenium_pfb_gas(da_diff_size)
     da_metrics_state["simulated_da_spending_total"] = (
         da_metrics_state.get("simulated_da_spending_total", Decimal("0"))
         + (estimated_pfb_gas * gas_price)
     )
 
 
+def get_cached_celenium_gas_price(now=None):
+    if not CELENIUM_GAS_PRICE_URL:
+        return None
+
+    if now is None:
+        now = time.time()
+
+    cached_gas_price = da_metrics_state.get("gas_price")
+    fetched_at = da_metrics_state.get("gas_price_fetched_at")
+    if (
+        cached_gas_price is not None
+        and fetched_at is not None
+        and (now - fetched_at) < CELENIUM_GAS_PRICE_CACHE_SECONDS
+    ):
+        return cached_gas_price
+
+    try:
+        gas_price_payload = call_json_api(CELENIUM_GAS_PRICE_URL)
+    except RuntimeError:
+        return cached_gas_price
+
+    gas_price = parse_decimal(gas_price_payload.get("median"))
+    da_metrics_state["gas_price"] = gas_price
+    da_metrics_state["gas_price_fetched_at"] = now
+    return gas_price
+
+
 def collect_celenium_gas_metrics_sync():
     if not CELENIUM_GAS_PRICE_URL:
         return []
 
-    gas_price_payload = call_json_api(CELENIUM_GAS_PRICE_URL)
-    gas_price = parse_decimal(gas_price_payload.get("median"))
+    gas_price = get_cached_celenium_gas_price()
+    if gas_price is None:
+        return []
+
     current_da_data_size = int(metrics_state.get("arkiv_da_data_size", 0))
     update_simulated_da_spending_total(current_da_data_size, gas_price)
 
