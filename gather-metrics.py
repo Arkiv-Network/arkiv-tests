@@ -32,6 +32,12 @@ CELENIUM_GAS_PRICE_URL = os.getenv(
 CELENIUM_GAS_PRICE_CACHE_SECONDS = 60
 CELENIUM_PFB_BASE_GAS = Decimal("90000")
 CELENIUM_PFB_GAS_PER_BYTE = Decimal("8.5")
+PRICE_API_URL = os.getenv(
+    "PRICE_API_URL",
+    "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,celestia&vs_currencies=usd",
+).strip()
+PRICE_CACHE_SECONDS = 60
+UTIA_PER_TIA = Decimal("1000000")
 
 SCRAPE_TARGETS = {
     "op-batcher": os.getenv(
@@ -73,6 +79,11 @@ da_metrics_state = {
     "simulated_da_spending_total": Decimal("0"),
     "gas_price": None,
     "gas_price_fetched_at": None,
+}
+price_metrics_state = {
+    "eth_price_usd": None,
+    "tia_price_usd": None,
+    "prices_fetched_at": None,
 }
 
 
@@ -524,6 +535,39 @@ def get_cached_celenium_gas_price(now=None):
     return gas_price
 
 
+def get_cached_prices(now=None):
+    if not PRICE_API_URL:
+        return None, None
+
+    if now is None:
+        now = time.time()
+
+    cached_eth = price_metrics_state.get("eth_price_usd")
+    cached_tia = price_metrics_state.get("tia_price_usd")
+    fetched_at = price_metrics_state.get("prices_fetched_at")
+    if (
+        cached_eth is not None
+        and cached_tia is not None
+        and fetched_at is not None
+        and (now - fetched_at) < PRICE_CACHE_SECONDS
+    ):
+        return cached_eth, cached_tia
+
+    try:
+        payload = call_json_api(PRICE_API_URL)
+    except Exception:
+        return cached_eth, cached_tia
+
+    eth_price = payload.get("ethereum", {}).get("usd")
+    tia_price = payload.get("celestia", {}).get("usd")
+    if eth_price is not None:
+        price_metrics_state["eth_price_usd"] = float(eth_price)
+    if tia_price is not None:
+        price_metrics_state["tia_price_usd"] = float(tia_price)
+    price_metrics_state["prices_fetched_at"] = now
+    return price_metrics_state.get("eth_price_usd"), price_metrics_state.get("tia_price_usd")
+
+
 def collect_celenium_gas_metrics_sync():
     if not CELENIUM_GAS_PRICE_URL:
         return []
@@ -535,13 +579,24 @@ def collect_celenium_gas_metrics_sync():
     current_da_data_size = int(metrics_state.get("arkiv_da_data_size", 0))
     update_simulated_da_spending_total(current_da_data_size, gas_price)
 
-    return [
+    points = [
         create_point("arkiv_celenium_gas_price", gas_price),
         create_point(
             "arkiv_simulated_da_spending",
             da_metrics_state.get("simulated_da_spending_total", Decimal("0")),
         ),
     ]
+
+    _, tia_price_usd = get_cached_prices()
+    if tia_price_usd is not None:
+        points.append(create_point("arkiv_tia_price_usd", tia_price_usd))
+        simulated_da_spending_total = da_metrics_state.get(
+            "simulated_da_spending_total", Decimal("0")
+        )
+        da_spending_usd = float(simulated_da_spending_total / UTIA_PER_TIA) * tia_price_usd
+        points.append(create_point("arkiv_simulated_da_spending_usd", da_spending_usd))
+
+    return points
 
 
 async def collect_celestia_balance_points():
@@ -745,6 +800,18 @@ def collect_mainnet_gas_metrics_sync():
         create_point("arkiv_mainnet_gas_price", gas_price_wei),
     ]
     points.extend(build_simulated_mainnet_spending_points())
+
+    eth_price_usd, _ = get_cached_prices()
+    if eth_price_usd is not None:
+        points.append(create_point("arkiv_eth_price_usd", eth_price_usd))
+        total_simulated_spend_wei = l1_tx_metrics_state.get(
+            "simulated_eth_spend_wei_total", 0
+        )
+        if total_simulated_spend_wei:
+            eth_spend_usd = (total_simulated_spend_wei / 1e18) * eth_price_usd
+            points.append(
+                create_point("arkiv_simulated_eth_spend_usd", eth_spend_usd)
+            )
 
     return points
 

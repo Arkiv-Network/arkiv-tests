@@ -94,6 +94,11 @@ class GatherMetricsTests(unittest.TestCase):
             "gas_price": None,
             "gas_price_fetched_at": None,
         }
+        self.module.price_metrics_state = {
+            "eth_price_usd": None,
+            "tia_price_usd": None,
+            "prices_fetched_at": None,
+        }
 
     def test_normalize_eth_address_lowercases_valid_addresses(self):
         self.assertEqual(
@@ -384,6 +389,8 @@ class GatherMetricsTests(unittest.TestCase):
             captured_calls.append((url, params))
             if url == self.module.CELENIUM_GAS_PRICE_URL:
                 return {"slow": "0.004001", "median": "0.004001", "fast": "0.004001"}
+            if url == self.module.PRICE_API_URL:
+                return {"ethereum": {"usd": 2500.0}, "celestia": {"usd": 6.5}}
             raise AssertionError(f"Unexpected URL: {url}")
 
         self.module.call_json_api = fake_json_api
@@ -391,12 +398,7 @@ class GatherMetricsTests(unittest.TestCase):
         points = self.module.collect_celenium_gas_metrics_sync()
         measurements = [point.measurement for point in points]
 
-        self.assertEqual(
-            captured_calls,
-            [
-                (self.module.CELENIUM_GAS_PRICE_URL, None),
-            ],
-        )
+        self.assertIn((self.module.CELENIUM_GAS_PRICE_URL, None), captured_calls)
         self.assertIn("arkiv_celenium_gas_price", measurements)
         self.assertIn("arkiv_simulated_da_spending", measurements)
         gas_price_point = next(
@@ -422,13 +424,15 @@ class GatherMetricsTests(unittest.TestCase):
             captured_calls.append((url, params))
             if url == self.module.CELENIUM_GAS_PRICE_URL:
                 return {"slow": "0.004001", "median": "0.004001", "fast": "0.004001"}
+            if url == self.module.PRICE_API_URL:
+                return {"ethereum": {"usd": 2500.0}, "celestia": {"usd": 6.5}}
             raise AssertionError(f"Unexpected URL: {url}")
 
         self.module.call_json_api = fake_json_api
 
         points = self.module.collect_celenium_gas_metrics_sync()
 
-        self.assertEqual(captured_calls, [(self.module.CELENIUM_GAS_PRICE_URL, None)])
+        self.assertIn((self.module.CELENIUM_GAS_PRICE_URL, None), captured_calls)
         spend_point = next(
             point for point in points if point.measurement == "arkiv_simulated_da_spending"
         )
@@ -502,6 +506,153 @@ class GatherMetricsTests(unittest.TestCase):
         self.module.GAS_BASE_NETWORK = ""
         points = self.module.collect_mainnet_gas_metrics_sync()
         self.assertEqual(points, [])
+
+    def test_get_cached_prices_fetches_and_caches(self):
+        def fake_json_api(url, params=None):
+            if url == self.module.PRICE_API_URL:
+                return {"ethereum": {"usd": 2500.0}, "celestia": {"usd": 6.5}}
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        self.module.call_json_api = fake_json_api
+
+        eth, tia = self.module.get_cached_prices(now=100.0)
+
+        self.assertEqual(eth, 2500.0)
+        self.assertEqual(tia, 6.5)
+        self.assertEqual(self.module.price_metrics_state["eth_price_usd"], 2500.0)
+        self.assertEqual(self.module.price_metrics_state["tia_price_usd"], 6.5)
+        self.assertEqual(self.module.price_metrics_state["prices_fetched_at"], 100.0)
+
+    def test_get_cached_prices_reuses_cache_within_ttl(self):
+        self.module.price_metrics_state = {
+            "eth_price_usd": 2500.0,
+            "tia_price_usd": 6.5,
+            "prices_fetched_at": 100.0,
+        }
+        self.module.call_json_api = lambda url, params=None: self.fail(
+            "price API should not be called while cache is fresh"
+        )
+
+        eth, tia = self.module.get_cached_prices(now=120.0)
+
+        self.assertEqual(eth, 2500.0)
+        self.assertEqual(tia, 6.5)
+
+    def test_get_cached_prices_returns_old_values_on_failure(self):
+        self.module.price_metrics_state = {
+            "eth_price_usd": 2500.0,
+            "tia_price_usd": 6.5,
+            "prices_fetched_at": 10.0,
+        }
+
+        self.module.call_json_api = lambda url, params=None: (_ for _ in ()).throw(
+            RuntimeError("boom")
+        )
+
+        eth, tia = self.module.get_cached_prices(now=200.0)
+
+        self.assertEqual(eth, 2500.0)
+        self.assertEqual(tia, 6.5)
+
+    def test_get_cached_prices_returns_none_when_url_empty(self):
+        self.module.PRICE_API_URL = ""
+        eth, tia = self.module.get_cached_prices()
+        self.assertIsNone(eth)
+        self.assertIsNone(tia)
+
+    def test_collect_mainnet_gas_metrics_emits_eth_price_and_spend_usd(self):
+        self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
+        self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = (
+            21_000_000_000_000
+        )
+        self.module.call_json_rpc = lambda url, method, params: 21_000_000_000_000
+        self.module.price_metrics_state = {
+            "eth_price_usd": 2500.0,
+            "tia_price_usd": 6.5,
+            "prices_fetched_at": 100.0,
+        }
+        self.module.time.time = lambda: 120.0
+
+        points = self.module.collect_mainnet_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertIn("arkiv_eth_price_usd", measurements)
+        self.assertIn("arkiv_simulated_eth_spend_usd", measurements)
+        eth_price_point = next(
+            p for p in points if p.measurement == "arkiv_eth_price_usd"
+        )
+        spend_usd_point = next(
+            p for p in points if p.measurement == "arkiv_simulated_eth_spend_usd"
+        )
+        self.assertEqual(eth_price_point.fields["value"], 2500.0)
+        # 21_000_000_000_000 / 1e18 * 2500.0 = 0.000021 * 2500 = 0.0525
+        self.assertAlmostEqual(spend_usd_point.fields["value"], 0.0525)
+
+    def test_collect_mainnet_gas_metrics_no_usd_when_price_unavailable(self):
+        self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
+        self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = (
+            21_000_000_000_000
+        )
+        self.module.call_json_rpc = lambda url, method, params: 21_000_000_000_000
+        self.module.PRICE_API_URL = ""
+
+        points = self.module.collect_mainnet_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertNotIn("arkiv_eth_price_usd", measurements)
+        self.assertNotIn("arkiv_simulated_eth_spend_usd", measurements)
+
+    def test_collect_celenium_gas_metrics_emits_tia_price_and_spend_usd(self):
+        self.module.metrics_state["arkiv_da_data_size"] = 1600
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": Decimal("1.5"),
+            "gas_price": None,
+            "gas_price_fetched_at": None,
+        }
+
+        def fake_json_api(url, params=None):
+            if url == self.module.CELENIUM_GAS_PRICE_URL:
+                return {"slow": "0.004001", "median": "0.004001", "fast": "0.004001"}
+            if url == self.module.PRICE_API_URL:
+                return {"ethereum": {"usd": 2500.0}, "celestia": {"usd": 6.5}}
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        self.module.call_json_api = fake_json_api
+
+        points = self.module.collect_celenium_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertIn("arkiv_tia_price_usd", measurements)
+        self.assertIn("arkiv_simulated_da_spending_usd", measurements)
+        tia_price_point = next(
+            p for p in points if p.measurement == "arkiv_tia_price_usd"
+        )
+        spend_usd_point = next(
+            p for p in points if p.measurement == "arkiv_simulated_da_spending_usd"
+        )
+        self.assertEqual(tia_price_point.fields["value"], 6.5)
+        # simulated_da_spending_total = 381.9951 utia
+        # TIA = 381.9951 / 1e6 = 0.000381995
+        # USD = 0.000381995 * 6.5 = 0.0024829715
+        self.assertAlmostEqual(spend_usd_point.fields["value"], 0.002482968, places=6)
+
+    def test_collect_celenium_gas_metrics_no_usd_when_price_unavailable(self):
+        self.module.metrics_state["arkiv_da_data_size"] = 1600
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": Decimal("1.5"),
+            "gas_price": Decimal("0.004001"),
+            "gas_price_fetched_at": 100.0,
+        }
+        self.module.PRICE_API_URL = ""
+        self.module.time.time = lambda: 120.0
+
+        points = self.module.collect_celenium_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertNotIn("arkiv_tia_price_usd", measurements)
+        self.assertNotIn("arkiv_simulated_da_spending_usd", measurements)
 
 
 if __name__ == "__main__":

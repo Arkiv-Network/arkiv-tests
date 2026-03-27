@@ -54,6 +54,8 @@ These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector f
 | `arkiv_mainnet_gas_price` | Cumulative estimated L1 spend in wei across all tracked components. Despite the legacy name, this is the running spend total, not the current gas price. | none beyond base tags |
 | `arkiv_simulated_mainnet_spending` | Cumulative estimated L1 spend in wei for each tracked component. Each new tracked transaction increments this by `gasUsed * eth_gasPrice`. | `component` |
 | `arkiv_simulated_eth_spend` | Aggregated estimated ETH spend across all tracked L1 components, computed as `arkiv_mainnet_gas_price / 1e18`. | none beyond base tags |
+| `arkiv_eth_price_usd` | Current ETH price in USD fetched from the configured price API. Only emitted when `PRICE_API_URL` returns a valid ETH price. | none beyond base tags |
+| `arkiv_simulated_eth_spend_usd` | Aggregated estimated USD spend across all tracked L1 components, computed as `arkiv_simulated_eth_spend * arkiv_eth_price_usd`. | none beyond base tags |
 
 ## Celenium gas price and simulated DA spend metrics
 
@@ -63,6 +65,8 @@ These metrics are emitted when `CELENIUM_GAS_PRICE_URL` is configured. The colle
 | --- | --- | --- |
 | `arkiv_celenium_gas_price` | Current median gas price returned by the Celenium API. | none beyond base tags |
 | `arkiv_simulated_da_spending` | Cumulative simulated DA spend based on positive `arkiv_da_data_size` deltas and the current Celenium median gas price. | none beyond base tags |
+| `arkiv_tia_price_usd` | Current TIA price in USD fetched from the configured price API. Only emitted when `PRICE_API_URL` returns a valid TIA price. | none beyond base tags |
+| `arkiv_simulated_da_spending_usd` | Cumulative simulated DA spend in USD, computed as `arkiv_simulated_da_spending / 1e6 * arkiv_tia_price_usd` (converting utia to TIA then to USD). | none beyond base tags |
 
 ## Scraped Prometheus metrics
 
