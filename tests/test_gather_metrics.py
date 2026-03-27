@@ -406,6 +406,7 @@ class GatherMetricsTests(unittest.TestCase):
             point for point in points if point.measurement == "arkiv_simulated_da_spending"
         )
         self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
+        # 1.5 + ((90000 + 8.5 * 600) * 0.004001)
         self.assertAlmostEqual(spend_point.fields["value"], 381.9951)
         self.assertEqual(self.module.da_metrics_state["last_da_data_size"], 1600)
         self.assertEqual(
@@ -460,6 +461,7 @@ class GatherMetricsTests(unittest.TestCase):
             point for point in points if point.measurement == "arkiv_simulated_da_spending"
         )
         self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
+        # (90000 + 8.5 * 10) * 0.004001
         self.assertAlmostEqual(spend_point.fields["value"], 360.430085)
         self.assertEqual(
             self.module.da_metrics_state["simulated_da_spending_total"], Decimal("360.430085")
@@ -490,6 +492,7 @@ class GatherMetricsTests(unittest.TestCase):
             point for point in points if point.measurement == "arkiv_simulated_da_spending"
         )
         self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
+        # (90000 + 8.5 * 20) * 0.004001
         self.assertAlmostEqual(spend_point.fields["value"], 360.77017)
         self.assertEqual(self.module.da_metrics_state["gas_price"], Decimal("0.004001"))
         self.assertEqual(self.module.da_metrics_state["gas_price_fetched_at"], 100.0)
