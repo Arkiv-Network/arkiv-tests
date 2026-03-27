@@ -503,7 +503,7 @@ def update_simulated_da_spending_total(current_da_data_size, gas_price):
     estimated_pfb_gas = estimate_celenium_pfb_gas(da_diff_size)
     da_metrics_state["simulated_da_spending_total"] = (
         da_metrics_state.get("simulated_da_spending_total", Decimal("0"))
-        + (estimated_pfb_gas * gas_price)
+        + (estimated_pfb_gas * gas_price / Decimal("1000000")) # Gas price is in uTIA, so divide by 1e6 to get TIA
     )
 
 
