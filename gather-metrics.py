@@ -24,6 +24,9 @@ MAX_L1_LOGGED_SENDERS = 5
 GAS_BASE_NETWORK = os.getenv(
     "GAS_BASE_NETWORK", "https://mainnet.rpc-node.dev.golem.network/"
 ).strip()
+CELENIUM_API_URL = os.getenv(
+    "CELENIUM_API_URL", "https://api-mainnet.celenium.io"
+).strip()
 
 SCRAPE_TARGETS = {
     "op-batcher": os.getenv(
@@ -59,6 +62,10 @@ l1_tx_metrics_state = {
     "gas_used_total": {},
     "simulated_mainnet_spending": {},
     "simulated_eth_spend_wei_total": 0,
+}
+da_metrics_state = {
+    "last_da_data_size": 0,
+    "simulated_da_spending_total": 0.0,
 }
 
 
@@ -441,6 +448,67 @@ def build_simulated_mainnet_spending_points():
     return points
 
 
+def fetch_celenium_gas_price():
+    try:
+        response = requests.get(
+            f"{CELENIUM_API_URL}/v1/gas/price", timeout=10
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Unable to fetch gas price from {CELENIUM_API_URL}"
+        ) from exc
+
+    data = response.json()
+    return float(data["median"])
+
+
+def fetch_celenium_pfb_estimate(size):
+    try:
+        response = requests.get(
+            f"{CELENIUM_API_URL}/v1/gas/estimate_for_pfb",
+            params={"sizes": size},
+            timeout=10,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Unable to fetch PFB estimate from {CELENIUM_API_URL}"
+        ) from exc
+
+    data = response.json()
+    if isinstance(data, list):
+        return int(data[0]) if data else 0
+    return int(data)
+
+
+def collect_celestia_da_gas_metrics_sync():
+    if not CELENIUM_API_URL:
+        return []
+
+    current_da_size = metrics_state.get("arkiv_da_data_size", 0)
+    last_da_size = da_metrics_state["last_da_data_size"]
+
+    gas_price = fetch_celenium_gas_price()
+    points = [create_point("arkiv_celestia_gas_price", gas_price)]
+
+    da_diff = current_da_size - last_da_size
+    if da_diff > 0:
+        da_metrics_state["last_da_data_size"] = current_da_size
+        estimate = fetch_celenium_pfb_estimate(da_diff)
+        da_metrics_state["simulated_da_spending_total"] += estimate * gas_price
+
+    if da_metrics_state["simulated_da_spending_total"]:
+        points.append(
+            create_point(
+                "arkiv_simulated_da_spending",
+                da_metrics_state["simulated_da_spending_total"],
+            )
+        )
+
+    return points
+
+
 async def collect_celestia_balance_points():
     if not CELESTIA_ADDRESS or not CELESTIA_RPC_ADDR:
         return []
@@ -725,6 +793,13 @@ async def run_infinite_loop():
                     )
                 except Exception as exc:
                     print(f"Failed to collect mainnet gas metrics: {exc}")
+
+                try:
+                    points.extend(
+                        await asyncio.to_thread(collect_celestia_da_gas_metrics_sync)
+                    )
+                except Exception as exc:
+                    print(f"Failed to collect Celestia DA gas metrics: {exc}")
 
                 try:
                     l1_points = await collect_l1_sender_points()

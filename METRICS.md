@@ -32,6 +32,15 @@ This metric is only emitted when both `CELESTIA_ADDRESS` and `CELESTIA_RPC_ADDR`
 | --- | --- | --- |
 | `arkiv_celestia_account_balance` | Current Celestia account balance for the configured address, currently recorded for the `utia` denomination. | `address`, `denom=utia` |
 
+## Celestia DA gas price and simulated DA spend metrics
+
+These metrics are emitted when `CELENIUM_API_URL` is configured (defaults to `https://api-mainnet.celenium.io`). The collector fetches the median gas price from the Celenium API and monitors changes in `arkiv_da_data_size`. When the DA data size increases, it fetches a PFB gas estimate for the size difference and accumulates the simulated DA spending.
+
+| Measurement | Meaning | Typical tags |
+| --- | --- | --- |
+| `arkiv_celestia_gas_price` | Current median Celestia gas price fetched from the Celenium API. | none beyond base tags |
+| `arkiv_simulated_da_spending` | Cumulative simulated DA spending, computed as the sum of `pfb_gas_estimate * median_gas_price` for each observed DA data size increase. | none beyond base tags |
+
 ## Optional L1 sender tracking metrics
 
 These metrics are emitted when `OP_NODE_L1_RPC_URL` is configured together with at least one tracked sender address such as `OP_NODE_L1_ADDRESS`, `OP_BATCHER_L1_ADDRESS`, or `OP_PROPOSER_L1_ADDRESS`. The collector scans L1 blocks, finds transactions sent by those addresses, and emits both per-transaction and cumulative measurements.

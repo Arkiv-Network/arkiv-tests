@@ -365,6 +365,83 @@ class GatherMetricsTests(unittest.TestCase):
         points = self.module.collect_mainnet_gas_metrics_sync()
         self.assertEqual(points, [])
 
+    def test_collect_celestia_da_gas_metrics_returns_gas_price(self):
+        self.module.CELENIUM_API_URL = "https://api-mainnet.celenium.io"
+        self.module.fetch_celenium_gas_price = lambda: 0.004001
+        self.module.da_metrics_state = {
+            "last_da_data_size": 0,
+            "simulated_da_spending_total": 0.0,
+        }
+        self.module.metrics_state["arkiv_da_data_size"] = 0
+
+        points = self.module.collect_celestia_da_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertIn("arkiv_celestia_gas_price", measurements)
+        gas_price_point = next(
+            p for p in points if p.measurement == "arkiv_celestia_gas_price"
+        )
+        self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
+
+    def test_collect_celestia_da_gas_metrics_computes_spending_on_size_change(self):
+        self.module.CELENIUM_API_URL = "https://api-mainnet.celenium.io"
+        self.module.fetch_celenium_gas_price = lambda: 0.004001
+        self.module.fetch_celenium_pfb_estimate = lambda size: 100000
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": 0.0,
+        }
+        self.module.metrics_state["arkiv_da_data_size"] = 2000
+
+        points = self.module.collect_celestia_da_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertIn("arkiv_celestia_gas_price", measurements)
+        self.assertIn("arkiv_simulated_da_spending", measurements)
+        spending_point = next(
+            p for p in points if p.measurement == "arkiv_simulated_da_spending"
+        )
+        # 100000 * 0.004001 = 400.1
+        self.assertAlmostEqual(spending_point.fields["value"], 400.1)
+        self.assertEqual(self.module.da_metrics_state["last_da_data_size"], 2000)
+
+    def test_collect_celestia_da_gas_metrics_no_spending_when_size_unchanged(self):
+        self.module.CELENIUM_API_URL = "https://api-mainnet.celenium.io"
+        self.module.fetch_celenium_gas_price = lambda: 0.004001
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": 0.0,
+        }
+        self.module.metrics_state["arkiv_da_data_size"] = 1000
+
+        points = self.module.collect_celestia_da_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertIn("arkiv_celestia_gas_price", measurements)
+        self.assertNotIn("arkiv_simulated_da_spending", measurements)
+
+    def test_collect_celestia_da_gas_metrics_accumulates_spending(self):
+        self.module.CELENIUM_API_URL = "https://api-mainnet.celenium.io"
+        self.module.fetch_celenium_gas_price = lambda: 0.004001
+        self.module.fetch_celenium_pfb_estimate = lambda size: 50000
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": 100.0,
+        }
+        self.module.metrics_state["arkiv_da_data_size"] = 2000
+
+        points = self.module.collect_celestia_da_gas_metrics_sync()
+        spending_point = next(
+            p for p in points if p.measurement == "arkiv_simulated_da_spending"
+        )
+        # 100.0 + 50000 * 0.004001 = 100.0 + 200.05 = 300.05
+        self.assertAlmostEqual(spending_point.fields["value"], 300.05)
+
+    def test_collect_celestia_da_gas_metrics_empty_when_no_url(self):
+        self.module.CELENIUM_API_URL = ""
+        points = self.module.collect_celestia_da_gas_metrics_sync()
+        self.assertEqual(points, [])
+
 
 if __name__ == "__main__":
     unittest.main()
