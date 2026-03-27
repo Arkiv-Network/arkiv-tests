@@ -592,7 +592,7 @@ def collect_celenium_gas_metrics_sync():
         simulated_da_spending_total = da_metrics_state.get(
             "simulated_da_spending_total", Decimal("0")
         )
-        da_spending_usd = (float(simulated_da_spending_total) / 1e6) * tia_price_usd
+        da_spending_usd = float(simulated_da_spending_total) * tia_price_usd
         points.append(create_point("arkiv_simulated_da_spending_usd", da_spending_usd))
 
     return points
