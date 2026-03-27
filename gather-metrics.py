@@ -515,7 +515,7 @@ def get_cached_celenium_gas_price(now=None):
 
     try:
         gas_price_payload = call_json_api(CELENIUM_GAS_PRICE_URL)
-    except RuntimeError:
+    except Exception:
         return cached_gas_price
 
     gas_price = parse_decimal(gas_price_payload.get("median"))

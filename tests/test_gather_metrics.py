@@ -447,6 +447,7 @@ class GatherMetricsTests(unittest.TestCase):
             "gas_price_fetched_at": 100.0,
         }
 
+        # Override the imported time module used by gather-metrics.py.
         self.module.time.time = lambda: 120.0
         self.module.call_json_api = lambda url, params=None: self.fail(
             "gas price endpoint should not be called while cache is fresh"
