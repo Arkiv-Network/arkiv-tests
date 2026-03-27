@@ -4,6 +4,7 @@ import importlib.util
 import sys
 import types
 import unittest
+from decimal import Decimal
 from pathlib import Path
 
 
@@ -86,6 +87,10 @@ class GatherMetricsTests(unittest.TestCase):
             "gas_used_total": {},
             "simulated_mainnet_spending": {},
             "simulated_eth_spend_wei_total": 0,
+        }
+        self.module.da_metrics_state = {
+            "last_da_data_size": None,
+            "simulated_da_spending_total": Decimal("0"),
         }
 
     def test_normalize_eth_address_lowercases_valid_addresses(self):
@@ -295,6 +300,7 @@ class GatherMetricsTests(unittest.TestCase):
     def test_collect_mainnet_gas_metrics_returns_total_spend(self):
         self.module.GAS_BASE_NETWORK = "https://mainnet.rpc-node.dev.golem.network/"
         self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = 21_000_000_000_000
+        self.module.call_json_rpc = lambda url, method, params: 21_000_000_000_000
 
         points = self.module.collect_mainnet_gas_metrics_sync()
         measurements = [point.measurement for point in points]
@@ -313,6 +319,7 @@ class GatherMetricsTests(unittest.TestCase):
         self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = (
             21_000_000_000_000
         )
+        self.module.call_json_rpc = lambda url, method, params: 21_000_000_000_000
 
         points = self.module.collect_mainnet_gas_metrics_sync()
         measurements = [point.measurement for point in points]
@@ -342,6 +349,7 @@ class GatherMetricsTests(unittest.TestCase):
         self.module.l1_tx_metrics_state["simulated_eth_spend_wei_total"] = (
             51_000_000_000_000
         )
+        self.module.call_json_rpc = lambda url, method, params: 21_000_000_000_000
 
         points = self.module.collect_mainnet_gas_metrics_sync()
         spend_points = {
@@ -359,6 +367,75 @@ class GatherMetricsTests(unittest.TestCase):
         self.assertEqual(len(eth_spend_points), 1)
         self.assertEqual(eth_spend_points[0].tags.get("component"), None)
         self.assertAlmostEqual(eth_spend_points[0].fields["value"], 0.000051)
+
+    def test_collect_celenium_gas_metrics_tracks_da_spending_from_size_diff(self):
+        self.module.metrics_state["arkiv_da_data_size"] = 1600
+        self.module.da_metrics_state = {
+            "last_da_data_size": 1000,
+            "simulated_da_spending_total": Decimal("1.5"),
+        }
+        captured_calls = []
+
+        def fake_json_api(url, params=None):
+            captured_calls.append((url, params))
+            if url == self.module.CELENIUM_GAS_PRICE_URL:
+                return {"slow": "0.004001", "median": "0.004001", "fast": "0.004001"}
+            if url == self.module.CELENIUM_GAS_ESTIMATE_URL:
+                self.assertEqual(params, {"sizes": 600})
+                return "2.5"
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        self.module.call_json_api = fake_json_api
+
+        points = self.module.collect_celenium_gas_metrics_sync()
+        measurements = [point.measurement for point in points]
+
+        self.assertEqual(
+            captured_calls,
+            [
+                (self.module.CELENIUM_GAS_PRICE_URL, None),
+                (self.module.CELENIUM_GAS_ESTIMATE_URL, {"sizes": 600}),
+            ],
+        )
+        self.assertIn("arkiv_celenium_gas_price", measurements)
+        self.assertIn("arkiv_simulated_da_spending", measurements)
+        gas_price_point = next(
+            point for point in points if point.measurement == "arkiv_celenium_gas_price"
+        )
+        spend_point = next(
+            point for point in points if point.measurement == "arkiv_simulated_da_spending"
+        )
+        self.assertAlmostEqual(gas_price_point.fields["value"], 0.004001)
+        self.assertAlmostEqual(spend_point.fields["value"], 1.5100025)
+        self.assertEqual(self.module.da_metrics_state["last_da_data_size"], 1600)
+        self.assertEqual(
+            self.module.da_metrics_state["simulated_da_spending_total"],
+            Decimal("1.5100025"),
+        )
+
+    def test_collect_celenium_gas_metrics_initializes_da_size_without_spend(self):
+        self.module.metrics_state["arkiv_da_data_size"] = 2048
+        captured_calls = []
+
+        def fake_json_api(url, params=None):
+            captured_calls.append((url, params))
+            if url == self.module.CELENIUM_GAS_PRICE_URL:
+                return {"slow": "0.004001", "median": "0.004001", "fast": "0.004001"}
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        self.module.call_json_api = fake_json_api
+
+        points = self.module.collect_celenium_gas_metrics_sync()
+
+        self.assertEqual(captured_calls, [(self.module.CELENIUM_GAS_PRICE_URL, None)])
+        spend_point = next(
+            point for point in points if point.measurement == "arkiv_simulated_da_spending"
+        )
+        self.assertEqual(spend_point.fields["value"], 0.0)
+        self.assertEqual(self.module.da_metrics_state["last_da_data_size"], 2048)
+        self.assertEqual(
+            self.module.da_metrics_state["simulated_da_spending_total"], Decimal("0")
+        )
 
     def test_collect_mainnet_gas_metrics_empty_when_no_url(self):
         self.module.GAS_BASE_NETWORK = ""

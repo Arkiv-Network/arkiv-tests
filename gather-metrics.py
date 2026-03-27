@@ -3,6 +3,7 @@ import json
 import math
 import os
 import socket
+from decimal import Decimal
 
 import requests
 from influxdb_client import Point
@@ -23,6 +24,13 @@ OP_NODE_L1_START_BLOCK = max(int(os.getenv("OP_NODE_L1_START_BLOCK", "0")), 0)
 MAX_L1_LOGGED_SENDERS = 5
 GAS_BASE_NETWORK = os.getenv(
     "GAS_BASE_NETWORK", "https://mainnet.rpc-node.dev.golem.network/"
+).strip()
+CELENIUM_GAS_PRICE_URL = os.getenv(
+    "CELENIUM_GAS_PRICE_URL", "https://api-mainnet.celenium.io/v1/gas/price"
+).strip()
+CELENIUM_GAS_ESTIMATE_URL = os.getenv(
+    "CELENIUM_GAS_ESTIMATE_URL",
+    "https://api-mainnet.celenium.io/v1/gas/estimate_for_pfb",
 ).strip()
 
 SCRAPE_TARGETS = {
@@ -59,6 +67,10 @@ l1_tx_metrics_state = {
     "gas_used_total": {},
     "simulated_mainnet_spending": {},
     "simulated_eth_spend_wei_total": 0,
+}
+da_metrics_state = {
+    "last_da_data_size": None,
+    "simulated_da_spending_total": Decimal("0"),
 }
 
 
@@ -166,6 +178,14 @@ def hex_to_int(value):
         return int(value)
 
     raise TypeError(f"Unsupported type for hex_to_int conversion: {type(value)!r}")
+
+
+def parse_decimal(value):
+    if value is None:
+        return Decimal("0")
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value).strip())
 
 
 def get_tracked_l1_senders():
@@ -288,6 +308,19 @@ def call_json_rpc(url, method, params):
         raise RuntimeError(f"RPC {method} failed: {error}")
 
     return payload.get("result")
+
+
+def call_json_api(url, params=None):
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Unable to fetch JSON from {url}") from exc
+
+    try:
+        return response.json()
+    except ValueError as exc:
+        raise RuntimeError(f"Unable to decode JSON from {url}") from exc
 
 
 def get_receipts_for_block(url, block_number, transaction_hashes):
@@ -439,6 +472,52 @@ def build_simulated_mainnet_spending_points():
         )
 
     return points
+
+
+def extract_celenium_pfb_gas_estimate(payload):
+    if isinstance(payload, dict):
+        for key in ("estimate", "value", "gas", "median"):
+            if key in payload:
+                return parse_decimal(payload[key])
+
+    return parse_decimal(payload)
+
+
+def update_simulated_da_spending_total(current_da_data_size, gas_price):
+    last_da_data_size = da_metrics_state.get("last_da_data_size")
+    da_metrics_state["last_da_data_size"] = current_da_data_size
+    if last_da_data_size is None:
+        return
+
+    da_diff_size = current_da_data_size - last_da_data_size
+    if da_diff_size <= 0 or not CELENIUM_GAS_ESTIMATE_URL:
+        return
+
+    estimated_pfb_gas = extract_celenium_pfb_gas_estimate(
+        call_json_api(CELENIUM_GAS_ESTIMATE_URL, {"sizes": da_diff_size})
+    )
+    da_metrics_state["simulated_da_spending_total"] = (
+        da_metrics_state.get("simulated_da_spending_total", Decimal("0"))
+        + (estimated_pfb_gas * gas_price)
+    )
+
+
+def collect_celenium_gas_metrics_sync():
+    if not CELENIUM_GAS_PRICE_URL:
+        return []
+
+    gas_price_payload = call_json_api(CELENIUM_GAS_PRICE_URL)
+    gas_price = parse_decimal(gas_price_payload.get("median"))
+    current_da_data_size = int(metrics_state.get("arkiv_da_data_size", 0))
+    update_simulated_da_spending_total(current_da_data_size, gas_price)
+
+    return [
+        create_point("arkiv_celenium_gas_price", gas_price),
+        create_point(
+            "arkiv_simulated_da_spending",
+            da_metrics_state.get("simulated_da_spending_total", Decimal("0")),
+        ),
+    ]
 
 
 async def collect_celestia_balance_points():
@@ -725,6 +804,13 @@ async def run_infinite_loop():
                     )
                 except Exception as exc:
                     print(f"Failed to collect mainnet gas metrics: {exc}")
+
+                try:
+                    points.extend(
+                        await asyncio.to_thread(collect_celenium_gas_metrics_sync)
+                    )
+                except Exception as exc:
+                    print(f"Failed to collect Celenium gas metrics: {exc}")
 
                 try:
                     l1_points = await collect_l1_sender_points()

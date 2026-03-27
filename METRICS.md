@@ -55,6 +55,15 @@ These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector f
 | `arkiv_simulated_mainnet_spending` | Cumulative estimated L1 spend in wei for each tracked component. Each new tracked transaction increments this by `gasUsed * eth_gasPrice`. | `component` |
 | `arkiv_simulated_eth_spend` | Aggregated estimated ETH spend across all tracked L1 components, computed as `arkiv_mainnet_gas_price / 1e18`. | none beyond base tags |
 
+## Celenium gas price and simulated DA spend metrics
+
+These metrics are emitted when `CELENIUM_GAS_PRICE_URL` is configured. The collector fetches the median gas price from the Celenium API and monitors changes in `arkiv_da_data_size`. On each positive size increase, it calls `CELENIUM_GAS_ESTIMATE_URL?sizes=<delta_bytes>` and increments the cumulative simulated DA spend by `estimate_for_pfb * median_gas_price`.
+
+| Measurement | Meaning | Typical tags |
+| --- | --- | --- |
+| `arkiv_celenium_gas_price` | Current median gas price returned by the Celenium API. | none beyond base tags |
+| `arkiv_simulated_da_spending` | Cumulative simulated DA spend based on positive `arkiv_da_data_size` deltas and the current Celenium median gas price. | none beyond base tags |
+
 ## Scraped Prometheus metrics
 
 The collector can also scrape Prometheus endpoints and forward all numeric samples directly into InfluxDB. By default it targets:
