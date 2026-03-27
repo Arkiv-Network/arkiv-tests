@@ -37,7 +37,6 @@ PRICE_API_URL = os.getenv(
     "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,celestia&vs_currencies=usd",
 ).strip()
 PRICE_CACHE_SECONDS = 60
-UTIA_PER_TIA = Decimal("1000000")
 
 SCRAPE_TARGETS = {
     "op-batcher": os.getenv(
@@ -593,7 +592,7 @@ def collect_celenium_gas_metrics_sync():
         simulated_da_spending_total = da_metrics_state.get(
             "simulated_da_spending_total", Decimal("0")
         )
-        da_spending_usd = float(simulated_da_spending_total / UTIA_PER_TIA) * tia_price_usd
+        da_spending_usd = (float(simulated_da_spending_total) / 1e6) * tia_price_usd
         points.append(create_point("arkiv_simulated_da_spending_usd", da_spending_usd))
 
     return points

@@ -633,9 +633,9 @@ class GatherMetricsTests(unittest.TestCase):
         )
         self.assertEqual(tia_price_point.fields["value"], 6.5)
         # simulated_da_spending_total = 381.9951 utia
-        # TIA = 381.9951 / 1e6 = 0.000381995
-        # USD = 0.000381995 * 6.5 = 0.0024829715
-        self.assertAlmostEqual(spend_usd_point.fields["value"], 0.002482968, places=6)
+        # TIA = 381.9951 / 1e6 = 0.0003819951
+        # USD = 0.0003819951 * 6.5 = 0.00248296815
+        self.assertAlmostEqual(spend_usd_point.fields["value"], 0.00248296815)
 
     def test_collect_celenium_gas_metrics_no_usd_when_price_unavailable(self):
         self.module.metrics_state["arkiv_da_data_size"] = 1600
