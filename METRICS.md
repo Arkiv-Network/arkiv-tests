@@ -47,13 +47,13 @@ At the moment the tracked sender map can include `component=op-node`, `component
 
 ## Mainnet gas price and simulated spend metrics
 
-These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector fetches `eth_gasPrice` from the configured network when it sees new tracked L1 transactions and increments cumulative spend totals from each transaction's gas used.
+These metrics are emitted when `GAS_BASE_NETWORK` is configured. The collector fetches the current `eth_gasPrice` from the configured network on each collection cycle, and separately maintains cumulative simulated spend totals as tracked L1 transactions are observed.
 
 | Measurement | Meaning | Typical tags |
 | --- | --- | --- |
-| `arkiv_mainnet_gas_price` | Cumulative estimated L1 spend in wei across all tracked components. Despite the legacy name, this is the running spend total, not the current gas price. | none beyond base tags |
+| `arkiv_mainnet_gas_price` | Current mainnet gas price in wei, fetched from `eth_gasPrice` on the configured network. | none beyond base tags |
 | `arkiv_simulated_mainnet_spending` | Cumulative estimated L1 spend in wei for each tracked component. Each new tracked transaction increments this by `gasUsed * eth_gasPrice`. | `component` |
-| `arkiv_simulated_eth_spend` | Aggregated estimated ETH spend across all tracked L1 components, computed as `arkiv_mainnet_gas_price / 1e18`. | none beyond base tags |
+| `arkiv_simulated_eth_spend` | Aggregated estimated ETH spend across all tracked L1 components, computed as the total simulated spend in wei divided by `1e18`. | none beyond base tags |
 | `arkiv_eth_price_usd` | Current ETH price in USD fetched from the configured price API. Only emitted when `PRICE_API_URL` returns a valid ETH price. | none beyond base tags |
 | `arkiv_simulated_eth_spend_usd` | Aggregated estimated USD spend across all tracked L1 components, computed as `arkiv_simulated_eth_spend * arkiv_eth_price_usd`. | none beyond base tags |
 
