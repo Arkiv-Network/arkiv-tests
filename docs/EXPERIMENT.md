@@ -93,12 +93,3 @@ The gas prices during the weekend were really low. More important is that we are
 
 The same principle is with TIA, right now gas prices are quite cheap but may raise in future (but they should be much less volatile than ETH prices)
 
-## Key Observations
-
-- **Doubling the DA size** (100K → 200K) resulted in roughly **2.5× more create operations** (500K → 1.25M) and **2.5× more created data** (1.41 GB → 3.49 GB).
-- **DA throughput doubled** from 6,500 to 13,000 bytes/sec, scaling linearly with the DA size limit.
-- **Commitment counts remained stable** (~18,500–18,630) across both configurations, with nearly identical gas costs per commitment (~21,400 gas).
-- **ETH spending was virtually identical** between both experiments (~0.041 ETH / ~$95 USD), indicating that L1 commitment costs are independent of DA volume.
-- **TIA spending scales with data volume** — roughly doubling from 55.8 TIA ($16.80) to 108 TIA ($32.50) as the DA size doubled.
-- **TIA cost per MB decreased** from $0.042/MB to $0.037/MB with higher da commitment size.
-
