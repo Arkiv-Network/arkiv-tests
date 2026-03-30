@@ -16,11 +16,11 @@ Two experiments were conducted during weekend 27.03.26-30.03.26 to evaluate Arki
 
 | Metric | Experiment 1 (100K DA) | Experiment 2 (200K DA) |
 | --- | --- | --- |
-| Max DA size | 100,000 | 200,000 |
+| Max DA size (parameter given) | 100,000 | 200,000 |
 | Create operations | 500,000 | 1,248,000 |
 | Created data | 1.41 GB | 3.49 GB |
-| Geth DB (Sequencer) | 5.58 GB | 12.2 GB |
-| Geth DB (Validator) | 1.81 GB | 3.92 GB |
+| Geth DB (Sequencer - archive node) | 5.58 GB | 12.2 GB |
+| Geth DB (Validator - full node) | 1.81 GB | 3.92 GB |
 | DA data | 1.33 GB | 2.94 GB |
 | Gas per block | 700,000 | 1,900,000 |
 | DA throughput | 6,500 bytes/sec | 13,000 bytes/sec |
