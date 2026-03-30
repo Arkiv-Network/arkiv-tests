@@ -74,6 +74,24 @@ All values below are the totals divided by the experiment duration of ~2.58 days
 | TIA spending per day | 21.6 TIA | 41.8 TIA |
 | TIA spending per day (USD) | $6.51 | $12.59 |
 
+## Important
+
+Don't use geth db sizes or creates at given, they are depending on what data is how well it compresses, how much empty blocks are and many more. 
+The values shown can be used to build an intuition about the orders of magnitude we are talking about.
+
+So the full data throuput may be exactly da bytes or greater depending on compression
+
+## Note
+
+The gas prices during the weekend were really low. More important is that we are using like 150m gas per day. Given gas prices charts we can easily compute
+
+| Gas Price (Gwei) | Gas Limit | Transaction Fee (ETH) | Transaction Fee (USD) |
+| :--- | :--- | :--- | :--- |
+| **0.1** | 155,000,000 | 0.0155 ETH | $31.00 |
+| **1.0** | 155,000,000 | 0.1550 ETH | $310.00 |
+| **10.0** | 155,000,000 | 1.5500 ETH | $3,100.00 |
+
+The same principle is with TIA, right now gas prices are quite cheap but may raise in future (but they should be much less volatile than ETH prices)
 
 ## Key Observations
 
@@ -84,4 +102,3 @@ All values below are the totals divided by the experiment duration of ~2.58 days
 - **TIA spending scales with data volume** — roughly doubling from 55.8 TIA ($16.80) to 108 TIA ($32.50) as the DA size doubled.
 - **TIA cost per MB decreased** from $0.042/MB to $0.037/MB with higher da commitment size.
 
-- **NOTE**: nonlinear scaling may be the result of data compression nuances
