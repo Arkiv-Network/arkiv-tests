@@ -4,6 +4,8 @@
 
 Two experiments were conducted during weekend 27.03.26-30.03.26 to evaluate Arkiv network performance under different DA (Data Availability) size configurations. Both experiments processed **111,500 blocks** with a block interval of **2 seconds**, resulting in a total experiment duration of approximately **61.9 hours (~2.6 days)** per run.
 
+The goal of this experiment is to simulate the cost we have to cover when using Celestia + Ethereum Mainnet as L1 layer and Arkiv as L2 layer. (without L2), so in our lingo L3 directly to L1.
+
 | Parameter | Value |
 | --- | --- |
 | Total blocks | 111,500 |
