@@ -16,6 +16,7 @@ Use this only as a reference.
 
 - [Script explanation](EXPLANATION.md)
 - [Metrics reference](METRICS.md)
+- [Experiment results](RESULTS.md)
 
 ## Other stuff
 
