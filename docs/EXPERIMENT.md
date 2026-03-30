@@ -81,6 +81,8 @@ The values shown can be used to build an intuition about the orders of magnitude
 
 So the full data throuput may be exactly da bytes or greater depending on compression
 
+Notice that the commitments are created every 1 block on L1 (12 seconds). We should have something better to rate limit commitments, but for know I will leave it as is.
+
 ## Note
 
 The gas prices during the weekend were really low. More important is that we are using like 150m gas per day. Given gas prices charts we can easily compute
