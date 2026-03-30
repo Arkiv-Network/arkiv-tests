@@ -43,6 +43,37 @@ Two experiments were conducted to evaluate Arkiv network performance under diffe
 | TIA spending (USD) | $16.80 | $32.50 |
 | TIA price per MB | $0.042/MB | $0.037/MB |
 
+## Results Normalized per Day
+
+All values below are the totals divided by the experiment duration of ~2.58 days (223,000 seconds).
+
+### Daily Storage Growth
+
+| Metric | Experiment 1 (100K DA) | Experiment 2 (200K DA) |
+| --- | --- | --- |
+| Blocks per day | 43,200 | 43,200 |
+| Create operations per day | ~193,700 | ~483,500 |
+| Created data per day | 0.55 GB | 1.35 GB |
+| Geth DB growth per day (Sequencer) | 2.16 GB | 4.73 GB |
+| Geth DB growth per day (Validator) | 0.70 GB | 1.52 GB |
+| DA data per day | 0.52 GB | 1.14 GB |
+
+### Daily Commitments
+
+| Metric | Experiment 1 (100K DA) | Experiment 2 (200K DA) |
+| --- | --- | --- |
+| Commitments per day | ~7,220 | ~7,170 |
+| Commitments gas per day | ~154,200,000 | ~153,400,000 |
+
+### Daily Cost
+
+| Metric | Experiment 1 (100K DA) | Experiment 2 (200K DA) |
+| --- | --- | --- |
+| ETH spending per day | 0.0159 ETH | 0.0159 ETH |
+| ETH spending per day (USD) | $36.84 | $36.69 |
+| TIA spending per day | 21.6 TIA | 41.8 TIA |
+| TIA spending per day (USD) | $6.51 | $12.59 |
+
 ## Key Observations
 
 - **Doubling the DA size** (100K → 200K) resulted in roughly **2.5× more create operations** (500K → 1.25M) and **2.5× more created data** (1.41 GB → 3.49 GB).
