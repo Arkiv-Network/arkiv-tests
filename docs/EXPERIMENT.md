@@ -2,7 +2,7 @@
 
 ## Experiment Overview
 
-Two experiments were conducted to evaluate Arkiv network performance under different DA (Data Availability) size configurations. Both experiments processed **111,500 blocks** with a block interval of **2 seconds**, resulting in a total experiment duration of approximately **61.9 hours (~2.6 days)** per run.
+Two experiments were conducted during weekend 27.03.26-30.03.26 to evaluate Arkiv network performance under different DA (Data Availability) size configurations. Both experiments processed **111,500 blocks** with a block interval of **2 seconds**, resulting in a total experiment duration of approximately **61.9 hours (~2.6 days)** per run.
 
 | Parameter | Value |
 | --- | --- |
