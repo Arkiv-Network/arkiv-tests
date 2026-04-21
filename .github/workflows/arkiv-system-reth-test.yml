@@ -396,7 +396,6 @@ jobs:
             --authrpc.addr=0.0.0.0 \
             --authrpc.port=8651 \
             --authrpc.jwtsecret jwt-sequencer.txt \
-            --disable-discovery \
             --port=30505 \
             --metrics 0.0.0.0:6160 \
             > reth-seq.log 2>&1 & echo $! > reth-seq.pid
@@ -591,14 +590,6 @@ jobs:
           TEST_NAME=${{ steps.test-name.outputs.val }}
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
-          echo "Fetching sequencer enode..."
-          SEQUENCER_ENODE=$(cast rpc --rpc-url http://localhost:8645 admin_nodeInfo | jq -r '.enode')
-          if [ -z "$SEQUENCER_ENODE" ] || [ "$SEQUENCER_ENODE" = "null" ]; then
-            echo "❌ Failed to fetch sequencer enode"
-            exit 1
-          fi
-          echo "Sequencer enode: $SEQUENCER_ENODE"
-
           reth-val node \
             --chain genesis.json \
             --datadir=./validator-data \
@@ -609,9 +600,6 @@ jobs:
             --authrpc.addr=localhost \
             --authrpc.port=8551 \
             --authrpc.jwtsecret=jwt-validator.txt \
-            --disable-discovery \
-            --trusted-peers="$SEQUENCER_ENODE" \
-            --trusted-only \
             --port=30405 \
             --metrics 0.0.0.0:6060 \
             > reth-val.log 2>&1 & echo $! > reth-val.pid
