@@ -1,4 +1,4 @@
-name: Arkiv System Reth Test
+name: Arkiv System Op-Reth Test
 
 on:
   workflow_dispatch:
@@ -12,29 +12,29 @@ on:
         required: false
         default: "bare-metal"
       reth-version:
-        description: "Reth version used for tests"
+        description: "Op-reth version used for tests"
         required: true
-        default: "v2.1.0"
+        default: "v0.0.0-arkiv-03"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
-        default: "v0.9.0-test.1"
+        default: "v0.0.0-arkiv-03"
       arkiv-op-da-server:
         description: "Arkiv da server tag/commit used for tests"
         required: true
-        default: "v0.9.0-test.1"
+        default: "v0.0.0-arkiv-03"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
-        default: "v0.9.0-test.1"
+        default: "v0.0.0-arkiv-03"
       arkiv-op-batcher:
         description: "Arkiv op batcher tag/commit used for tests"
         required: true
-        default: "v0.9.0-test.1"
+        default: "v0.0.0-arkiv-03"
       arkiv-op-proposer:
         description: "Arkiv op proposer tag/commit used for tests"
         required: true
-        default: "v0.9.0-test.1"
+        default: "v0.0.0-arkiv-03"
       test-length:
         description: "Test length in seconds"
         required: true
@@ -97,7 +97,7 @@ permissions:
 
 jobs:
   arkiv-system-testing:
-    name: Test Arkiv System Reth
+    name: Test Arkiv System Op-Reth
     timeout-minutes: ${{ fromJSON(inputs.timeout-minutes) }}
     # Use the matrix variable here
     runs-on: ${{ inputs.worker }}
@@ -183,7 +183,7 @@ jobs:
           cast --version
           anvil --version
 
-      - name: Get reth, op-node and op-deployer binaries
+      - name: Get op-reth, op-node and op-deployer binaries
         if: ${{ inputs.is-external == 'false' }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -209,19 +209,19 @@ jobs:
             && mv op-deployer $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv da-server $BIN_PATH/ \
-            && curl -sL https://github.com/paradigmxyz/reth/releases/download/${RETH_VERSION}/reth-${RETH_VERSION}-x86_64-unknown-linux-gnu.tar.gz | tar -xz \
-            && mv reth $BIN_PATH/
+            && curl -fsSL https://github.com/arkiv-network/optimism/releases/download/${RETH_VERSION}/arkiv-op-reth-${RETH_VERSION}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-reth $BIN_PATH/
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
-          cp $BIN_PATH/reth $BIN_PATH/reth-seq
-          cp $BIN_PATH/reth $BIN_PATH/reth-val
+          cp $BIN_PATH/op-reth $BIN_PATH/op-reth-seq
+          cp $BIN_PATH/op-reth $BIN_PATH/op-reth-val
 
           cp $BIN_PATH/op-node $BIN_PATH/op-node-seq
           cp $BIN_PATH/op-node $BIN_PATH/op-node-val
 
           op-node --version
           op-deployer --version
-          reth --version
+          op-reth --version
           op-batcher --version
           op-proposer --version
           da-server --version
@@ -322,8 +322,8 @@ jobs:
           
           $PYTHON_BIN patch-genesis.py 
           
-          reth init --datadir ./sequencer-data --chain genesis.json > init_sequencer_genesis.log 2>&1
-          reth init --datadir ./validator-data --chain genesis.json > init_validator_genesis.log 2>&1
+          op-reth init --datadir ./sequencer-data --chain genesis.json > init_sequencer_genesis.log 2>&1
+          op-reth init --datadir ./validator-data --chain genesis.json > init_validator_genesis.log 2>&1
 
           openssl rand -hex 32 > jwt-sequencer.txt
           openssl rand -hex 32 > jwt-validator.txt
@@ -376,12 +376,12 @@ jobs:
       - name: Start sequencer node
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          echo "Starting L2 sequencer node reth..."
+          echo "Starting L2 sequencer node op-reth..."
 
           TEST_NAME=${{ steps.test-name.outputs.val }}
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
-          reth-seq node \
+          op-reth-seq node \
             --chain genesis.json \
             --datadir=./sequencer-data \
             --http \
@@ -401,7 +401,7 @@ jobs:
             --metrics 0.0.0.0:6160 \
             > reth-seq.log 2>&1 & echo $! > reth-seq.pid
 
-          echo "Waiting for sequencer reth RPC..."
+          echo "Waiting for sequencer op-reth RPC..."
           for i in $(seq 1 60); do
             if cast block-number --rpc-url http://localhost:8645 >/dev/null 2>&1; then
               break
@@ -409,7 +409,7 @@ jobs:
             sleep 1
           done
           if ! cast block-number --rpc-url http://localhost:8645 >/dev/null 2>&1; then
-            echo "❌ Sequencer reth RPC did not become ready"
+            echo "❌ Sequencer op-reth RPC did not become ready"
             exit 1
           fi
 
@@ -586,7 +586,7 @@ jobs:
 
       - name: Start validator node
         run: |
-          echo "Starting validator node reth..."
+          echo "Starting validator node op-reth..."
 
           TEST_NAME=${{ steps.test-name.outputs.val }}
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
@@ -599,7 +599,7 @@ jobs:
           fi
           echo "Sequencer enode: $SEQUENCER_ENODE"
 
-          reth-val node \
+          op-reth-val node \
             --chain genesis.json \
             --datadir=./validator-data \
             --http \
