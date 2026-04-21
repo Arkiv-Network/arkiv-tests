@@ -213,13 +213,14 @@ jobs:
           OP_RETH_IMAGE=us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:${OP_RETH_VERSION}
           docker pull $OP_RETH_IMAGE
           OP_RETH_CONTAINER=$(docker create $OP_RETH_IMAGE)
+          OP_RETH_PATHS="/usr/local/bin/op-reth /usr/local/bin/reth /bin/op-reth /bin/reth"
           cleanup_op_reth_container() {
-            docker rm -f $OP_RETH_CONTAINER >/dev/null 2>&1 || true
+            docker rm $OP_RETH_CONTAINER >/dev/null 2>&1 || true
           }
           trap cleanup_op_reth_container EXIT
 
           OP_RETH_EXTRACTED=false
-          for OP_RETH_PATH in /usr/local/bin/op-reth /usr/local/bin/reth /bin/op-reth /bin/reth; do
+          for OP_RETH_PATH in $OP_RETH_PATHS; do
             if docker cp $OP_RETH_CONTAINER:$OP_RETH_PATH $BIN_PATH/reth 2>/dev/null; then
               OP_RETH_EXTRACTED=true
               break
@@ -227,7 +228,7 @@ jobs:
           done
 
           if [ "$OP_RETH_EXTRACTED" != "true" ]; then
-            echo "Failed to extract op-reth from $OP_RETH_IMAGE. Tried: /usr/local/bin/op-reth, /usr/local/bin/reth, /bin/op-reth, /bin/reth"
+            echo "Failed to extract op-reth from $OP_RETH_IMAGE. Tried: $OP_RETH_PATHS"
             exit 1
           fi
 
