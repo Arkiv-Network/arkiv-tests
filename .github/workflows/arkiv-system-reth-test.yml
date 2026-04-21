@@ -188,7 +188,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -x
+          set -ex
           BIN_PATH=${{ github.workspace }}/bin
 
           RETH_VERSION=${{ inputs.reth-version }}
