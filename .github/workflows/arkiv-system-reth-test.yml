@@ -215,8 +215,6 @@ jobs:
           trap 'docker rm -f $OP_RETH_CONTAINER >/dev/null 2>&1 || true' EXIT
           docker cp $OP_RETH_CONTAINER:/usr/local/bin/op-reth $BIN_PATH/reth
           chmod +x $BIN_PATH/reth
-          docker rm -f $OP_RETH_CONTAINER >/dev/null 2>&1 || true
-          trap - EXIT
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
           cp $BIN_PATH/reth $BIN_PATH/reth-seq
