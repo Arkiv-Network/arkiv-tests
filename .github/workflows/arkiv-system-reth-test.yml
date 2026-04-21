@@ -92,6 +92,9 @@ on:
         required: false
         default: "https://v2test.hoodi.arkiv.network/rpc"
 
+permissions:
+  contents: read
+
 jobs:
   arkiv-system-testing:
     name: Test Arkiv System Reth
@@ -246,14 +249,16 @@ jobs:
           CELESTIA_QUICKNODE_AUTH_TOKEN: ${{ secrets.CELESTIA_QUICKNODE_AUTH_TOKEN }}
         run: |
           set -x
+          echo "::add-mask::$CELESTIA_QUICKNODE_AUTH_TOKEN"
           mkdir -p keyring/keyring-home
           celestia-appd keys add my_celes_key --keyring-backend test --home keyring/keyring-home --recover <<< "$MNEMONIC"
           
           # Extract the address and add it to the GitHub environment
           CELESTIA_ADDRESS=$(celestia-appd keys show my_celes_key -a --keyring-backend test --home keyring/keyring-home)
+          CELESTIA_RPC_ADDR="https://wiser-proportionate-bird.celestia-mainnet.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN"
           echo "Recovered Celestia address: $CELESTIA_ADDRESS"
           echo "CELESTIA_ADDRESS=$CELESTIA_ADDRESS" >> $GITHUB_ENV
-          echo "CELESTIA_RPC_ADDR=https://wiser-proportionate-bird.celestia-mainnet.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN" >> $GITHUB_ENV
+          echo "CELESTIA_RPC_ADDR=$CELESTIA_RPC_ADDR" >> $GITHUB_ENV
 
           mv keyring/keyring-home/keyring-test keyring/keyring-test
           rm -r keyring/keyring-home
@@ -343,6 +348,8 @@ jobs:
         if: ${{ inputs.is-external == 'false' && inputs.use-celestia == 'true' }}
         run: |
           echo "Starting Celestia da-server..."
+          echo "::add-mask::$CELESTIA_QUICKNODE_AUTH_TOKEN"
+          CELESTIA_SERVER_URL="https://wiser-proportionate-bird.celestia-mainnet.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN"
           
           # Unused but leave to not break metrics scripts
           mkdir da-data
@@ -353,13 +360,13 @@ jobs:
             --port 3100 \
             --celestia.namespace=000000000000000000000000000000000000007323c069f0a07b3e8e12 \
             --celestia.compact-blobid \
-            --celestia.server=https://wiser-proportionate-bird.celestia-mainnet.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN \
+            --celestia.server="$CELESTIA_SERVER_URL" \
             --celestia.tx-client.keyring-path=keyring \
             --celestia.tx-client.key-name=my_celes_key \
             --celestia.tx-client.p2p-network=celestia \
             --celestia.tx-client.core-grpc.addr=wiser-proportionate-bird.celestia-mainnet.quiknode.pro:9090 \
             --celestia.tx-client.core-grpc.tls-enabled \
-            --celestia.tx-client.core-grpc.auth-token=$CELESTIA_QUICKNODE_AUTH_TOKEN \
+            --celestia.tx-client.core-grpc.auth-token="$CELESTIA_QUICKNODE_AUTH_TOKEN" \
             --metrics.enabled=true \
             --metrics.port=7385 \
             > da-server.log 2>&1 & echo $! > da-server.pid
