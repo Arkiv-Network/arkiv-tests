@@ -209,7 +209,7 @@ jobs:
             && mv op-deployer $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv da-server $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${RETH_VERSION}/arkiv-op-reth-${RETH_VERSION}-linux-amd64.tar.xz | tar -xJ \
+            && curl -fsSL https://github.com/arkiv-network/optimism/releases/download/${RETH_VERSION}/arkiv-op-reth-${RETH_VERSION}-linux-amd64.tar.xz | tar -xJ \
             && mv op-reth $BIN_PATH/
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
