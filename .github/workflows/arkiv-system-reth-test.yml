@@ -12,9 +12,9 @@ on:
         required: false
         default: "bare-metal"
       reth-version:
-        description: "Reth version used for tests"
+        description: "op-reth image tag used for tests"
         required: true
-        default: "v2.1.0"
+        default: "v2.0.0"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
@@ -183,7 +183,7 @@ jobs:
           cast --version
           anvil --version
 
-      - name: Get reth, op-node and op-deployer binaries
+      - name: Get op-reth, op-node and op-deployer binaries
         if: ${{ inputs.is-external == 'false' }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -191,7 +191,7 @@ jobs:
           set -x
           BIN_PATH=${{ github.workspace }}/bin
 
-          RETH_VERSION=${{ inputs.reth-version }}
+          OP_RETH_VERSION=${{ inputs.reth-version }}
           OP_NODE_TAG=${{ inputs.arkiv-op-node }}
           OP_BATCHER_TAG=${{ inputs.arkiv-op-batcher }}
           OP_DEPLOYER_TAG=${{ inputs.arkiv-op-deployer }}
@@ -208,9 +208,22 @@ jobs:
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-deployer $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv da-server $BIN_PATH/ \
-            && curl -sL https://github.com/paradigmxyz/reth/releases/download/${RETH_VERSION}/reth-${RETH_VERSION}-x86_64-unknown-linux-gnu.tar.gz | tar -xz \
-            && mv reth $BIN_PATH/
+            && mv da-server $BIN_PATH/
+
+          OP_RETH_IMAGE=us-docker.pkg.dev/oplabs-tools-artifacts/images/op-reth:${OP_RETH_VERSION}
+          docker pull $OP_RETH_IMAGE
+          OP_RETH_CONTAINER=$(docker create $OP_RETH_IMAGE)
+          trap 'docker rm -f $OP_RETH_CONTAINER >/dev/null 2>&1 || true' EXIT
+
+          for OP_RETH_PATH in /usr/local/bin/op-reth /usr/local/bin/reth /bin/op-reth /bin/reth; do
+            if docker cp $OP_RETH_CONTAINER:$OP_RETH_PATH $BIN_PATH/reth 2>/dev/null; then
+              break
+            fi
+          done
+
+          test -x $BIN_PATH/reth
+          docker rm -f $OP_RETH_CONTAINER
+          trap - EXIT
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
           cp $BIN_PATH/reth $BIN_PATH/reth-seq
