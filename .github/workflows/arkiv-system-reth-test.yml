@@ -215,13 +215,19 @@ jobs:
           OP_RETH_CONTAINER=$(docker create $OP_RETH_IMAGE)
           trap 'docker rm -f $OP_RETH_CONTAINER >/dev/null 2>&1 || true' EXIT
 
+          OP_RETH_EXTRACTED=false
           for OP_RETH_PATH in /usr/local/bin/op-reth /usr/local/bin/reth /bin/op-reth /bin/reth; do
             if docker cp $OP_RETH_CONTAINER:$OP_RETH_PATH $BIN_PATH/reth 2>/dev/null; then
+              OP_RETH_EXTRACTED=true
               break
             fi
           done
 
-          test -x $BIN_PATH/reth
+          if [ "$OP_RETH_EXTRACTED" != "true" ]; then
+            echo "Failed to extract op-reth from $OP_RETH_IMAGE. Tried: /usr/local/bin/op-reth, /usr/local/bin/reth, /bin/op-reth, /bin/reth"
+            exit 1
+          fi
+
           docker rm -f $OP_RETH_CONTAINER
           trap - EXIT
 
