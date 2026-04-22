@@ -7,8 +7,58 @@ import {
 import { privateKeyToAccount } from "@arkiv-network/sdk/accounts";
 import { ExpirationTime, jsonToPayload } from "@arkiv-network/sdk/utils";
 import {eq, QueryBuilder} from "@arkiv-network/sdk/query";
-import {Hex} from "viem";
 
+function getLoopDurationSeconds(): number {
+  const loopArg = process.argv
+    .slice(2)
+    .find((arg) => arg.startsWith("--loop-seconds="));
+  const rawValue = loopArg?.split("=")[1] ?? process.env.CREATE_ENTITY_LOOP_DURATION_SECONDS ?? "0";
+  const loopDurationSeconds = Number.parseInt(rawValue, 10);
+
+  if (Number.isNaN(loopDurationSeconds) || loopDurationSeconds < 0) {
+    throw new Error(`Invalid loop duration: ${rawValue}`);
+  }
+
+  return loopDurationSeconds;
+}
+
+async function createSimpleEntity(
+  client: ReturnType<typeof createWalletClient>,
+  entityId = "doc-123",
+) {
+  return client.createEntity({
+    payload: jsonToPayload({
+      entity: {
+        entityType: "document",
+        entityId,
+        entityContent: "Hello World! This is my first document stored on Arkiv.",
+      },
+    }),
+    contentType: "application/json",
+    attributes: [
+      {key: "category", value: "simple-test"},
+      {key: "version", value: "1.0"},
+    ],
+    expiresIn: ExpirationTime.fromMinutes(10),
+  });
+}
+
+async function runEntityLoop(client: ReturnType<typeof createWalletClient>, loopDurationSeconds: number) {
+  const deadline = Date.now() + loopDurationSeconds * 1000;
+  let iteration = 0;
+
+  console.log(`Starting entity loop for ${loopDurationSeconds} second(s).`);
+
+  while (iteration === 0 || Date.now() < deadline) {
+    iteration += 1;
+    const {entityKey, txHash} = await createSimpleEntity(client, `doc-123-loop-${iteration}`);
+
+    console.log(`[${iteration}] Created entity:`, entityKey);
+    console.log(`[${iteration}] Transaction hash:`, txHash);
+  }
+
+  console.log(`Finished entity loop after ${iteration} transaction(s).`);
+}
 
 async function main() {
   let privateKey = process.env.PRIVATE_KEY || "6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200";
@@ -48,22 +98,14 @@ async function main() {
     transport: http(),
   });
 
+  const loopDurationSeconds = getLoopDurationSeconds();
+  if (loopDurationSeconds > 0) {
+    await runEntityLoop(client, loopDurationSeconds);
+    return;
+  }
+
   // Create an entity
-  const {entityKey, txHash} = await client.createEntity({
-    payload: jsonToPayload({
-      entity: {
-        entityType: "document",
-        entityId: "doc-123",
-        entityContent: "Hello World! This is my first document stored on Arkiv.",
-      },
-    }),
-    contentType: "application/json",
-    attributes: [
-      {key: "category", value: "simple-test"},
-      {key: "version", value: "1.0"},
-    ],
-    expiresIn: ExpirationTime.fromMinutes(10), // Entity expires in 30 days
-  });
+  const {entityKey, txHash} = await createSimpleEntity(client);
 
   console.log("Created entity:", entityKey);
   console.log("Transaction hash:", txHash);
