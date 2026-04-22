@@ -22,12 +22,15 @@ function getLoopDurationSeconds(): number {
   return loopDurationSeconds;
 }
 
-async function createSimpleEntity(client: ReturnType<typeof createWalletClient>) {
+async function createSimpleEntity(
+  client: ReturnType<typeof createWalletClient>,
+  entityId = "doc-123",
+) {
   return client.createEntity({
     payload: jsonToPayload({
       entity: {
         entityType: "document",
-        entityId: "doc-123",
+        entityId,
         entityContent: "Hello World! This is my first document stored on Arkiv.",
       },
     }),
@@ -48,7 +51,7 @@ async function runEntityLoop(client: ReturnType<typeof createWalletClient>, loop
 
   while (iteration === 0 || Date.now() < deadline) {
     iteration += 1;
-    const {entityKey, txHash} = await createSimpleEntity(client);
+    const {entityKey, txHash} = await createSimpleEntity(client, `doc-123-loop-${iteration}`);
 
     console.log(`[${iteration}] Created entity:`, entityKey);
     console.log(`[${iteration}] Transaction hash:`, txHash);
