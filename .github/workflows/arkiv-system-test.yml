@@ -612,7 +612,7 @@ jobs:
             --http.addr=0.0.0.0 \
             --http.vhosts="*" \
             --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
-            --authrpc.addr="localhost" \
+            --authrpc.addr=127.0.0.1 \
             --authrpc.port=8551 \
             --authrpc.vhosts="*" \
             --authrpc.jwtsecret=jwt-validator.txt \

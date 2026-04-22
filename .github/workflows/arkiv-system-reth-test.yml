@@ -399,7 +399,7 @@ jobs:
             --disable-discovery \
             --port=30505 \
             --metrics 0.0.0.0:6160 \
-            > reth-seq.log 2>&1 & echo $! > reth-seq.pid
+            > op-reth-seq.log 2>&1 & echo $! > reth-seq.pid
 
           echo "Waiting for sequencer op-reth RPC..."
           for i in $(seq 1 60); do
@@ -606,7 +606,7 @@ jobs:
             --http.port=8545 \
             --http.addr=0.0.0.0 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
-            --authrpc.addr=localhost \
+            --authrpc.addr=127.0.0.1 \
             --authrpc.port=8551 \
             --authrpc.jwtsecret=jwt-validator.txt \
             --disable-discovery \
@@ -614,7 +614,7 @@ jobs:
             --trusted-only \
             --port=30405 \
             --metrics 0.0.0.0:6060 \
-            > reth-val.log 2>&1 & echo $! > reth-val.pid
+            > op-reth-val.log 2>&1 & echo $! > reth-val.pid
 
           OP_NODE_PEER_ID=$(cat op-node-peer-id.txt)
 
