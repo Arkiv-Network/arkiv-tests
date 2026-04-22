@@ -196,15 +196,15 @@ jobs:
           OP_DA_SERVER_TAG=${{ inputs.arkiv-op-da-server }}
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
             && mv forge cast anvil chisel $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism-old/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-node $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism-old/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-batcher $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism-old/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-proposer $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism-old/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-deployer $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/optimism-old/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv da-server $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/arkiv-op-geth/releases/download/${ARKIV_GETH_TAG}/arkiv-op-geth-${ARKIV_GETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-geth $BIN_PATH/
