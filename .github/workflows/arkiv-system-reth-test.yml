@@ -676,6 +676,25 @@ jobs:
           OP_BATCHER_METRICS_URL: http://127.0.0.1:7365/metrics
           OP_PROPOSER_METRICS_URL: http://127.0.0.1:7375/metrics
 
+      - name: Scrape reth metrics to InfluxDB
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # op-reth has no native InfluxDB exporter (unlike op-geth), so we
+          # poll its Prometheus endpoints for both sequencer and validator
+          # every few seconds and forward the samples to InfluxDB.
+          export JOB_NAME=${{ steps.test-name.outputs.val }}
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
+          export INSTANCE_NAME=$WORKER_NAME
+          python -u scrape-reth-metrics.py > scrape-reth-metrics.log 2>&1 & echo $! > scrape-reth-metrics.pid
+        env:
+          INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+          INFLUXDB_TOKEN: my-super-secret-auth-token
+          INFLUXDB_ORG: arkiv-network
+          INFLUXDB_BUCKET: arkiv-tests
+          RETH_SCRAPE_INTERVAL_SECONDS: "5"
+          RETH_SEQUENCER_METRICS_URL: http://127.0.0.1:6160/debug/metrics/prometheus
+          RETH_VALIDATOR_METRICS_URL: http://127.0.0.1:6060/debug/metrics/prometheus
+
       - name: Notify that the test is starting
         run: |
           # notify the test server
@@ -746,6 +765,7 @@ jobs:
       - name: Stop services
         if: ${{ inputs.is-external == 'false' }}
         run: |
+          kill $(cat scrape-reth-metrics.pid)
           kill $(cat gather-metrics.pid)
           kill $(cat reth-val.pid)
           kill $(cat op-node-val.pid)
