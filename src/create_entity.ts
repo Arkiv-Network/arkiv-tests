@@ -51,10 +51,17 @@ async function runEntityLoop(client: ReturnType<typeof createWalletClient>, loop
 
   while (iteration === 0 || Date.now() < deadline) {
     iteration += 1;
-    const {entityKey, txHash} = await createSimpleEntity(client, `doc-123-loop-${iteration}`);
-
-    console.log(`[${iteration}] Created entity:`, entityKey);
-    console.log(`[${iteration}] Transaction hash:`, txHash);
+    try {
+      const {entityKey, txHash} = await createSimpleEntity(client, `doc-123-loop-${iteration}`);
+      console.log(`[${iteration}] Created entity:`, entityKey);
+      console.log(`[${iteration}] Transaction hash:`, txHash);
+    } catch (ex: any) {
+      if (ex instanceof TypeError && ex.message === "undefined is not an object (evaluating 'receipt.logs[0].topics')") {
+        console.log(`[${iteration}] Transaction failed, which is expected...`);
+      } else {
+        throw ex;
+      }
+    }
   }
 
   console.log(`Finished entity loop after ${iteration} transaction(s).`);
