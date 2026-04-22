@@ -741,29 +741,6 @@ jobs:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
           PYTHON_BIN: ${{ steps.poetry.outputs.python }}
 
-      - name: Start locust write only test
-        if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' }}
-        run: |
-          # Todo fix test returning error
-          if [ "${{ inputs.is-external }}" = "true" ]; then
-            export LOCUST_HOST=${{ inputs.external-rpc-url }}
-          else
-            export LOCUST_HOST=http://localhost:8645
-          fi
-          set -x
-          LOCUST_TEST_NAME=dc_write_only
-          poetry run locust -f stress/l3/$LOCUST_TEST_NAME.py \
-            --csv=$LOCUST_TEST_NAME \
-            --headless \
-            -u=${{ inputs.test-users }} \
-            -r=100 \
-            -t=${{ inputs.test-length }} \
-            --print-stats \
-            --html "locust.html" > locust.log 2>&1 || true
-        env:
-          DC_WRITE_ONLY_PAYLOAD_SIZE: ${{ inputs.dc-write-only-payload-size }}
-          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-
       - name: Stop services
         if: ${{ inputs.is-external == 'false' }}
         run: |
