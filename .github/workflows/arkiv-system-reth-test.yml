@@ -14,27 +14,27 @@ on:
       arkiv-op-reth:
         description: "Arkiv op-reth version used for tests"
         required: true
-        default: "v0.0.0-arkiv-03"
+        default: "v0.0.0-arkiv-05"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
-        default: "v0.0.0-arkiv-03"
+        default: "v0.0.0-arkiv-05"
       arkiv-op-da-server:
         description: "Arkiv da server tag/commit used for tests"
         required: true
-        default: "v0.0.0-arkiv-03"
+        default: "v0.0.0-arkiv-05"
       arkiv-op-deployer:
         description: "Arkiv op deployer tag/commit used for tests"
         required: true
-        default: "v0.0.0-arkiv-03"
+        default: "v0.0.0-arkiv-05"
       arkiv-op-batcher:
         description: "Arkiv op batcher tag/commit used for tests"
         required: true
-        default: "v0.0.0-arkiv-03"
+        default: "v0.0.0-arkiv-05"
       arkiv-op-proposer:
         description: "Arkiv op proposer tag/commit used for tests"
         required: true
-        default: "v0.0.0-arkiv-03"
+        default: "v0.0.0-arkiv-05"
       test-length:
         description: "Test length in seconds"
         required: true
@@ -209,7 +209,7 @@ jobs:
             && mv op-deployer $BIN_PATH/ \
             && curl -sL https://github.com/scx1332/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv da-server $BIN_PATH/ \
-            && curl -fsSL https://github.com/scx1332/optimism/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/scx1332/optimism/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-reth $BIN_PATH/
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
