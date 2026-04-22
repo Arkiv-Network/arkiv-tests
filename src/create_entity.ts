@@ -46,6 +46,7 @@ async function runEntityLoop(client: ReturnType<typeof createWalletClient>, loop
 
   console.log(`Starting entity loop for ${loopDurationSeconds} second(s).`);
 
+  // For any positive duration, send at least one transaction before checking the deadline again.
   do {
     iteration += 1;
     const {entityKey, txHash} = await createSimpleEntity(client);
