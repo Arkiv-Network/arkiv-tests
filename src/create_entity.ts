@@ -36,7 +36,7 @@ async function createSimpleEntity(client: ReturnType<typeof createWalletClient>)
       {key: "category", value: "simple-test"},
       {key: "version", value: "1.0"},
     ],
-    expiresIn: ExpirationTime.fromMinutes(10), // Entity expires in 10 minutes
+    expiresIn: ExpirationTime.fromMinutes(10),
   });
 }
 
@@ -46,14 +46,13 @@ async function runEntityLoop(client: ReturnType<typeof createWalletClient>, loop
 
   console.log(`Starting entity loop for ${loopDurationSeconds} second(s).`);
 
-  // For any positive duration, send at least one transaction before checking the deadline again.
-  do {
+  while (iteration === 0 || Date.now() < deadline) {
     iteration += 1;
     const {entityKey, txHash} = await createSimpleEntity(client);
 
     console.log(`[${iteration}] Created entity:`, entityKey);
     console.log(`[${iteration}] Transaction hash:`, txHash);
-  } while (Date.now() < deadline);
+  }
 
   console.log(`Finished entity loop after ${iteration} transaction(s).`);
 }
