@@ -36,7 +36,7 @@ async function createSimpleEntity(client: ReturnType<typeof createWalletClient>)
       {key: "category", value: "simple-test"},
       {key: "version", value: "1.0"},
     ],
-    expiresIn: ExpirationTime.fromMinutes(10), // Entity expires in 30 days
+    expiresIn: ExpirationTime.fromMinutes(10), // Entity expires in 10 minutes
   });
 }
 
