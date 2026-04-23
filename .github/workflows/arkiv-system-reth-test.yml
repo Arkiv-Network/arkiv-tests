@@ -14,7 +14,7 @@ on:
       arkiv-op-reth:
         description: "Arkiv op-reth version used for tests"
         required: true
-        default: "v0.0.0-arkiv-07"
+        default: "v0.0.0-integration-02"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
@@ -209,7 +209,7 @@ jobs:
             && mv op-deployer $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv da-server $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && curl -sL https://github.com/arkiv-network/arkiv-op-reth/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-reth $BIN_PATH/
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
