@@ -222,6 +222,7 @@ jobs:
             mv arkiv-node "$BIN_PATH/op-reth"
           else
             echo ".tar.xz not available, trying fallback tar.gz"
+            curl -sL -o "$TMP_TGZ" "$OP_RETH_TGZ_URL"
             tar -xzf "$TMP_TGZ"
             mv arkiv-node "$BIN_PATH/op-reth"
             rm -f "$TMP_TGZ"
