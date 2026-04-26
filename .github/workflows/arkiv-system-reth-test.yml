@@ -398,7 +398,8 @@ jobs:
             --authrpc.jwtsecret jwt-sequencer.txt \
             --disable-discovery \
             --port=30505 \
-            --metrics 0.0.0.0:6160
+            --metrics 0.0.0.0:6160 \
+            > op-reth-seq.log 2>&1 & echo $! > reth-seq.pid
 
           echo "Waiting for sequencer op-reth RPC..."
           for i in $(seq 1 60); do
@@ -576,6 +577,8 @@ jobs:
             --metrics.port=7375 \
             > op-proposer.log 2>&1 & echo $! > op-proposer.pid
 
+          cat op-reth-seq.log
+          
           # Wait up to 60 seconds for sequencer to produce blocks
           python -u wait-for-blocks.py \
             --l2-url http://localhost:8645 \
