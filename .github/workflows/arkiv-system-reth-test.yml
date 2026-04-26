@@ -208,9 +208,26 @@ jobs:
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-deployer $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv da-server $BIN_PATH/ \
-            && curl -sL https://github.com/arkiv-network/arkiv-op-reth/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-linux-amd64.tar.xz | tar -xJ \
-            && mv arkiv-node $BIN_PATH/op-reth
+            && mv da-server $BIN_PATH/
+          
+          
+          # Prefer the .tar.xz release if it exists and contains the executable; otherwise fall back
+          OP_RETH_XZ_URL="https://github.com/arkiv-network/arkiv-op-reth/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-linux-amd64.tar.xz"
+          OP_RETH_TGZ_URL="https://github.com/arkiv-network/arkiv-op-reth/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-integration-tests.tar.gz"
+          TMP_XZ="op-reth.tar.xz"
+          TMP_TGZ="op-reth.tar.gz"
+
+          if curl -fSL -o "$TMP_XZ" "$OP_RETH_XZ_URL"; then
+            tar -xJf "$TMP_XZ"
+            mv arkiv-node "$BIN_PATH/op-reth"
+          else
+            echo ".tar.xz not available, trying fallback tar.gz"
+            tar -xzf "$TMP_TGZ"
+            mv arkiv-node "$BIN_PATH/op-reth"
+            rm -f "$TMP_TGZ"
+          fi
+          rm -f "$TMP_XZ" || true
+
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
           cp $BIN_PATH/op-reth $BIN_PATH/op-reth-seq
