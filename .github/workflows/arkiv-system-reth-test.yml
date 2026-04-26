@@ -398,8 +398,7 @@ jobs:
             --authrpc.jwtsecret jwt-sequencer.txt \
             --disable-discovery \
             --port=30505 \
-            --metrics 0.0.0.0:6160 \
-            > op-reth-seq.log 2>&1 & echo $! > reth-seq.pid
+            --metrics 0.0.0.0:6160
 
           echo "Waiting for sequencer op-reth RPC..."
           for i in $(seq 1 60); do
