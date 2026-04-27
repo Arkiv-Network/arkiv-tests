@@ -242,7 +242,6 @@ jobs:
           op-node --version
           op-deployer --version
           arkiv-node --version
-          arkiv-cli --version
           op-batcher --version
           op-proposer --version
           da-server --version
@@ -344,9 +343,9 @@ jobs:
           $PYTHON_BIN patch-genesis.py
           
           
-          
-          op-reth init --datadir ./sequencer-data --chain genesis.json > init_sequencer_genesis.log 2>&1
-          op-reth init --datadir ./validator-data --chain genesis.json > init_validator_genesis.log 2>&1
+          arkiv-cli inject-predeploy genesis.json
+          arkiv-node init --datadir ./sequencer-data --chain genesis.json > init_sequencer_genesis.log 2>&1
+          arkiv-node init --datadir ./validator-data --chain genesis.json > init_validator_genesis.log 2>&1
 
           openssl rand -hex 32 > jwt-sequencer.txt
           openssl rand -hex 32 > jwt-validator.txt
@@ -399,12 +398,12 @@ jobs:
       - name: Start sequencer node
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          echo "Starting L2 sequencer node op-reth..."
+          echo "Starting L2 sequencer node arkiv-node..."
 
           TEST_NAME=${{ steps.test-name.outputs.val }}
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
-          op-reth-seq node \
+          arkiv-node-seq node \
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
@@ -421,9 +420,9 @@ jobs:
             --disable-discovery \
             --port=30505 \
             --metrics 0.0.0.0:6160 \
-            > op-reth-seq.log 2>&1 & echo $! > reth-seq.pid
+            > arkiv-node-seq.log 2>&1 & echo $! > reth-seq.pid
 
-          echo "Waiting for sequencer op-reth RPC..."
+          echo "Waiting for sequencer arkiv-node RPC..."
           for i in $(seq 1 60); do
             if cast block-number --rpc-url http://localhost:8645 >/dev/null 2>&1; then
               break
@@ -431,7 +430,7 @@ jobs:
             sleep 1
           done
           if ! cast block-number --rpc-url http://localhost:8645 >/dev/null 2>&1; then
-            echo "❌ Sequencer op-reth RPC did not become ready"
+            echo "❌ Sequencer arkiv-node RPC did not become ready"
             exit 1
           fi
 
@@ -599,7 +598,7 @@ jobs:
             --metrics.port=7375 \
             > op-proposer.log 2>&1 & echo $! > op-proposer.pid
 
-          cat op-reth-seq.log
+          cat arkiv-node-seq.log
           
           # Wait up to 60 seconds for sequencer to produce blocks
           python -u wait-for-blocks.py \
@@ -610,7 +609,7 @@ jobs:
 
       - name: Start validator node
         run: |
-          echo "Starting validator node op-reth..."
+          echo "Starting validator node arkiv-node..."
 
           TEST_NAME=${{ steps.test-name.outputs.val }}
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
@@ -623,7 +622,7 @@ jobs:
           fi
           echo "Sequencer enode: $SEQUENCER_ENODE"
 
-          op-reth-val node \
+          arkiv-node-val node \
             --chain genesis.json \
             --datadir=./validator-data \
             --http \
@@ -638,7 +637,7 @@ jobs:
             --trusted-only \
             --port=30405 \
             --metrics 0.0.0.0:6060 \
-            > op-reth-val.log 2>&1 & echo $! > reth-val.pid
+            > arkiv-node-val.log 2>&1 & echo $! > reth-val.pid
 
           OP_NODE_PEER_ID=$(cat op-node-peer-id.txt)
 
@@ -703,7 +702,7 @@ jobs:
       - name: Scrape reth metrics to InfluxDB
         if: ${{ inputs.is-external == 'false' }}
         run: |
-          # op-reth has no native InfluxDB exporter (unlike op-geth), so we
+          # arkiv-node has no native InfluxDB exporter (unlike op-geth), so we
           # poll its Prometheus endpoints for both sequencer and validator
           # every few seconds and forward the samples to InfluxDB.
           export JOB_NAME=${{ steps.test-name.outputs.val }}
