@@ -173,16 +173,6 @@ jobs:
           mkdir -p $HOME/bin
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Get foundry cli
-        run: |
-          set -x
-          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
-          mv forge cast anvil chisel $HOME/bin/
-          forge --version
-          chisel --version
-          cast --version
-          anvil --version
-
       - name: Get op-reth, op-node and op-deployer binaries
         if: ${{ inputs.is-external == 'false' }}
         env:
