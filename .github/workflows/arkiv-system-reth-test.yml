@@ -440,6 +440,7 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
           arkiv-node-seq node \
+            --chain genesis.json \
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
