@@ -338,6 +338,7 @@ jobs:
           op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
           op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
           
+          cp genesis.json original-genesis.json
           # $PYTHON_BIN patch-genesis.py 
           
           op-reth init --datadir ./sequencer-data --chain genesis.json > init_sequencer_genesis.log 2>&1
