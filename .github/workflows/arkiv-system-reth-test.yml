@@ -401,7 +401,6 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
           op-reth-seq node \
-            --chain genesis.json \
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \

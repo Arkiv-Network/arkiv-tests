@@ -173,7 +173,7 @@ jobs:
       - name: Get foundry cli
         run: |
           set -x
-          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.6.0-rc1/foundry_v1.6.0-rc1_linux_amd64.tar.gz | tar -xz
           mv forge cast anvil chisel $HOME/bin/
           forge --version
           chisel --version
@@ -194,7 +194,7 @@ jobs:
           OP_DEPLOYER_TAG=${{ inputs.arkiv-op-deployer }}
           OP_PROPOSER_TAG=${{ inputs.arkiv-op-proposer }}
           OP_DA_SERVER_TAG=${{ inputs.arkiv-op-da-server }}
-          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.6.0-rc1/foundry_v1.6.0-rc1_linux_amd64.tar.gz | tar -xz \
             && mv forge cast anvil chisel $BIN_PATH/ \
             && curl -sL https://github.com/arkiv-network/optimism_old/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
             && mv op-node $BIN_PATH/ \
