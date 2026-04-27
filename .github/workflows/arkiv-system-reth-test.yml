@@ -14,7 +14,7 @@ on:
       arkiv-op-reth:
         description: "Arkiv op-reth version used for tests"
         required: true
-        default: "v0.1.0-alpha-06"
+        default: "v0.1.0-alpha-09"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
@@ -219,27 +219,30 @@ jobs:
 
           if curl -fSL -o "$TMP_XZ" "$OP_RETH_XZ_URL"; then
             tar -xJf "$TMP_XZ"
-            mv arkiv-node "$BIN_PATH/op-reth"
+            mv arkiv-node "$BIN_PATH"
+            mv arkiv-cli "$BIN_PATH"
           else
             echo ".tar.xz not available, trying fallback tar.gz"
             curl -sL -o "$TMP_TGZ" "$OP_RETH_TGZ_URL"
             tar -xzf "$TMP_TGZ"
-            mv arkiv-node "$BIN_PATH/op-reth"
+            mv arkiv-node "$BIN_PATH"
+            mv arkiv-cli "$BIN_PATH"
             rm -f "$TMP_TGZ"
           fi
           rm -f "$TMP_XZ" || true
 
 
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
-          cp $BIN_PATH/op-reth $BIN_PATH/op-reth-seq
-          cp $BIN_PATH/op-reth $BIN_PATH/op-reth-val
+          cp $BIN_PATH/arkiv-node $BIN_PATH/arkiv-node-seq
+          cp $BIN_PATH/arkiv-node $BIN_PATH/arkiv-node-val
 
           cp $BIN_PATH/op-node $BIN_PATH/op-node-seq
           cp $BIN_PATH/op-node $BIN_PATH/op-node-val
 
           op-node --version
           op-deployer --version
-          op-reth --version
+          arkiv-node --version
+          arkiv-cli --version
           op-batcher --version
           op-proposer --version
           da-server --version
@@ -338,8 +341,9 @@ jobs:
           op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
           op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
           
-          cp genesis.json original-genesis.json
-          # $PYTHON_BIN patch-genesis.py 
+          $PYTHON_BIN patch-genesis.py
+          
+          
           
           op-reth init --datadir ./sequencer-data --chain genesis.json > init_sequencer_genesis.log 2>&1
           op-reth init --datadir ./validator-data --chain genesis.json > init_validator_genesis.log 2>&1
