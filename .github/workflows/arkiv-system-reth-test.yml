@@ -349,9 +349,7 @@ jobs:
           
           # 3. Use 'console' mode to query the database for the exact block hash
           echo "Querying database for full hash..."
-          FULL_HASH=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "eth.getBlock(0).hash")
-          # Clean up quotes from the output (e.g., "0x..." -> 0x...)
-          FULL_HASH=$(echo "$FULL_HASH" | tr -d '"')
+          FULL_HASH=$(grep "Genesis block written" init_sequencer_genesis.log | sed -n 's/.*hash=\(0x[0-9a-fA-F]*\).*/\1/p')
           
           # Validate the hash length (should be 66 characters: 0x + 64 hex chars)
           if [[ ${#FULL_HASH} -ne 66 ]]; then
