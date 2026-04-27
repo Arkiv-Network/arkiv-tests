@@ -349,7 +349,7 @@ jobs:
           
           # 3. Use 'console' mode to query the database for the exact block hash
           echo "Querying database for full hash..."
-          FULL_HASH=$(grep "Genesis block written" init_sequencer_genesis.log | sed -n 's/.*hash=\(0x[0-9a-fA-F]*\).*/\1/p')
+          FULL_HASH=$(grep "Genesis block written" init_sequencer_genesis.log | grep -oE "0x[0-9a-fA-F]{64}")
           
           # Validate the hash length (should be 66 characters: 0x + 64 hex chars)
           if [[ ${#FULL_HASH} -ne 66 ]]; then
