@@ -14,7 +14,7 @@ on:
       arkiv-op-reth:
         description: "Arkiv op-reth version used for tests"
         required: true
-        default: "v0.1.0-alpha-05"
+        default: "v0.1.0-alpha-06"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
