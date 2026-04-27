@@ -322,7 +322,7 @@ jobs:
 
           # 3. Use 'console' mode to query the database for the exact block hash
           echo "Querying database for full hash..."
-          FULL_HASH=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "eth.getBlock(0).hash")
+          FULL_HASH=$(arkiv-node node --datadir sequencer-data --verbosity 0 console --exec "eth.getBlock(0).hash")
           # Clean up quotes from the output (e.g., "0x..." -> 0x...)
           FULL_HASH=$(echo "$FULL_HASH" | tr -d '"')
           
@@ -334,7 +334,7 @@ jobs:
           echo "Detected Full Genesis Hash: $FULL_HASH"
 
           echo "Querying database for enode path..."
-          GETH_SEQUENCER_ENODE=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "admin.nodeInfo.enode")
+          GETH_SEQUENCER_ENODE=$(arkiv-node node --datadir sequencer-data --verbosity 0 console --exec "admin.nodeInfo.enode")
           echo "Retrieved Geth Sequencer Enode: ${GETH_SEQUENCER_ENODE}"
           echo ["${GETH_SEQUENCER_ENODE}"] > ./validator-data/geth/static-nodes.json
           echo "Added to validator static-nodes.json"
