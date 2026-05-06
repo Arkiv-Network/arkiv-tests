@@ -690,13 +690,23 @@ jobs:
             --rollup.config=rollup.json \
             --rollup.l1-chain-config anvil-chain.json \
             > op-node-val.log 2>&1 & echo $! > op-node-val.pid
-
+          
           # Wait up to 60 seconds for validator to produce blocks
           python -u wait-for-blocks.py \
             --l2-url http://localhost:8545 \
             --l1-url http://localhost:15900 \
             --timeout 60 \
             --blocks 3
+
+      - name: Run js-sdk library tests
+        run: |
+          (cd arkiv-sdk-js/test && bun run test:component)
+        env:
+          ARKIV_SDK_TEST_RPC_URL: http://localhost:8645
+          ARKIV_SDK_TEST_WS_URL: ws://localhost:8646
+          ARKIV_SDK_TEST_CHAIN_ID: 42069
+          ARKIV_SDK_TEST_CRUD_TIMEOUT: 30000
+          PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
 
       - name: Gather metrics
         if: ${{ inputs.is-external == 'false' }}
@@ -751,14 +761,12 @@ jobs:
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
-      - name: Simple entity loop test
+      - name: Simple entity test
         if: ${{ inputs.is-external == 'false' }}
         run: |
           # Uncomment to debug entity creation test
           # export DEBUG=arkiv:*
           bun src/create_entity.ts
-        env:
-          CREATE_ENTITY_LOOP_DURATION_SECONDS: ${{ inputs.test-length }}
 
       - name: Start snapshot loop
         run: |
