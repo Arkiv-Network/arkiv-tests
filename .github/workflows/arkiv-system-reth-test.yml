@@ -14,7 +14,7 @@ on:
       arkiv-op-reth:
         description: "Arkiv op-reth version used for tests"
         required: true
-        default: "v0.1.0-alpha-10"
+        default: "v0.1.0-dev-01"
       arkiv-op-node:
         description: "Arkiv op node tag/commit used for tests"
         required: true
@@ -78,7 +78,7 @@ on:
       arkiv-sdk-js:
         description: "Arkiv SDK Tag/commit used for tests"
         required: true
-        default: "develop"
+        default: "feature/use-entity-registry-contract"
       is-external:
         description: "Whether test already deployed network"
         required: true
