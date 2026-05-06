@@ -211,12 +211,14 @@ jobs:
             tar -xJf "$TMP_XZ"
             mv arkiv-node "$BIN_PATH"
             mv arkiv-cli "$BIN_PATH"
+            mv arkiv-storaged "$BIN_PATH"
           else
             echo ".tar.xz not available, trying fallback tar.gz"
             curl -sL -o "$TMP_TGZ" "$OP_RETH_TGZ_URL"
             tar -xzf "$TMP_TGZ"
             mv arkiv-node "$BIN_PATH"
             mv arkiv-cli "$BIN_PATH"
+            mv arkiv-storaged "$BIN_PATH"
             rm -f "$TMP_TGZ"
           fi
           rm -f "$TMP_XZ" || true
@@ -225,6 +227,8 @@ jobs:
           # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
           cp $BIN_PATH/arkiv-node $BIN_PATH/arkiv-node-seq
           cp $BIN_PATH/arkiv-node $BIN_PATH/arkiv-node-val
+          cp $BIN_PATH/arkiv-storaged $BIN_PATH/arkiv-storaged-seq
+          cp $BIN_PATH/arkiv-storaged $BIN_PATH/arkiv-storaged-val
 
           cp $BIN_PATH/op-node $BIN_PATH/op-node-seq
           cp $BIN_PATH/op-node $BIN_PATH/op-node-val
@@ -232,6 +236,7 @@ jobs:
           op-node --version
           op-deployer --version
           arkiv-node --version
+          arkiv-storaged --version
           op-batcher --version
           op-proposer --version
           da-server --version
@@ -429,13 +434,21 @@ jobs:
           TEST_NAME=${{ steps.test-name.outputs.val }}
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
+          arkiv-storaged-seq \
+            --data-dir=./sequencer-data \
+            --chain-addr=127.0.0.1:22704 \
+            --query-addr=127.0.0.1:22705 \
+            > arkiv-storaged-seq.log 2>&1 & echo $! > arkiv-storaged-seq.pid
+          
           arkiv-node-seq node \
-            --chain genesis.json \
+            --chain=genesis.json \
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
             --http.addr=0.0.0.0 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
+            --arkiv.db-url=http://localhost:22704 \
+            --arkiv.query-url=http://localhost:22705 \
             --ws \
             --ws.addr=0.0.0.0 \
             --ws.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
@@ -620,6 +633,12 @@ jobs:
           fi
           echo "Sequencer enode: $SEQUENCER_ENODE"
 
+          arkiv-storaged-val \
+            --data-dir=./validator-data \
+            --chain-addr=127.0.0.1:22714 \
+            --query-addr=127.0.0.1:22715 \
+            > arkiv-storaged-val.log 2>&1 & echo $! > arkiv-storaged-val.pid
+
           arkiv-node-val node \
             --chain genesis.json \
             --datadir=./validator-data \
@@ -627,6 +646,8 @@ jobs:
             --http.port=8545 \
             --http.addr=0.0.0.0 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
+            --arkiv.db-url=http://localhost:22714 \
+            --arkiv.query-url=http://localhost:22715 \
             --authrpc.addr=127.0.0.1 \
             --authrpc.port=8551 \
             --authrpc.jwtsecret=jwt-validator.txt \
@@ -788,11 +809,13 @@ jobs:
         run: |
           kill $(cat scrape-reth-metrics.pid)
           kill $(cat gather-metrics.pid)
-          kill $(cat reth-val.pid)
+          kill $(cat arkiv-node-val.pid)
+          kill $(cat arkiv-storaged-val.pid)
           kill $(cat op-node-val.pid)
           kill $(cat op-proposer.pid)
           kill $(cat op-batcher.pid)
-          kill $(cat reth-seq.pid)
+          kill $(cat arkiv-node-seq.pid)
+          kill $(cat arkiv-storaged-seq.pid)
           kill $(cat op-node-seq.pid)
           kill $(cat anvil.pid)
 
