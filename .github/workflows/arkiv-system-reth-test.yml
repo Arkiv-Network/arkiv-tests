@@ -391,7 +391,7 @@ jobs:
           mkdir da-data
           da-server \
             --log.level=debug \
-            --addr 0.0.0.0 \
+            --addr 127.0.0.1 \
             --port 3100 \
             --file.path ./da-data \
             --generic-commitment \
@@ -409,7 +409,7 @@ jobs:
           
           celestia-alt-da \
             --log.level=debug \
-            --addr 0.0.0.0 \
+            --addr 127.0.0.1 \
             --port 3100 \
             --celestia.namespace=000000000000000000000000000000000000007323c069f0a07b3e8e12 \
             --celestia.compact-blobid \
@@ -445,21 +445,21 @@ jobs:
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
-            --http.addr=0.0.0.0 \
+            --http.addr=127.0.0.1 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22704 \
             --arkiv.query-url=http://localhost:22705 \
             --ws \
-            --ws.addr=0.0.0.0 \
+            --ws.addr=127.0.0.1 \
             --ws.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --ws.origins="*" \
             --ws.port=8646 \
-            --authrpc.addr=0.0.0.0 \
+            --authrpc.addr=127.0.0.1 \
             --authrpc.port=8651 \
             --authrpc.jwtsecret jwt-sequencer.txt \
             --disable-discovery \
             --port=30505 \
-            --metrics 0.0.0.0:6160 \
+            --metrics 127.0.0.1:6160 \
             > arkiv-node-seq.log 2>&1 & echo $! > arkiv-node-seq.pid
 
           echo "Starting sequencer op-node..."
@@ -491,7 +491,7 @@ jobs:
             --sequencer.enabled \
             --sequencer.l1-confs=0 \
             --verifier.l1-confs=0 \
-            --rpc.addr=0.0.0.0 \
+            --rpc.addr=127.0.0.1 \
             --rpc.port=8647 \
             --l1=http://localhost:15900 \
             --l1.beacon.ignore \
@@ -548,17 +548,17 @@ jobs:
             --num-confirmations=1 \
             --safe-abort-nonce-too-low-count=3 \
             --resubmission-timeout=30s \
-            --rpc.addr=0.0.0.0 \
+            --rpc.addr=127.0.0.1 \
             --rpc.port=8548 \
             --rpc.enable-admin \
             --max-channel-duration=300 \
             --batch-type=1 \
             --data-availability-type=calldata \
             --metrics.enabled=true \
-            --metrics.addr=0.0.0.0 \
+            --metrics.addr=127.0.0.1 \
             --metrics.port=7365 \
             --pprof.enabled \
-            --pprof.addr 0.0.0.0 \
+            --pprof.addr 127.0.0.1 \
             --pprof.path pprof-data \
             --pprof.port 6727 \
             > op-batcher.log 2>&1 & echo $! > op-batcher.pid
@@ -603,9 +603,9 @@ jobs:
             --txmgr.min-basefee=1 \
             --txmgr.min-tip-cap=1 \
             --wait-node-sync=true \
-            --rpc.addr=0.0.0.0 \
+            --rpc.addr=127.0.0.1 \
             --metrics.enabled=true \
-            --metrics.addr=0.0.0.0 \
+            --metrics.addr=127.0.0.1 \
             --metrics.port=7375 \
             > op-proposer.log 2>&1 & echo $! > op-proposer.pid
 
@@ -644,7 +644,7 @@ jobs:
             --datadir=./validator-data \
             --http \
             --http.port=8545 \
-            --http.addr=0.0.0.0 \
+            --http.addr=127.0.0.1 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22714 \
             --arkiv.query-url=http://localhost:22715 \
@@ -655,7 +655,7 @@ jobs:
             --trusted-peers="$SEQUENCER_ENODE" \
             --trusted-only \
             --port=30405 \
-            --metrics 0.0.0.0:6060 \
+            --metrics 127.0.0.1:6060 \
             > arkiv-node-val.log 2>&1 & echo $! > arkiv-node-val.pid
 
           OP_NODE_PEER_ID=$(cat op-node-peer-id.txt)
@@ -672,11 +672,11 @@ jobs:
             --l2.jwt-secret=jwt-validator.txt \
             --l2.enginekind=reth \
             --verifier.l1-confs=0 \
-            --rpc.addr=0.0.0.0 \
+            --rpc.addr=127.0.0.1 \
             --rpc.port=8547 \
             --p2p.static=/ip4/127.0.0.1/tcp/9442/p2p/${OP_NODE_PEER_ID} \
             --p2p.sync.req-resp=true \
-            --p2p.listen.ip=0.0.0.0 \
+            --p2p.listen.ip=127.0.0.1 \
             --p2p.listen.tcp=9342 \
             --p2p.listen.udp=9342 \
             --p2p.no-discovery=true \
