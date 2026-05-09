@@ -36,8 +36,7 @@ except Exception:
     from arkiv.types import KEY
 
     _QUERY_FIELDS = KEY
-from arkiv.utils import to_create_op, to_query_options, to_tx_params
-from arkiv.types import Operations, TxHash, HexStr
+from arkiv.utils import to_create_op, to_query_options
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from locust import constant, events, task
@@ -614,13 +613,4 @@ def on_test_start(environment, **kwargs):
 
 
 def custom_execute(w3: Arkiv, operations: Operations, tx_params: TxParams) -> Any:
-        tx_params = to_tx_params(operations, tx_params)
-
-        # Send transaction and get tx hash
-        tx_hash_bytes = w3.eth.send_transaction(tx_params)
-        tx_hash = TxHash(HexStr(tx_hash_bytes.to_0x_hex()))
-
-        # Wait for transaction to complete and return receipt
-        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=0.5)
-
-        return tx_receipt
+    return w3.arkiv.execute(operations, tx_params)
