@@ -371,7 +371,7 @@ jobs:
           mkdir da-data
           da-server \
             --log.level=debug \
-            --addr 127.0.0.1 \
+            --addr 0.0.0.0 \
             --port 3100 \
             --file.path ./da-data \
             --generic-commitment \
@@ -387,7 +387,7 @@ jobs:
           
           celestia-alt-da \
             --log.level=debug \
-            --addr 127.0.0.1 \
+            --addr 0.0.0.0 \
             --port 3100 \
             --celestia.namespace=000000000000000000000000000000000000007323c069f0a07b3e8e12 \
             --celestia.compact-blobid \
@@ -416,15 +416,15 @@ jobs:
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
-            --http.addr=127.0.0.1 \
+            --http.addr=0.0.0.0 \
             --http.vhosts="*" \
             --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
             --ws \
-            --ws.addr=127.0.0.1 \
+            --ws.addr=0.0.0.0 \
             --ws.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
             --ws.origins="*" \
             --ws.port=8646 \
-            --authrpc.addr=127.0.0.1 \
+            --authrpc.addr=0.0.0.0 \
             --authrpc.port=8651 \
             --authrpc.vhosts="*" \
             --authrpc.jwtsecret jwt-sequencer.txt \
@@ -433,7 +433,7 @@ jobs:
             --nodiscover \
             --networkid=42069 \
             --metrics \
-            --metrics.addr=127.0.0.1 \
+            --metrics.addr=0.0.0.0 \
             --metrics.port=6160 \
             --port=30505 \
             --metrics.influxdbv2 \
@@ -473,7 +473,7 @@ jobs:
             --sequencer.enabled \
             --sequencer.l1-confs=0 \
             --verifier.l1-confs=0 \
-            --rpc.addr=127.0.0.1 \
+            --rpc.addr=0.0.0.0 \
             --rpc.port=8647 \
             --l1=http://localhost:15900 \
             --l1.beacon.ignore \
@@ -530,17 +530,17 @@ jobs:
             --num-confirmations=1 \
             --safe-abort-nonce-too-low-count=3 \
             --resubmission-timeout=30s \
-            --rpc.addr=127.0.0.1 \
+            --rpc.addr=0.0.0.0 \
             --rpc.port=8548 \
             --rpc.enable-admin \
             --max-channel-duration=300 \
             --batch-type=1 \
             --data-availability-type=calldata \
             --metrics.enabled=true \
-            --metrics.addr=127.0.0.1 \
+            --metrics.addr=0.0.0.0 \
             --metrics.port=7365 \
             --pprof.enabled \
-            --pprof.addr 127.0.0.1 \
+            --pprof.addr 0.0.0.0 \
             --pprof.path pprof-data \
             --pprof.port 6727 \
             > op-batcher.log 2>&1 & echo $! > op-batcher.pid
@@ -585,9 +585,9 @@ jobs:
             --txmgr.min-basefee=1 \
             --txmgr.min-tip-cap=1 \
             --wait-node-sync=true \
-            --rpc.addr=127.0.0.1 \
+            --rpc.addr=0.0.0.0 \
             --metrics.enabled=true \
-            --metrics.addr=127.0.0.1 \
+            --metrics.addr=0.0.0.0 \
             --metrics.port=7375 \
             > op-proposer.log 2>&1 & echo $! > op-proposer.pid
 
@@ -609,7 +609,7 @@ jobs:
             --datadir=./validator-data \
             --http \
             --http.port=8545 \
-            --http.addr=127.0.0.1 \
+            --http.addr=0.0.0.0 \
             --http.vhosts="*" \
             --http.api="web3,debug,eth,txpool,net,admin,miner,arkiv" \
             --authrpc.addr=127.0.0.1 \
@@ -621,7 +621,7 @@ jobs:
             --nodiscover \
             --networkid=42069 \
             --metrics \
-            --metrics.addr=127.0.0.1 \
+            --metrics.addr=0.0.0.0 \
             --metrics.port=6060 \
             --discovery.port=30405 \
             --port=30405 \
@@ -649,11 +649,11 @@ jobs:
             --l2.jwt-secret=jwt-validator.txt \
             --l2.enginekind=geth \
             --verifier.l1-confs=0 \
-            --rpc.addr=127.0.0.1 \
+            --rpc.addr=0.0.0.0 \
             --rpc.port=8547 \
             --p2p.static=/ip4/127.0.0.1/tcp/9442/p2p/${OP_NODE_PEER_ID} \
             --p2p.sync.req-resp=true \
-            --p2p.listen.ip=127.0.0.1 \
+            --p2p.listen.ip=0.0.0.0 \
             --p2p.listen.tcp=9342 \
             --p2p.listen.udp=9342 \
             --p2p.no-discovery=true \
