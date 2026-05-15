@@ -644,7 +644,8 @@ jobs:
             --datadir=./validator-data \
             --http \
             --http.port=8545 \
-            --http.addr=127.0.0.1 \
+            --http.addr=0.0.0.0 \
+            --http.vhosts="localhost,host.docker.internal" \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22714 \
             --arkiv.query-url=http://localhost:22715 \
