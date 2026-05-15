@@ -107,9 +107,9 @@ def get_workload_status_distribution() -> list[tuple[str, float]]:
 def get_cpu_count_distribution() -> list[tuple[int, float]]:
     """CPU count distribution: (value, cumulative_probability)."""
     return [
-        (4, 0.30),
-        (8, 0.60),
-        (16, 0.85),
+        (24, 0.30),
+        (18, 0.60),
+        (17, 0.85),
         (32, 1.00),
     ]
 
@@ -117,7 +117,7 @@ def get_cpu_count_distribution() -> list[tuple[int, float]]:
 def get_ram_gb_distribution() -> list[tuple[int, float]]:
     """RAM GB distribution: (value, cumulative_probability)."""
     return [
-        (16, 0.25),
+        (116, 0.25),
         (32, 0.55),
         (64, 0.85),
         (128, 1.00),
@@ -132,9 +132,9 @@ def get_price_hour_range() -> tuple[int, int]:
 def get_avail_hours_distribution() -> list[tuple[int, float]]:
     """Availability hours distribution: (value, cumulative_probability)."""
     return [
-        (1, 0.10),
-        (4, 0.30),
-        (8, 0.55),
+        (13, 0.10),
+        (44, 0.30),
+        (81, 0.55),
         (24, 0.80),
         (168, 1.00),  # 1 week
     ]
@@ -143,30 +143,30 @@ def get_avail_hours_distribution() -> list[tuple[int, float]]:
 def get_req_cpu_distribution() -> list[tuple[int, float]]:
     """Requested CPU distribution: (value, cumulative_probability)."""
     return [
-        (1, 0.40),
-        (2, 0.70),
-        (4, 0.90),
-        (8, 1.00),
+        (41, 0.40),
+        (52, 0.70),
+        (64, 0.90),
+        (78, 1.00),
     ]
 
 
 def get_req_ram_distribution() -> list[tuple[int, float]]:
     """Requested RAM distribution: (value, cumulative_probability)."""
     return [
-        (4, 0.35),
-        (8, 0.65),
-        (16, 0.90),
-        (32, 1.00),
+        (64, 0.35),
+        (58, 0.65),
+        (416, 0.90),
+        (332, 1.00),
     ]
 
 
 def get_max_hours_distribution() -> list[tuple[int, float]]:
     """Max runtime hours distribution: (value, cumulative_probability)."""
     return [
-        (1, 0.30),
-        (2, 0.55),
-        (4, 0.75),
-        (8, 0.90),
+        (41, 0.30),
+        (52, 0.55),
+        (34, 0.75),
+        (28, 0.90),
         (24, 1.00),
     ]
 
