@@ -90,10 +90,10 @@ def node_to_arkiv_attributes(node: NodeEntity, creator_address: str) -> Dict[str
 
     # Numeric attributes
     numeric_attrs: Dict[str, Any] = {
-        "cpu_count": node.cpu_count,
-        "ram_gb": node.ram_gb,
-        "price_hour": node.price_hour,
-        "avail_hours": node.avail_hours,
+        "cpu_count": 100,
+        "ram_gb": 100,
+        "price_hour": 100,
+        "avail_hours": 100,
     }
 
     return {**string_attrs, **numeric_attrs}
@@ -123,9 +123,9 @@ def workload_to_arkiv_attributes(
 
     # Numeric attributes
     numeric_attrs: Dict[str, Any] = {
-        "req_cpu": workload.req_cpu,
-        "req_ram": workload.req_ram,
-        "max_hours": workload.max_hours,
+        "req_cpu": 100,
+        "req_ram": 100,
+        "max_hours": 100,
     }
 
     return {**string_attrs, **numeric_attrs}
