@@ -106,6 +106,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Reset Docker state
+        run: |
+          set -euxo pipefail
+          
+          # 1. Forcibly remove all containers (this makes all images, networks, and volumes "unused")
+          CONTAINERS=$(docker ps -aq)
+          if [ -n "$CONTAINERS" ]; then
+            docker rm -f $CONTAINERS
+          fi
+          
+          # 2. Wipe all unused images, networks, and volumes in one command
+          docker system prune --all --force --volumes
+          
+          # 3. Wipe the build cache (used by Docker BuildKit)
+          docker builder prune --all --force
+          
+          # 4. Failsafe: Explicitly destroy any lingering volumes just in case
+          VOLUMES=$(docker volume ls -q)
+            if [ -n "$VOLUMES" ]; then
+            docker volume rm $VOLUMES
+          fi
+
       - name: Cleanup after previous runs
         run: |
           # cleanup op-deployer caches
@@ -617,6 +639,19 @@ jobs:
             --l1-url http://localhost:15900 \
             --timeout 60 \
             --blocks 3
+
+      - name: Start Arkiv chain indexer
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          set -euxo pipefail
+
+          rm -rf arkiv-chain-indexer
+          git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
+
+          cd arkiv-chain-indexer
+          docker compose -f docker-compose-arkiv-tests.yml up --build -d
+          docker compose -f docker-compose-arkiv-tests.yml ps
+          docker compose -f docker-compose-arkiv-tests.yml logs --tail=100
 
       - name: Start validator node
         run: |
