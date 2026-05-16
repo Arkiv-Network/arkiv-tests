@@ -110,17 +110,23 @@ jobs:
         run: |
           set -euxo pipefail
           
-          # The script will continue or fail gracefully if Docker hangs for more than 10 seconds
-          CONTAINERS=$(timeout 10s docker ps -aq || echo "")
-          
+          # 1. Forcibly remove all containers (this makes all images, networks, and volumes "unused")
+          CONTAINERS=$(docker ps -aq)
           if [ -n "$CONTAINERS" ]; then
-            # Also add timeouts to the destructive commands
-            timeout 30s docker rm -f $CONTAINERS
+            docker rm -f $CONTAINERS
           fi
           
-          timeout 60s docker system prune --all --force --volumes
-          timeout 60s docker volume prune --force
-          timeout 60s docker builder prune --all --force
+          # 2. Wipe all unused images, networks, and volumes in one command
+          docker system prune --all --force --volumes
+          
+          # 3. Wipe the build cache (used by Docker BuildKit)
+          docker builder prune --all --force
+          
+          # 4. Failsafe: Explicitly destroy any lingering volumes just in case
+          VOLUMES=$(docker volume ls -q)
+            if [ -n "$VOLUMES" ]; then
+            docker volume rm $VOLUMES
+          fi
 
       - name: Cleanup after previous runs
         run: |
