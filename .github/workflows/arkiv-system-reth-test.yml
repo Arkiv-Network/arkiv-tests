@@ -111,16 +111,16 @@ jobs:
           set -euxo pipefail
           
           # The script will continue or fail gracefully if Docker hangs for more than 10 seconds
-          CONTAINERS=$(sudo timeout 10s docker ps -aq || echo "")
+          CONTAINERS=$(timeout 10s docker ps -aq || echo "")
           
           if [ -n "$CONTAINERS" ]; then
             # Also add timeouts to the destructive commands
-            sudo timeout 30s docker rm -f $CONTAINERS
+            timeout 30s docker rm -f $CONTAINERS
           fi
           
-          sudo timeout 60s docker system prune --all --force --volumes
-          sudo timeout 60s docker volume prune --force
-          sudo timeout 60s docker builder prune --all --force
+          timeout 60s docker system prune --all --force --volumes
+          timeout 60s docker volume prune --force
+          timeout 60s docker builder prune --all --force
 
       - name: Cleanup after previous runs
         run: |
@@ -643,9 +643,9 @@ jobs:
           git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
 
           cd arkiv-chain-indexer
-          sudo docker compose -f docker-compose-arkiv-tests.yml up --build -d
-          sudo docker compose -f docker-compose-arkiv-tests.yml ps
-          sudo docker compose -f docker-compose-arkiv-tests.yml logs --tail=100
+          docker compose -f docker-compose-arkiv-tests.yml up --build -d
+          docker compose -f docker-compose-arkiv-tests.yml ps
+          docker compose -f docker-compose-arkiv-tests.yml logs --tail=100
 
       - name: Start validator node
         run: |
