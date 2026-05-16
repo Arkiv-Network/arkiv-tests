@@ -109,15 +109,18 @@ jobs:
       - name: Reset Docker state
         run: |
           set -euxo pipefail
-
-          CONTAINERS=$(sudo docker ps -aq)
+          
+          # The script will continue or fail gracefully if Docker hangs for more than 10 seconds
+          CONTAINERS=$(sudo timeout 10s docker ps -aq || echo "")
+          
           if [ -n "$CONTAINERS" ]; then
-            sudo docker rm -f $CONTAINERS
+            # Also add timeouts to the destructive commands
+            sudo timeout 30s docker rm -f $CONTAINERS
           fi
-
-          sudo docker system prune --all --force --volumes
-          sudo docker volume prune --force
-          sudo docker builder prune --all --force
+          
+          sudo timeout 60s docker system prune --all --force --volumes
+          sudo timeout 60s docker volume prune --force
+          sudo timeout 60s docker builder prune --all --force
 
       - name: Cleanup after previous runs
         run: |
