@@ -106,6 +106,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Reset Docker state
+        run: |
+          set -euxo pipefail
+
+          CONTAINERS=$(docker ps -aq)
+          if [ -n "$CONTAINERS" ]; then
+            docker rm -f $CONTAINERS
+          fi
+
+          docker system prune --all --force --volumes
+          docker volume prune --force
+          docker builder prune --all --force
+
       - name: Cleanup after previous runs
         run: |
           # cleanup op-deployer caches
@@ -617,6 +630,19 @@ jobs:
             --l1-url http://localhost:15900 \
             --timeout 60 \
             --blocks 3
+
+      - name: Start Arkiv chain indexer
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          set -euxo pipefail
+
+          rm -rf arkiv-chain-indexer
+          git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
+
+          cd arkiv-chain-indexer
+          docker compose -f docker-compose-arkiv-tests.yml up --build -d
+          docker compose -f docker-compose-arkiv-tests.yml ps
+          docker compose -f docker-compose-arkiv-tests.yml logs --tail=100
 
       - name: Start validator node
         run: |
