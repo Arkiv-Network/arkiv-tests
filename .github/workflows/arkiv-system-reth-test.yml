@@ -683,14 +683,23 @@ jobs:
             echo "❌ No running indexer container found"
             exit 1
           fi
-          GATEWAY_IP=$(docker inspect "$INDEXER_CONTAINER" \
-            --format '{{range .NetworkSettings.Networks}}{{.Gateway}}{{"\n"}}{{end}}' \
-            | grep -v '^$' | head -1)
+          # Resolve host.docker.internal from inside the container itself —
+          # this is the exact IP the indexer scanner will dial, so socat must
+          # listen on it. /etc/hosts is the most portable lookup (works on
+          # alpine, debian, distroless-ish images without getent/nslookup).
+          GATEWAY_IP=$(docker exec "$INDEXER_CONTAINER" sh -c \
+            'getent hosts host.docker.internal 2>/dev/null \
+              || grep -E "[[:space:]]host\.docker\.internal($|[[:space:]])" /etc/hosts' \
+            | awk '{print $1}' | head -1)
           if [ -z "$GATEWAY_IP" ]; then
-            echo "❌ Failed to determine docker compose gateway IP"
+            echo "❌ host.docker.internal does not resolve inside indexer container"
+            echo "Container /etc/hosts:"
+            docker exec "$INDEXER_CONTAINER" cat /etc/hosts || true
+            echo "Container networks:"
+            docker inspect "$INDEXER_CONTAINER" --format '{{json .NetworkSettings.Networks}}' || true
             exit 1
           fi
-          echo "Binding socat proxies to docker compose gateway: $GATEWAY_IP"
+          echo "host.docker.internal resolves to $GATEWAY_IP inside the indexer container — binding socat there"
           cd ..
 
           socat TCP-LISTEN:18545,bind=${GATEWAY_IP},fork,reuseaddr TCP:127.0.0.1:8545 \
