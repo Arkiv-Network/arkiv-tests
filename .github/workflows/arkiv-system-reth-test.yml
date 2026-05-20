@@ -653,7 +653,7 @@ jobs:
           docker compose ps
           docker compose logs --tail=100
         env:
-          SCANNER_RPC_FULL_NODE: http://host:docker:internal:8545
+          SCANNER_RPC_FULL_NODE: http://host.docker.internal:8545
           HOST_GATEWAY_IP: host-gateway
           SCANNER_FROM_BLOCK: 1
           FRONTEND_HOST: 0.0.0.0
