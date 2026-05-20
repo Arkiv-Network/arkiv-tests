@@ -640,73 +640,6 @@ jobs:
             --timeout 60 \
             --blocks 3
 
-      - name: Start Arkiv chain indexer
-        if: ${{ inputs.is-external == 'false' }}
-        run: |
-          set -euxo pipefail
-
-          rm -rf arkiv-chain-indexer
-          git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
-
-          cd arkiv-chain-indexer
-          docker compose up --build -d
-          docker compose ps
-          docker compose logs --tail=100
-        env:
-          SCANNER_RPC_FULL_NODE: http://host.docker.internal:18545
-          HOST_GATEWAY_IP: host-gateway
-          SCANNER_FROM_BLOCK: 1
-          FRONTEND_HOST: 0.0.0.0
-          BACKEND_HOST: 0.0.0.0
-          BASELOAD_MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-          BASELOAD_RPC_NODE: http://host.docker.internal:18645
-          BASELOAD_ADMIN_BEARER_TOKEN: av4f2222
-          SCANNER_OLDEST_BACKFILL_BLOCK: 1
-          SAVE_TRANSACTION_DATA: true
-
-      - name: Start socat proxies for docker compose
-        if: ${{ inputs.is-external == 'false' }}
-        run: |
-          set -euxo pipefail
-          # reth binds only to 127.0.0.1; expose it to the indexer containers
-          # via socat on the docker compose network's gateway IP — which is
-          # what host.docker.internal (host-gateway) resolves to from inside
-          # those containers. This keeps reth off any other interface.
-          if ! command -v socat >/dev/null 2>&1; then
-            echo "❌ socat is not installed on this runner — install it on the runner image (sudo is not available in this action)"
-            exit 1
-          fi
-
-          cd arkiv-chain-indexer
-          INDEXER_CONTAINER=$(docker compose ps -q | head -1)
-          if [ -z "$INDEXER_CONTAINER" ]; then
-            echo "❌ No running indexer container found"
-            exit 1
-          fi
-          # Resolve host.docker.internal from inside the container itself —
-          # this is the exact IP the indexer scanner will dial, so socat must
-          # listen on it. /etc/hosts is the most portable lookup (works on
-          # alpine, debian, distroless-ish images without getent/nslookup).
-          GATEWAY_IP=$(docker exec "$INDEXER_CONTAINER" sh -c \
-            'getent hosts host.docker.internal 2>/dev/null \
-              || grep -E "[[:space:]]host\.docker\.internal($|[[:space:]])" /etc/hosts' \
-            | awk '{print $1}' | head -1)
-          if [ -z "$GATEWAY_IP" ]; then
-            echo "❌ host.docker.internal does not resolve inside indexer container"
-            echo "Container /etc/hosts:"
-            docker exec "$INDEXER_CONTAINER" cat /etc/hosts || true
-            echo "Container networks:"
-            docker inspect "$INDEXER_CONTAINER" --format '{{json .NetworkSettings.Networks}}' || true
-            exit 1
-          fi
-          echo "host.docker.internal resolves to $GATEWAY_IP inside the indexer container — binding socat there"
-          cd ..
-
-          socat TCP-LISTEN:18545,bind=${GATEWAY_IP},fork,reuseaddr TCP:127.0.0.1:8545 \
-            > socat-18545.log 2>&1 & echo $! > socat-18545.pid
-          socat TCP-LISTEN:18645,bind=${GATEWAY_IP},fork,reuseaddr TCP:127.0.0.1:8645 \
-            > socat-18645.log 2>&1 & echo $! > socat-18645.pid
-
       - name: Start validator node
         run: |
           echo "Starting validator node arkiv-node..."
@@ -786,6 +719,73 @@ jobs:
             --l1-url http://localhost:15900 \
             --timeout 60 \
             --blocks 3
+
+      - name: Start Arkiv chain indexer
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          set -euxo pipefail
+
+          rm -rf arkiv-chain-indexer
+          git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
+
+          cd arkiv-chain-indexer
+          docker compose up --build -d
+          docker compose ps
+          docker compose logs --tail=100
+        env:
+          SCANNER_RPC_FULL_NODE: http://host.docker.internal:18545
+          HOST_GATEWAY_IP: host-gateway
+          SCANNER_FROM_BLOCK: 1
+          FRONTEND_HOST: 0.0.0.0
+          BACKEND_HOST: 0.0.0.0
+          BASELOAD_MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+          BASELOAD_RPC_NODE: http://host.docker.internal:18645
+          BASELOAD_ADMIN_BEARER_TOKEN: av4f2222
+          SCANNER_OLDEST_BACKFILL_BLOCK: 1
+          SAVE_TRANSACTION_DATA: true
+
+      - name: Start socat proxies for docker compose
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          set -euxo pipefail
+          # reth binds only to 127.0.0.1; expose it to the indexer containers
+          # via socat on the docker compose network's gateway IP — which is
+          # what host.docker.internal (host-gateway) resolves to from inside
+          # those containers. This keeps reth off any other interface.
+          if ! command -v socat >/dev/null 2>&1; then
+            echo "❌ socat is not installed on this runner — install it on the runner image (sudo is not available in this action)"
+            exit 1
+          fi
+
+          cd arkiv-chain-indexer
+          INDEXER_CONTAINER=$(docker compose ps -q | head -1)
+          if [ -z "$INDEXER_CONTAINER" ]; then
+            echo "❌ No running indexer container found"
+            exit 1
+          fi
+          # Resolve host.docker.internal from inside the container itself —
+          # this is the exact IP the indexer scanner will dial, so socat must
+          # listen on it. /etc/hosts is the most portable lookup (works on
+          # alpine, debian, distroless-ish images without getent/nslookup).
+          GATEWAY_IP=$(docker exec "$INDEXER_CONTAINER" sh -c \
+            'getent hosts host.docker.internal 2>/dev/null \
+              || grep -E "[[:space:]]host\.docker\.internal($|[[:space:]])" /etc/hosts' \
+            | awk '{print $1}' | head -1)
+          if [ -z "$GATEWAY_IP" ]; then
+            echo "❌ host.docker.internal does not resolve inside indexer container"
+            echo "Container /etc/hosts:"
+            docker exec "$INDEXER_CONTAINER" cat /etc/hosts || true
+            echo "Container networks:"
+            docker inspect "$INDEXER_CONTAINER" --format '{{json .NetworkSettings.Networks}}' || true
+            exit 1
+          fi
+          echo "host.docker.internal resolves to $GATEWAY_IP inside the indexer container — binding socat there"
+          cd ..
+
+          socat TCP-LISTEN:18545,bind=${GATEWAY_IP},fork,reuseaddr TCP:127.0.0.1:8545 \
+            > socat-18545.log 2>&1 & echo $! > socat-18545.pid
+          socat TCP-LISTEN:18645,bind=${GATEWAY_IP},fork,reuseaddr TCP:127.0.0.1:8645 \
+            > socat-18645.log 2>&1 & echo $! > socat-18645.pid
 
       - name: Run js-sdk library tests
         if: false
