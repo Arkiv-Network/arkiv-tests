@@ -467,12 +467,12 @@ jobs:
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
-            --http.addr=127.0.0.1 \
+            --http.addr=0.0.0.0 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22704 \
             --arkiv.query-url=http://localhost:22705 \
             --ws \
-            --ws.addr=127.0.0.1 \
+            --ws.addr=0.0.0.0 \
             --ws.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --ws.origins="*" \
             --ws.port=8646 \
@@ -649,9 +649,19 @@ jobs:
           git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
 
           cd arkiv-chain-indexer
-          docker compose -f docker-compose-arkiv-tests.yml up --build -d
-          docker compose -f docker-compose-arkiv-tests.yml ps
-          docker compose -f docker-compose-arkiv-tests.yml logs --tail=100
+          docker compose up --build -d
+          docker compose ps
+          docker compose logs --tail=100
+        env:
+          SCANNER_RPC_FULL_NODE: http://host:docker:internal:8545
+          HOST_GATEWAY_IP: host-gateway
+          SCANNER_FROM_BLOCK: 1
+          FRONTEND_HOST: 0.0.0.0
+          BACKEND_HOST: 0.0.0.0
+          BASELOAD_MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+          BASELOAD_RPC_NODE: http://host.docker.internal:8645
+          SCANNER_OLDEST_BACKFILL_BLOCK: 1
+          SAVE_TRANSACTION_DATA: true
 
       - name: Start validator node
         run: |
