@@ -467,12 +467,12 @@ jobs:
             --datadir=./sequencer-data \
             --http \
             --http.port=8645 \
-            --http.addr=0.0.0.0 \
+            --http.addr=127.0.0.1 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22704 \
             --arkiv.query-url=http://localhost:22705 \
             --ws \
-            --ws.addr=0.0.0.0 \
+            --ws.addr=127.0.0.1 \
             --ws.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --ws.origins="*" \
             --ws.port=8646 \
@@ -653,16 +653,47 @@ jobs:
           docker compose ps
           docker compose logs --tail=100
         env:
-          SCANNER_RPC_FULL_NODE: http://host.docker.internal:8545
+          SCANNER_RPC_FULL_NODE: http://host.docker.internal:18545
           HOST_GATEWAY_IP: host-gateway
           SCANNER_FROM_BLOCK: 1
           FRONTEND_HOST: 0.0.0.0
           BACKEND_HOST: 0.0.0.0
           BASELOAD_MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
-          BASELOAD_RPC_NODE: http://host.docker.internal:8645
+          BASELOAD_RPC_NODE: http://host.docker.internal:18645
           BASELOAD_ADMIN_BEARER_TOKEN: av4f2222
           SCANNER_OLDEST_BACKFILL_BLOCK: 1
           SAVE_TRANSACTION_DATA: true
+
+      - name: Start socat proxies for docker compose
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          set -euxo pipefail
+          # reth binds only to 127.0.0.1; expose it to the indexer containers
+          # via socat on the docker compose network's gateway IP — which is
+          # what host.docker.internal (host-gateway) resolves to from inside
+          # those containers. This keeps reth off any other interface.
+          which socat || (sudo apt-get update && sudo apt-get install -y socat)
+
+          cd arkiv-chain-indexer
+          INDEXER_CONTAINER=$(docker compose ps -q | head -1)
+          if [ -z "$INDEXER_CONTAINER" ]; then
+            echo "❌ No running indexer container found"
+            exit 1
+          fi
+          GATEWAY_IP=$(docker inspect "$INDEXER_CONTAINER" \
+            --format '{{range .NetworkSettings.Networks}}{{.Gateway}}{{"\n"}}{{end}}' \
+            | grep -v '^$' | head -1)
+          if [ -z "$GATEWAY_IP" ]; then
+            echo "❌ Failed to determine docker compose gateway IP"
+            exit 1
+          fi
+          echo "Binding socat proxies to docker compose gateway: $GATEWAY_IP"
+          cd ..
+
+          socat TCP-LISTEN:18545,bind=${GATEWAY_IP},fork,reuseaddr TCP:127.0.0.1:8545 \
+            > socat-18545.log 2>&1 & echo $! > socat-18545.pid
+          socat TCP-LISTEN:18645,bind=${GATEWAY_IP},fork,reuseaddr TCP:127.0.0.1:8645 \
+            > socat-18645.log 2>&1 & echo $! > socat-18645.pid
 
       - name: Start validator node
         run: |
@@ -690,7 +721,7 @@ jobs:
             --datadir=./validator-data \
             --http \
             --http.port=8545 \
-            --http.addr=0.0.0.0 \
+            --http.addr=127.0.0.1 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22714 \
             --arkiv.query-url=http://localhost:22715 \
@@ -888,6 +919,8 @@ jobs:
         run: |
           kill $(cat scrape-reth-metrics.pid)
           kill $(cat gather-metrics.pid)
+          kill $(cat socat-18545.pid) || true
+          kill $(cat socat-18645.pid) || true
           kill $(cat arkiv-node-val.pid)
           kill $(cat arkiv-storaged-val.pid)
           kill $(cat op-node-val.pid)
