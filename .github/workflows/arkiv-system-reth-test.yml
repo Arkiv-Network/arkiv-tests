@@ -672,7 +672,10 @@ jobs:
           # via socat on the docker compose network's gateway IP — which is
           # what host.docker.internal (host-gateway) resolves to from inside
           # those containers. This keeps reth off any other interface.
-          which socat || (sudo apt-get update && sudo apt-get install -y socat)
+          if ! command -v socat >/dev/null 2>&1; then
+            echo "❌ socat is not installed on this runner — install it on the runner image (sudo is not available in this action)"
+            exit 1
+          fi
 
           cd arkiv-chain-indexer
           INDEXER_CONTAINER=$(docker compose ps -q | head -1)
