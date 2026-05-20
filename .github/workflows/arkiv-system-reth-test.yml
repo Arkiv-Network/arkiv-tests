@@ -660,6 +660,7 @@ jobs:
           BACKEND_HOST: 0.0.0.0
           BASELOAD_MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
           BASELOAD_RPC_NODE: http://host.docker.internal:8645
+          BASELOAD_ADMIN_BEARER_TOKEN: av4f2222
           SCANNER_OLDEST_BACKFILL_BLOCK: 1
           SAVE_TRANSACTION_DATA: true
 
