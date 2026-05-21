@@ -76,6 +76,8 @@ async function main() {
 
   const account = privateKeyToAccount(`0x${privateKey}`);
 
+  const rpcUrl = process.env.RPC_URL || "http://localhost:8645";
+
   const l3Testnet = defineChain({
     id: 42069,
     name: "Arkiv L3 Testnet",
@@ -87,7 +89,7 @@ async function main() {
     },
     rpcUrls: {
       default: {
-        http: ["http://localhost:8645"],
+        http: [rpcUrl],
       },
     },
   });

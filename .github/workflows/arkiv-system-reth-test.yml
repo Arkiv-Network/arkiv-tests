@@ -815,6 +815,9 @@ jobs:
           # Uncomment to debug entity creation test
           # export DEBUG=arkiv:*
           bun src/create_entity.ts
+        env:
+          RPC_URL: http://localhost:18645
+          PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
 
       - name: Start snapshot loop
         run: |
