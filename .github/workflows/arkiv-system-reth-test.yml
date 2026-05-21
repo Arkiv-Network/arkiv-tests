@@ -466,8 +466,8 @@ jobs:
             --chain=genesis.json \
             --datadir=./sequencer-data \
             --http \
-            --http.port=8645 \
-            --http.addr=127.0.0.1 \
+            --http.port=18645 \
+            --http.addr=0.0.0.0 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22704 \
             --arkiv.query-url=http://localhost:22705 \
@@ -561,7 +561,7 @@ jobs:
             --throttle.unsafe-da-bytes-upper-threshold=${{inputs.max-unsafe-limit}} \
             --log.level=debug \
             --l1-eth-rpc=http://localhost:15900 \
-            --l2-eth-rpc=http://localhost:8645 \
+            --l2-eth-rpc=http://localhost:18645 \
             --rollup-rpc=http://localhost:8647 \
             --private-key="$BATCHER_PRIVATE_KEY" \
             --poll-interval=10s \
@@ -635,7 +635,7 @@ jobs:
           
           # Wait up to 60 seconds for sequencer to produce blocks
           python -u wait-for-blocks.py \
-            --l2-url http://localhost:8645 \
+            --l2-url http://localhost:18645 \
             --l1-url http://localhost:15900 \
             --timeout 60 \
             --blocks 3
@@ -648,7 +648,7 @@ jobs:
           WORKER_NAME=${{ steps.test-name.outputs.worker }}
 
           echo "Fetching sequencer enode..."
-          SEQUENCER_ENODE=$(cast rpc --rpc-url http://localhost:8645 admin_nodeInfo | jq -r '.enode')
+          SEQUENCER_ENODE=$(cast rpc --rpc-url http://localhost:18645 admin_nodeInfo | jq -r '.enode')
           if [ -z "$SEQUENCER_ENODE" ] || [ "$SEQUENCER_ENODE" = "null" ]; then
             echo "❌ Failed to fetch sequencer enode"
             exit 1
@@ -665,8 +665,8 @@ jobs:
             --chain genesis.json \
             --datadir=./validator-data \
             --http \
-            --http.port=8545 \
-            --http.addr=127.0.0.1 \
+            --http.port=18545 \
+            --http.addr=0.0.0.0 \
             --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
             --arkiv.db-url=http://localhost:22714 \
             --arkiv.query-url=http://localhost:22715 \
@@ -715,7 +715,7 @@ jobs:
           
           # Wait up to 60 seconds for validator to produce blocks
           python -u wait-for-blocks.py \
-            --l2-url http://localhost:8545 \
+            --l2-url http://localhost:18545 \
             --l1-url http://localhost:15900 \
             --timeout 60 \
             --blocks 3
@@ -744,30 +744,13 @@ jobs:
           SCANNER_OLDEST_BACKFILL_BLOCK: 1
           SAVE_TRANSACTION_DATA: true
 
-      - name: Start socat proxies for docker compose
-        if: ${{ inputs.is-external == 'false' }}
-        run: |
-          set -euxo pipefail
-          # reth binds only to 127.0.0.1; expose it on 0.0.0.0 via socat on
-          # alternate ports so the docker compose indexer can reach the host
-          # RPC endpoints through host.docker.internal.
-          if ! command -v socat >/dev/null 2>&1; then
-            echo "❌ socat is not installed on this runner"
-            exit 1
-          fi
-
-          socat TCP-LISTEN:18545,bind=0.0.0.0,fork,reuseaddr TCP:127.0.0.1:8545 \
-            > socat-18545.log 2>&1 & echo $! > socat-18545.pid
-          socat TCP-LISTEN:18645,bind=0.0.0.0,fork,reuseaddr TCP:127.0.0.1:8645 \
-            > socat-18645.log 2>&1 & echo $! > socat-18645.pid
-
       - name: Run js-sdk library tests
         if: false
         continue-on-error: true
         run: |
           (cd arkiv-sdk-js/test && bun run test:component)
         env:
-          ARKIV_SDK_TEST_RPC_URL: http://localhost:8645
+          ARKIV_SDK_TEST_RPC_URL: http://localhost:18645
           ARKIV_SDK_TEST_WS_URL: ws://localhost:8646
           ARKIV_SDK_TEST_CHAIN_ID: 42069
           ARKIV_SDK_TEST_CRUD_TIMEOUT: 30000
@@ -822,7 +805,7 @@ jobs:
 
       - name: Show balances of main accounts
         run: |
-          poetry run python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save-to-compare account-values.json
+          poetry run python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:18645' }} --save-to-compare account-values.json
         env:
           MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
 
@@ -859,7 +842,7 @@ jobs:
               
               # 4. Run your commands using RELATIVE_TIME
               $PYTHON_BIN query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" >> query-arkiv-loop.log 2>&1 || true
-              $PYTHON_BIN show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:8645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json >> show-accounts-arkiv-loop.log 2>&1 || true
+              $PYTHON_BIN show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:18645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json >> show-accounts-arkiv-loop.log 2>&1 || true
               TEST_NAME=${{ steps.test-name.outputs.val }}
               $PYTHON_BIN push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME >> push-results-loop.log 2>&1 || true
               
@@ -884,7 +867,7 @@ jobs:
           if [ "${{ inputs.is-external }}" = "true" ]; then
             export LOCUST_HOST=${{ inputs.external-rpc-url }}
           else
-            export LOCUST_HOST=http://localhost:8645
+            export LOCUST_HOST=http://localhost:18645
           fi
           set -x
           LOCUST_TEST_NAME=dc_write_only
@@ -905,8 +888,6 @@ jobs:
         run: |
           kill $(cat scrape-reth-metrics.pid)
           kill $(cat gather-metrics.pid)
-          kill $(cat socat-18545.pid) || true
-          kill $(cat socat-18645.pid) || true
           kill $(cat arkiv-node-val.pid)
           kill $(cat arkiv-storaged-val.pid)
           kill $(cat op-node-val.pid)
