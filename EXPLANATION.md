@@ -16,6 +16,13 @@ This repository contains a mix of helpers for local network setup, test orchestr
 - Builds a custom `deploy-config/intent.toml` with Arkiv-specific chain settings, including AltDA-related fields and configurable `L2_BLOCK_TIME` / `L2_GAS_LIMIT`.
 - Use this when the deployment should match the Arkiv network layout rather than the more generic local template.
 
+### `start.sh`
+- Boots the local L1, deploys the local OP Stack config, initializes `op-geth`, and starts `op-geth` plus `op-node`.
+- Waits until the L2 is producing blocks, then starts `op-batcher` with its admin RPC enabled on port `8548`.
+- Starts `op-batcher-collector` after the batcher RPC is reachable. By default the collector reads `http://127.0.0.1:8548` and exposes its API on `http://127.0.0.1:28881`.
+- `arkiv-chain-indexer` should use the collector API (`/health`, `/latest`, `/history`) rather than connecting directly to the batcher RPC.
+- Relevant overrides are `BATCHER_RPC_HOST`, `BATCHER_RPC_PORT`, `BATCHER_RPC_URL`, `HISTORY_SIZE`, `COLLECTOR_LISTEN_HOST`, `COLLECTOR_LISTEN_PORT`, and the `OP_BATCHER_*` timing variables in the script.
+
 ### `patch-genesis.py`
 - Updates the `alloc` section of a `genesis.json` file so predefined accounts start with funds.
 - Reads addresses from `test-accounts.txt` and writes each one into `genesis.json` with a fixed balance of `1000 ETH` (stored in wei).

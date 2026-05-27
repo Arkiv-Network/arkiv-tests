@@ -1,14 +1,21 @@
 FROM python:3.14-trixie
 
+ARG OP_BATCHER_COLLECTOR_VERSION=v1.2.0
+
 RUN curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
     && mv forge cast anvil chisel /usr/local/bin/
 
 RUN curl -sL https://github.com/salad-x-golem/yagna-arkiv-market-matcher/releases/download/v0.0.0/optimism-binaries-2026-01-22.tar.xz | tar -xJ \
-    && mv op-deployer op-geth op-node /usr/local/bin/
+    && mv op-deployer op-geth op-node op-batcher /usr/local/bin/
+
+RUN curl -sL "https://github.com/Arkiv-Network/op-batcher-collector/releases/download/${OP_BATCHER_COLLECTOR_VERSION}/op-batcher-collector-${OP_BATCHER_COLLECTOR_VERSION}-linux-amd64.tar.xz" | tar -xJ \
+    && mv "op-batcher-collector-${OP_BATCHER_COLLECTOR_VERSION}-linux-amd64/op-batcher-collector" /usr/local/bin/ \
+    && rm -rf "op-batcher-collector-${OP_BATCHER_COLLECTOR_VERSION}-linux-amd64"
 
 WORKDIR /app
 COPY start.sh .
 COPY generate-intent.py .
 COPY anvil-chain.json .
 RUN chmod +x start.sh
+EXPOSE 15900 8545 8547 8548 28881
 ENTRYPOINT ["/bin/bash", "start.sh"]
