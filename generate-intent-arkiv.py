@@ -68,7 +68,9 @@ l2ContractsLocator = "embedded"
   eip1559DenominatorCanyon = 250
   eip1559Elasticity = 6
   gasLimit = {gas_limit}
-  
+  # Jovian (Upgrade 17) configurable minimum base fee, in wei. 0.01 Gwei = 10_000_000 wei.
+  minBaseFee = 10000000
+
   [chains.dangerousAltDAConfig]
     useAltDA = true
     daCommitmentType = "GenericCommitment"
