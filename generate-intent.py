@@ -6,6 +6,8 @@ import subprocess
 OUTPUT_DIR = "deploy-config"
 INTENT_FILE = os.path.join(OUTPUT_DIR, "intent.toml")
 KEYS_FILE = os.path.join(OUTPUT_DIR, "keys.txt")
+MIN_BASE_FEE_WEI = 10_000_000  # 0.01 Gwei
+MIN_BASE_FEE_HEX = hex(MIN_BASE_FEE_WEI)
 
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
@@ -58,7 +60,10 @@ l2ContractsLocator = "embedded"
   eip1559DenominatorCanyon = 250
   eip1559Elasticity = 6
   gasLimit = 30000000
-  minBaseFee = 1000000
+  minBaseFee = {MIN_BASE_FEE_WEI}
+
+  [chains.deployOverrides]
+    l2GenesisBlockBaseFeePerGas = "{MIN_BASE_FEE_HEX}"
   
   [chains.roles]
     l1ProxyAdminOwner = "{admin_addr}"

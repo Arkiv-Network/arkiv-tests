@@ -8,13 +8,19 @@ This repository contains a mix of helpers for local network setup, test orchestr
 - Generates `deploy-config/intent.toml` and `deploy-config/keys.txt`.
 - Uses `cast wallet new --json` to create fresh keypairs for the admin, batcher, proposer, signer, and challenger roles.
 - Writes an OP Stack-style intent file for a local deployment (`l1ChainID = 31337`) and stores the generated private keys in a companion text file.
+- Sets Jovian `minBaseFee` to `10,000,000` wei (`0.01 Gwei`) and asks op-deployer to generate the L2 genesis with the same `baseFeePerGas`.
 - Use this when you want a fresh generic deployment config for local testing.
 
 ### `generate-intent-arkiv.py`
 - Same general job as `generate-intent.py`, but tailored to the Arkiv-flavored deployment shape.
 - Generates admin, batcher, proposer, sequencer, and challenger keys, then writes them into `deploy-config/keys.txt`.
 - Builds a custom `deploy-config/intent.toml` with Arkiv-specific chain settings, including AltDA-related fields and configurable `L2_BLOCK_TIME` / `L2_GAS_LIMIT`.
+- Sets Jovian `minBaseFee` to `10,000,000` wei (`0.01 Gwei`) and asks op-deployer to generate the L2 genesis with the same `baseFeePerGas`.
 - Use this when the deployment should match the Arkiv network layout rather than the more generic local template.
+
+### `scripts/set-genesis-base-fee.sh`
+- Patches a generated `genesis.json` so top-level `baseFeePerGas` starts at `0x989680`, matching the configured `minBaseFee`.
+- Called by `start.sh` and `init_geth-l2.sh` before the L2 datadir is initialized.
 
 ### `patch-genesis.py`
 - Updates the `alloc` section of a `genesis.json` file so predefined accounts start with funds.

@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+set -e
+
 # Get current timestamp in hex
 NOW_HEX=$(printf "0x%x" $(date +%s))
 # Replace timestamp in anvil-chain.json (requires jq)
@@ -8,9 +12,10 @@ anvil --init anvil-chain.json -p 15900 --block-time 1 > anvil.log 2>&1 &
 
 # Initialize the deployment intent
 op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
-python generate-intent.py
+python3 generate-intent.py
 op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
 op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
+./scripts/set-genesis-base-fee.sh genesis.json
 op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
 
 op-geth --datadir ./l2-data init genesis.json
@@ -77,4 +82,3 @@ while [ $SECONDS -lt $end ]; do
   echo "Waiting for L2... (Current block: $L2_BLOCK)"
   sleep 1
 done
-
