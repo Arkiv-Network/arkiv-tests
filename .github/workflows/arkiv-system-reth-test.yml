@@ -919,7 +919,9 @@ jobs:
           kill $(cat op-node-seq.pid)
           kill $(cat anvil.pid)
           if [ -d arkiv-chain-indexer ]; then
-            (cd arkiv-chain-indexer && docker compose down --volumes --remove-orphans) || true
+            # Intentionally keep the reth action's compose services running longer.
+            # Do not re-enable this teardown without confirming the service should stop here.
+            # (cd arkiv-chain-indexer && docker compose down --volumes --remove-orphans) || true
           fi
 
       - name: Cleanup metrics gateway
