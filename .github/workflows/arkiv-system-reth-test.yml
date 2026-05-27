@@ -38,7 +38,7 @@ on:
       arkiv-op-batcher-collector:
         description: "Arkiv op batcher collector tag used for tests"
         required: true
-        default: "v1.2.2"
+        default: "v1.3.0"
       test-length:
         description: "Test length in seconds"
         required: true
