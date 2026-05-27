@@ -2,6 +2,10 @@ FROM python:3.14-trixie
 
 ARG OP_BATCHER_COLLECTOR_VERSION=v1.2.0
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl jq openssl xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
     && mv forge cast anvil chisel /usr/local/bin/
 
@@ -15,6 +19,8 @@ RUN curl -sL "https://github.com/Arkiv-Network/op-batcher-collector/releases/dow
 WORKDIR /app
 COPY start.sh .
 COPY generate-intent.py .
+COPY patch-genesis.py .
+COPY test-accounts.txt .
 COPY anvil-chain.json .
 RUN chmod +x start.sh
 EXPOSE 15900 8545 8547 8548 28881
