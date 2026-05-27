@@ -6,6 +6,9 @@ import os
 # 1 ETH = 10^18 Wei
 WEI_PER_ETH = 10**18
 
+# Start the L2 at the Jovian (Upgrade 17) minimum base fee: 0.01 Gwei = 10_000_000 wei.
+INITIAL_BASE_FEE_WEI = 10_000_000
+
 def load_json(file_path):
     """Loads JSON data from a file."""
     try:
@@ -63,11 +66,19 @@ def patch_genesis(file_path, addresses, amount_eth):
 
     save_json(file_path, data)
 
+def patch_base_fee(file_path, base_fee_wei):
+    """Sets baseFeePerGas on the L2 genesis block to base_fee_wei."""
+    data = load_json(file_path)
+    data['baseFeePerGas'] = hex(base_fee_wei)
+    print(f"--- Setting genesis baseFeePerGas to {base_fee_wei} wei ({hex(base_fee_wei)}) ---")
+    save_json(file_path, data)
+
 def main():
     with open("test-accounts.txt") as r:
         addresses = [line.strip() for line in r if line.strip()]
 
     patch_genesis("genesis.json", addresses, 1000)
+    patch_base_fee("genesis.json", INITIAL_BASE_FEE_WEI)
 
 if __name__ == "__main__":
     main()

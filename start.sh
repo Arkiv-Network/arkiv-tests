@@ -13,6 +13,9 @@ op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec3
 op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
 op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
 
+# Fund test accounts and pin the L2 genesis baseFeePerGas to 0.01 Gwei (matches Jovian minBaseFee).
+python patch-genesis.py
+
 op-geth --datadir ./l2-data init genesis.json
 openssl rand -hex 32 > jwt.txt
 
