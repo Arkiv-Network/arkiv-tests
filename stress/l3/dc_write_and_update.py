@@ -22,18 +22,12 @@ Usage:
 import os
 import random
 import sys
-import time
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import web3
 from arkiv import Arkiv
-from arkiv.account import NamedAccount
-from eth_account import Account
-from eth_account.signers.local import LocalAccount
-from locust import constant, events, task
-from web3 import Web3
+from locust import constant, task
 
 # Add the project root (stress-tests/) to Python path so we can import stress.*
 file_dir = Path(__file__).resolve().parent
@@ -41,9 +35,7 @@ project_root = file_dir.parent.parent  # l3/ -> stress/ -> stress-tests/
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-import stress.tools.config as config
-from stress.tools.json_rpc_user import JsonRpcUser
-from stress.tools.utils import build_account_path
+from stress.tools.arkiv_user import ArkivUser
 
 # Add parent directory to path for backwards-compat imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -56,8 +48,6 @@ from stress.tools.dc_data import (
     create_node,
     create_workload,
 )
-
-Account.enable_unaudited_hdwallet_features()
 
 # =============================================================================
 # Configuration (env-overridable)

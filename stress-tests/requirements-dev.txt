@@ -1,0 +1,6 @@
+# Generated from pyproject.toml - Development dependencies
+# Include base requirements
+-r requirements.txt
+
+ruff>=0.14.6,<0.15.0
+

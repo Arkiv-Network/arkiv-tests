@@ -16,16 +16,13 @@ Usage:
 import os
 import random
 import sys
-import time
 from itertools import islice
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional
 
-import web3
 from arkiv import Arkiv
-from arkiv.account import NamedAccount
 try:
-    from arkiv.types import ATTRIBUTES, KEY
+    from arkiv.types import ATTRIBUTES, KEY, PAYLOAD
     _QUERY_FIELDS = KEY | ATTRIBUTES
 except Exception:
     # Older SDKs may not expose ATTRIBUTES. Reads may still work, but sampling ids
@@ -34,8 +31,6 @@ except Exception:
 
     _QUERY_FIELDS = KEY
 from arkiv.utils import to_query_options
-from eth_account import Account
-from eth_account.signers.local import LocalAccount
 from locust import constant, events, task
 
 # Add the project root (stress-tests/) to Python path so we can import stress.*
@@ -44,14 +39,10 @@ project_root = file_dir.parent.parent  # l3/ -> stress/ -> stress-tests/
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-import stress.tools.config as config
-from stress.tools.json_rpc_user import JsonRpcUser
-from stress.tools.utils import build_account_path
+from stress.tools.arkiv_user import ArkivUser
 
 # Add parent directory to path (kept for backwards compat)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-Account.enable_unaudited_hdwallet_features()
 
 
 # =============================================================================
@@ -85,6 +76,8 @@ DEFAULT_WORKLOAD_LIMIT = 100
 
 DEFAULT_BLOCK_DURATION_SECONDS = 2
 MAX_RESULTS_PER_PAGE: int = 1_000_000_000
+
+RETURN_FIELDS = ATTRIBUTES | PAYLOAD
 
 
 # =============================================================================
@@ -169,52 +162,14 @@ class GlobalSampleData:
 # Locust User Class
 # =============================================================================
 
-class DataCenterReadUser(JsonRpcUser):
+class DataCenterReadUser(ArkivUser):
     """
     Locust user that performs read queries on op-geth-simulator.
-    
+
     Each user randomly selects query types based on QUERY_MIX weights.
     """
     wait_time = constant(1)
 
-    account: Optional[LocalAccount] = None
-    w3: Optional[Arkiv] = None
-
-    def _initialize_account_and_w3(self) -> Arkiv:
-        if self.account is None or self.w3 is None:
-            account_path = build_account_path(self.id)
-            self.account = Account.from_mnemonic(config.mnemonic, account_path=account_path)
-            self.w3 = Arkiv(
-                web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client),
-                NamedAccount(name="LocalSigner", account=self.account),
-            )
-            if not self.w3.is_connected():
-                raise RuntimeError(f"Not connected to Arkiv RPC at {self.client.base_url}")
-        return self.w3
-
-    def _fire_locust_request(self, name: str, fn) -> Any:
-        start = time.perf_counter()
-        exc: Optional[BaseException] = None
-        try:
-            return fn()
-        except BaseException as e:
-            exc = e
-            raise
-        finally:
-            events.request.fire(
-                request_type="arkiv",
-                name=name,
-                response_time=(time.perf_counter() - start) * 1000,
-                response_length=0,
-                exception=exc,
-                context={},
-                response=None,
-            )
-
-    def _is_not_found(self, e: BaseException) -> bool:
-        msg = str(e).lower()
-        return ("not found" in msg) or ("404" in msg) or ("missing" in msg) or ("does not exist" in msg)
-    
     def _query_count(self, query: str, limit: Optional[int] = None) -> int:
         w3 = self._initialize_account_and_w3()
         it = w3.arkiv.query_entities(
@@ -237,6 +192,7 @@ class DataCenterReadUser(JsonRpcUser):
     @task(20)  # 20% weight
     def point_by_id(self):
         """Point lookup by node_id or workload_id."""
+        print(f"[TRACE] point_by_id called: node_ids={len(GlobalSampleData.node_ids)}, workload_ids={len(GlobalSampleData.workload_ids)}, initialized={GlobalSampleData.initialized}")
         if not GlobalSampleData.node_ids and not GlobalSampleData.workload_ids:
             return
         
@@ -271,6 +227,7 @@ class DataCenterReadUser(JsonRpcUser):
     @task(15)  # 15% weight
     def point_by_key(self):
         """Direct lookup by entity_key."""
+        print(f"[TRACE] point_by_key called: entity_keys={len(GlobalSampleData.entity_keys)}, initialized={GlobalSampleData.initialized}")
         if not GlobalSampleData.entity_keys:
             return
         
@@ -280,7 +237,7 @@ class DataCenterReadUser(JsonRpcUser):
 
         w3 = self._initialize_account_and_w3()
         try:
-            entity = self._fire_locust_request("point_by_key", lambda: w3.arkiv.get_entity(entity_key))
+            entity = self._fire_locust_request("point_by_key", lambda: w3.arkiv.get_entity(entity_key, fields=RETURN_FIELDS))
             key = getattr(entity, "key", "unknown")
             debug_log(f"[DEBUG] point_by_key: SUCCESS - found entity key={str(key)[:20]}...")
         except Exception as e:
@@ -300,7 +257,7 @@ class DataCenterReadUser(JsonRpcUser):
 
         w3 = self._initialize_account_and_w3()
         try:
-            _ = self._fire_locust_request("point_miss", lambda: w3.arkiv.get_entity(nonexistent_key))
+            _ = self._fire_locust_request("point_miss", lambda: w3.arkiv.get_entity(nonexistent_key, fields=RETURN_FIELDS))
             debug_log(f"[DEBUG] point_miss: FAILED - unexpectedly found key={nonexistent_key[:20]}...")
             raise RuntimeError("Expected entity to be missing, but it existed")
         except Exception as e:

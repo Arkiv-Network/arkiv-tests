@@ -11,21 +11,15 @@ Usage:
 import os
 import random
 import sys
-import time
 from pathlib import Path
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-import web3
 from web3.types import TxParams
 from arkiv import Arkiv
-from arkiv.account import NamedAccount
 from arkiv.types import Operations, TxHash, HexStr
-from arkiv.utils import to_create_op, to_tx_params
-from eth_account import Account
-from eth_account.signers.local import LocalAccount
-from locust import constant, events, task
-from web3 import Web3
+from arkiv.utils import to_create_op
+from locust import constant, task
 
 # Add the project root (stress-tests/) to Python path so we can import stress.*
 file_dir = Path(__file__).resolve().parent
@@ -33,9 +27,7 @@ project_root = file_dir.parent.parent  # l3/ -> stress/ -> stress-tests/
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-import stress.tools.config as config
-from stress.tools.json_rpc_user import JsonRpcUser
-from stress.tools.utils import build_account_path
+from stress.tools.arkiv_user import ArkivUser
 
 # Add parent directory to path to import from src.db.append_dc_data (kept for backwards compat)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -48,8 +40,6 @@ from stress.tools.dc_data import (
     create_node,
     create_workload,
 )
-
-Account.enable_unaudited_hdwallet_features()
 
 
 # =============================================================================
@@ -135,14 +125,14 @@ def workload_to_arkiv_attributes(
 # Locust User Class
 # =============================================================================
 
-class DataCenterUser(JsonRpcUser):
+class DataCenterUser(ArkivUser):
     """
     Locust user that generates nodes and workloads and sends them to op-geth-simulator.
-    
+
     Each user maintains its own counters for unique entity IDs.
     """
     wait_time = constant(1)
-    
+
     # Per-user state
     node_counter: int = 0
     workload_counter: int = 0
@@ -152,78 +142,12 @@ class DataCenterUser(JsonRpcUser):
     payload_size: int = DEFAULT_PAYLOAD_SIZE
     dc_num: int = DEFAULT_DC_NUM
     workloads_per_node: int = DEFAULT_WORKLOADS_PER_NODE
-
-    account: Optional[LocalAccount] = None
-    w3: Optional[Arkiv] = None
-    block_duration_seconds: int = DEFAULT_BLOCK_DURATION_SECONDS
     real_dc_payload_content: bytes | None = None
 
     if (REAL_DC_PAYLOAD_CONTENT):
         # load real dc payload content from file
         with open(f"stress/l3/sample_sys_x5.payload", "rb") as f:
             real_dc_payload_content = f.read()
-
-    def _initialize_account_and_w3(self) -> Arkiv:
-        if self.account is None or self.w3 is None:
-            account_path = build_account_path(self.id)
-            logging.info("Mnemonic: " + config.mnemonic)
-            self.account = Account.from_mnemonic(config.mnemonic, account_path=account_path)
-
-            self.w3 = Arkiv(
-                web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client),
-                NamedAccount(name="LocalSigner", account=self.account),
-            )
-            if not self.w3.is_connected():
-                raise RuntimeError(f"Not connected to Arkiv RPC at {self.client.base_url}")
-
-            if config.chain_env == "local":
-                self._topup_local_account()
-
-            try:
-                block_timing = self.w3.arkiv.get_block_timing()
-                self.block_duration_seconds = int(getattr(block_timing, "duration", DEFAULT_BLOCK_DURATION_SECONDS))
-            except Exception:
-                self.block_duration_seconds = DEFAULT_BLOCK_DURATION_SECONDS
-
-        return self.w3
-
-    def _topup_local_account(self) -> None:
-        """Top up local account with ETH from the first dev account."""
-        if self.w3 is None or self.account is None:
-            return
-        try:
-            accounts = self.w3.eth.accounts
-            balance = Web3.from_wei(self.w3.eth.get_balance(self.account.address), "ether")
-            if balance < 0.1:
-                tx_hash = self.w3.eth.send_transaction(
-                    {"from": accounts[0], "to": self.account.address, "value": Web3.to_wei(10, "ether")}
-                )
-                self.w3.eth.wait_for_transaction_receipt(tx_hash)
-        except Exception:
-            # Best-effort: if top-up fails, transactions may fail later with insufficient funds.
-            return
-
-    def _expires_in_seconds_from_blocks(self, ttl_blocks: int) -> int:
-        return max(1, int(ttl_blocks) * int(self.block_duration_seconds))
-
-    def _fire_locust_request(self, name: str, fn) -> Any:
-        start = time.perf_counter()
-        exc: Optional[BaseException] = None
-        try:
-            return fn()
-        except BaseException as e:
-            exc = e
-            raise
-        finally:
-            events.request.fire(
-                request_type="arkiv",
-                name=name,
-                response_time=(time.perf_counter() - start) * 1000,
-                response_length=0,
-                exception=exc,
-                context={},
-                response=None,
-            )
     
     @task
     def write_node_with_workloads(self):
@@ -254,7 +178,7 @@ class DataCenterUser(JsonRpcUser):
                 payload=node.payload,
                 content_type="application/octet-stream",
                 attributes=node_to_arkiv_attributes(node, self.creator_address),
-                expires_in=expires_in_seconds,
+                expires_in=node.ttl,
             )
         ]
         
@@ -291,7 +215,7 @@ class DataCenterUser(JsonRpcUser):
                     payload=workload.payload,
                     content_type="application/octet-stream",
                     attributes=workload_to_arkiv_attributes(workload, self.creator_address),
-                    expires_in=expires_in_seconds,
+                    expires_in=workload.ttl,
                 )
             )
 
@@ -304,13 +228,5 @@ class DataCenterUser(JsonRpcUser):
 
 
 def custom_execute(w3: Arkiv, operations: Operations, tx_params: TxParams) -> Any:
-    tx_params = to_tx_params(operations, tx_params)
-
     # Send transaction and get tx hash
-    tx_hash_bytes = w3.eth.send_transaction(tx_params)
-    tx_hash = TxHash(HexStr(tx_hash_bytes.to_0x_hex()))
-
-    # Wait for transaction to complete and return receipt
-    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=0.5)
-
-    return tx_receipt
+    return w3.arkiv.execute(operations, tx_params)

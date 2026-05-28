@@ -19,16 +19,12 @@ Usage:
 import os
 import random
 import sys
-import time
 from itertools import islice
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import web3
 from web3.types import TxParams
 from arkiv import Arkiv
-from arkiv.account import NamedAccount
-from arkiv.types import Operations
 try:
     from arkiv.types import ATTRIBUTES, KEY
     _QUERY_FIELDS = KEY | ATTRIBUTES
@@ -38,10 +34,7 @@ except Exception:
     _QUERY_FIELDS = KEY
 from arkiv.utils import to_create_op, to_query_options, to_tx_params
 from arkiv.types import Operations, TxHash, HexStr
-from eth_account import Account
-from eth_account.signers.local import LocalAccount
 from locust import constant, events, task
-from web3 import Web3
 
 # Add the project root (stress-tests/) to Python path so we can import stress.*
 file_dir = Path(__file__).resolve().parent
@@ -49,9 +42,7 @@ project_root = file_dir.parent.parent  # l3/ -> stress/ -> stress-tests/
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-import stress.tools.config as config
-from stress.tools.json_rpc_user import JsonRpcUser
-from stress.tools.utils import build_account_path
+from stress.tools.arkiv_user import ArkivUser
 
 # Add parent directory to path (kept for backwards compat)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -64,8 +55,6 @@ from stress.tools.dc_data import (
     create_node,
     create_workload,
 )
-
-Account.enable_unaudited_hdwallet_features()
 
 
 # =============================================================================
@@ -252,15 +241,15 @@ def workload_to_arkiv_attributes(
 # Locust User Class
 # =============================================================================
 
-class DataCenterReadWriteUser(JsonRpcUser):
+class DataCenterReadWriteUser(ArkivUser):
     """
     Locust user that performs both read queries and write operations on op-geth-simulator.
-    
+
     Each user randomly selects between read and write tasks based on READ_WRITE_RATIO.
     Read tasks are further weighted by QUERY_MIX weights.
     """
     wait_time = constant(1)
-    
+
     # Per-user state for write operations
     node_counter: int = 0
     workload_counter: int = 0
@@ -270,72 +259,6 @@ class DataCenterReadWriteUser(JsonRpcUser):
     payload_size: int = DEFAULT_PAYLOAD_SIZE
     dc_num: int = DEFAULT_DC_NUM
     workloads_per_node: int = DEFAULT_WORKLOADS_PER_NODE
-
-    account: Optional[LocalAccount] = None
-    w3: Optional[Arkiv] = None
-    block_duration_seconds: int = DEFAULT_BLOCK_DURATION_SECONDS
-
-    def _initialize_account_and_w3(self) -> Arkiv:
-        if self.account is None or self.w3 is None:
-            account_path = build_account_path(self.id)
-            self.account = Account.from_mnemonic(config.mnemonic, account_path=account_path)
-            self.w3 = Arkiv(
-                web3.HTTPProvider(endpoint_uri=self.client.base_url, session=self.client),
-                NamedAccount(name="LocalSigner", account=self.account),
-            )
-            if not self.w3.is_connected():
-                raise RuntimeError(f"Not connected to Arkiv RPC at {self.client.base_url}")
-            if config.chain_env == "local":
-                self._topup_local_account()
-            try:
-                block_timing = self.w3.arkiv.get_block_timing()
-                self.block_duration_seconds = int(
-                    getattr(block_timing, "duration", DEFAULT_BLOCK_DURATION_SECONDS)
-                )
-            except Exception:
-                self.block_duration_seconds = DEFAULT_BLOCK_DURATION_SECONDS
-        return self.w3
-
-    def _topup_local_account(self) -> None:
-        """Top up local account with ETH from the first dev account."""
-        if self.w3 is None or self.account is None:
-            return
-        try:
-            accounts = self.w3.eth.accounts
-            balance = Web3.from_wei(self.w3.eth.get_balance(self.account.address), "ether")
-            if balance < 0.1:
-                tx_hash = self.w3.eth.send_transaction(
-                    {"from": accounts[0], "to": self.account.address, "value": Web3.to_wei(10, "ether")}
-                )
-                self.w3.eth.wait_for_transaction_receipt(tx_hash)
-        except Exception:
-            return
-
-    def _expires_in_seconds_from_blocks(self, ttl_blocks: int) -> int:
-        return max(1, int(ttl_blocks) * int(self.block_duration_seconds))
-
-    def _fire_locust_request(self, name: str, fn) -> Any:
-        start = time.perf_counter()
-        exc: Optional[BaseException] = None
-        try:
-            return fn()
-        except BaseException as e:
-            exc = e
-            raise
-        finally:
-            events.request.fire(
-                request_type="arkiv",
-                name=name,
-                response_time=(time.perf_counter() - start) * 1000,
-                response_length=0,
-                exception=exc,
-                context={},
-                response=None,
-            )
-
-    def _is_not_found(self, e: BaseException) -> bool:
-        msg = str(e).lower()
-        return ("not found" in msg) or ("404" in msg) or ("missing" in msg) or ("does not exist" in msg)
 
     def _query_count(self, query: str, limit: Optional[int] = None) -> int:
         w3 = self._initialize_account_and_w3()

@@ -1,0 +1,266 @@
+[
+{
+    "system": {
+        "manufacturer": "Dell Inc.",
+        "model": "Vostro 7620",
+        "version": "",
+        "serial": "BFM7PL3-01",
+        "uuid": "4c4c4544-0046-4d10-8037-c2c04f504c01",
+        "sku": "0B3F",
+        "virtual": false
+    },
+    "bios": {
+        "vendor": "Dell Inc.",
+        "version": "1.32.0",
+        "releaseDate": "2025-08-05",
+        "revision": "",
+        "serial": "BFM7PL3-01"
+    },
+    "baseboard": {
+        "manufacturer": "Dell Inc.",
+        "model": "0XCD0K",
+        "version": "A00",
+        "assetTag": "DC-01",
+        "memMax": 68719476736,
+        "memSlots": 2
+    },
+    "chassis": {
+        "manufacturer": "Dell Inc.",
+        "model": "",
+        "type": "Notebook",
+        "version": "",
+        "serial": "BFM7PL3-01",
+        "assetTag": "",
+        "sku": ""
+    },
+    "os": {
+        "platform": "Windows",
+        "distro": "Microsoft Windows 11 Pro",
+        "release": "10.0.26200",
+        "codename": "",
+        "kernel": "10.0.26200",
+        "arch": "x64",
+        "hostname": "salad-car-01",
+        "fqdn": "SALAD-CAR-01",
+        "codepage": "437",
+        "logofile": "windows",
+        "build": "26200",
+        "servicepack": "0.0",
+        "uefi": true,
+        "hypervisor": true,
+        "remoteSession": false
+    },
+    "uuid": {
+        "os": "d135fb28-ef14-4a9b-99d8-f479aa245b01",
+        "hardware": "4c4c4544-0046-4d10-8037-c2c04f504c01",
+        "macs": [ ]
+    },
+    "versions": {
+        "kernel": "10.0.26200",
+        "apache": "",
+        "bash": "",
+        "bun": "",
+        "deno": "",
+        "docker": "28.5.1",
+        "dotnet": "4.8.09221",
+        "fish": "",
+        "gcc": "",
+        "git": "2.51.0.windows.2",
+        "grunt": "",
+        "gulp": "",
+        "homebrew": "",
+        "java": "",
+        "mongodb": "",
+        "mysql": "",
+        "nginx": "",
+        "node": "",
+        "npm": "10.9.3",
+        "openssl": "3.0.16",
+        "perl": "",
+        "php": "",
+        "pip3": "",
+        "pip": "",
+        "pm2": "",
+        "postfix": "",
+        "postgresql": "",
+        "powershell": "5.1.26100.6899:",
+        "python3": "",
+        "python": "",
+        "redis": "",
+        "systemOpenssl": "",
+        "systemOpensslLib": "",
+        "tsc": "",
+        "v8": "12.4.254.21-node.27",
+        "virtualbox": "",
+        "yarn": "",
+        "zsh": ""
+    },
+    "cpu": {
+        "manufacturer": "Intel",
+        "brand": "Gen Intel® Core™ i7-12700H",
+        "vendor": "GenuineIntel",
+        "family": "6",
+        "model": "154",
+        "stepping": "3",
+        "revision": "",
+        "voltage": "",
+        "speed": 2.3,
+        "speedMin": 2.3,
+        "speedMax": 2.3,
+        "governor": "",
+        "cores": 20,
+        "physicalCores": 14,
+        "performanceCores": 20,
+        "efficiencyCores": 0,
+        "processors": 1,
+        "socket": "Other",
+        "flags": "de pse mce sep mtrr mca cmov psn clfsh ds mmx fxsr sse sse2 ss htt tm ia64 pbe",
+        "virtualization": true,
+        "cache": {
+            "l1d": 557056,
+            "l1i": 720896,
+            "l2": 12058624,
+            "l3": 25165824
+        }
+    },
+    "graphics": {
+        "controllers": [
+            {
+                "vendor": "NVIDIA",
+                "model": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+                "bus": "PCI",
+                "vram": 4096,
+                "vramDynamic": true,
+                "subDeviceId": "0B3F1028"
+            },
+            {
+                "vendor": "Intel Corporation",
+                "model": "Intel(R) Iris(R) Xe Graphics",
+                "bus": "PCI",
+                "vram": 2047.99609375,
+                "vramDynamic": true,
+                "subDeviceId": "0B3F1028"
+            }
+        ],
+        "displays": [
+            {
+                "vendor": "",
+                "model": "Default Monitor",
+                "deviceName": "\\\\.\\DISPLAY1",
+                "main": false,
+                "builtin": false,
+                "connection": "HDMI",
+                "resolutionX": 1920,
+                "resolutionY": 1200,
+                "sizeX": 48,
+                "sizeY": 27,
+                "pixelDepth": "32",
+                "currentResX": 1920,
+                "currentResY": 1200,
+                "positionX": 875,
+                "positionY": 1080,
+                "currentRefreshRate": 60
+            },
+            {
+                "vendor": "",
+                "model": "Default Monitor",
+                "deviceName": "\\\\.\\DISPLAY2",
+                "main": true,
+                "builtin": false,
+                "connection": "DP",
+                "resolutionX": 1920,
+                "resolutionY": 1080,
+                "sizeX": 48,
+                "sizeY": 27,
+                "pixelDepth": "32",
+                "currentResX": 1920,
+                "currentResY": 1080,
+                "positionX": 0,
+                "positionY": 0,
+                "currentRefreshRate": 60
+            },
+            {
+                "vendor": "",
+                "model": "Default Monitor",
+                "deviceName": "\\\\.\\DISPLAY3",
+                "main": false,
+                "builtin": true,
+                "connection": "INTERNAL",
+                "resolutionX": 1920,
+                "resolutionY": 1080,
+                "sizeX": 34,
+                "sizeY": 22,
+                "pixelDepth": "32",
+                "currentResX": 1920,
+                "currentResY": 1080,
+                "positionX": 1920,
+                "positionY": 0,
+                "currentRefreshRate": 60
+            }
+        ]
+    },
+    "memLayout": [
+        {
+            "size": 8589934592,
+            "bank": "BANK 0/0",
+            "type": "DDR5",
+            "ecc": false,
+            "clockSpeed": 4800,
+            "formFactor": "SODIMM",
+            "manufacturer": "80CE000080CE",
+            "partNum": "M425R1GB4BB0-CQKOL",
+            "serialNum": "02B465A1",
+            "voltageConfigured": 1.1,
+            "voltageMin": 0,
+            "voltageMax": 0
+        },
+        {
+            "size": 8589934592,
+            "bank": "/1",
+            "type": "DDR5",
+            "ecc": false,
+            "clockSpeed": 4800,
+            "formFactor": "SODIMM",
+            "manufacturer": "",
+            "partNum": "",
+            "serialNum": "",
+            "voltageConfigured": 1.1,
+            "voltageMin": 0,
+            "voltageMax": 0
+        }
+    ],
+    "diskLayout": [
+        {
+            "device": "\\\\.\\PHYSICALDRIVE0",
+            "type": "SSD",
+            "name": "BC711 NVMe SK hynix 1TB",
+            "vendor": "",
+            "size": 1024203640320,
+            "bytesPerSector": 512,
+            "totalCylinders": 124519,
+            "totalHeads": 255,
+            "totalSectors": 2000397735,
+            "totalTracks": 31752345,
+            "tracksPerCylinder": 255,
+            "sectorsPerTrack": 63,
+            "firmwareRevision": "41002131",
+            "serialNum": "FFFF_FFFF_FFFF_FF01.",
+            "interfaceType": "NVMe",
+            "smartStatus": "Ok",
+            "temperature": null
+        }
+    ],
+    "fsSize": [
+        {
+            "fs": "C:",
+            "type": "NTFS",
+            "size": 1023318945792,
+            "used": 153869627392,
+            "available": 869449318400,
+            "use": 15.04,
+            "mount": "C:",
+            "rw": true
+        }
+    ]
+}
+]

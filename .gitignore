@@ -10,3 +10,6 @@
 /bun.lock
 account-values.json
 __pycache__/
+.DS_Store
+locust.log
+.vscode
