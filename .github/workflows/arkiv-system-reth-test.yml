@@ -71,6 +71,10 @@ on:
         description: "Test scenario to run"
         required: true
         default: "LocustWriteOnly"
+      run-locust:
+        description: "Whether to run locust stress test (disabled by default — task waits indefinitely if false)"
+        required: true
+        default: "false"
       test-users:
         description: "Number of users to run"
         required: true
@@ -880,8 +884,13 @@ jobs:
           TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
           PYTHON_BIN: ${{ steps.poetry.outputs.python }}
 
+      - name: Wait indefinitely
+        if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' && inputs.run-locust == 'false' }}
+        run: |
+          sleep infinity
+
       - name: Start locust write only test
-        if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' }}
+        if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' && inputs.run-locust == 'true' }}
         run: |
           # Todo fix test returning error
           if [ "${{ inputs.is-external }}" = "true" ]; then
