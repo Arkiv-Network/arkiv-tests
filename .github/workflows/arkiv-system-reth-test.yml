@@ -59,6 +59,14 @@ on:
         description: "Alt-da limit"
         required: true
         default: "100000"
+      altda-max-concurrent-da-requests:
+        description: "Max concurrent batcher->DA-server requests (raise >1 for higher batcher throughput)"
+        required: true
+        default: "5"
+      batcher-max-pending-tx:
+        description: "Max concurrent pending L1 batch txs (0 = no limit). Raise alongside altda concurrency."
+        required: true
+        default: "5"
       min-unsafe-limit:
         description: "Min threshold for unsafe da bytes to trigger throttling"
         required: true
@@ -569,6 +577,8 @@ jobs:
             --altda.enabled=true \
             --altda.da-server=http://localhost:3100 \
             --altda.da-service=true \
+            --altda.max-concurrent-da-requests=${{inputs.altda-max-concurrent-da-requests}} \
+            --max-pending-tx=${{inputs.batcher-max-pending-tx}} \
             --max-l1-tx-size-bytes=${{inputs.altda-limit}} \
             --throttle.unsafe-da-bytes-lower-threshold=${{inputs.min-unsafe-limit}} \
             --throttle.unsafe-da-bytes-upper-threshold=${{inputs.max-unsafe-limit}} \
