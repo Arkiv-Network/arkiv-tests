@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "workers": [
+    {
+      "id": "wallet-0",
+      "maxGasPriceGwei": 1,
+      "createsPerMinute": 5,
+      "singleCreatePayloadSize": 50000,
+      "singleCreateStringArgumentCount": 0,
+      "singleCreateNumberArgumentCount": 0,
+      "walletNumber": 0,
+      "walletAddress": "0x1e8254Ecb29AC73De90F02066A35b27f75FD5654",
+      "startBlock": 0,
+      "endBlock": null,
+      "durationSeconds": null,
+      "ttlSeconds": 3600
+    },
+    {
+      "id": "wallet-1",
+      "maxGasPriceGwei": 1.5,
+      "createsPerMinute": 5,
+      "singleCreatePayloadSize": 50000,
+      "singleCreateStringArgumentCount": 0,
+      "singleCreateNumberArgumentCount": 0,
+      "walletNumber": 1,
+      "walletAddress": "0x8C59ca3A3BF65F5C530Eb5Ea67F2bd4b37049cf2",
+      "startBlock": 0,
+      "endBlock": null,
+      "durationSeconds": null,
+      "ttlSeconds": 3600
+    },
+    {
+      "id": "wallet-2",
+      "maxGasPriceGwei": 2,
+      "createsPerMinute": 5,
+      "singleCreatePayloadSize": 50000,
+      "singleCreateStringArgumentCount": 0,
+      "singleCreateNumberArgumentCount": 0,
+      "walletNumber": 2,
+      "walletAddress": "0xF43B9910eC03bF1FCF684b629dEDf70e0B16184b",
+      "startBlock": 0,
+      "endBlock": null,
+      "durationSeconds": null,
+      "ttlSeconds": 3600
+    },
+    {
+      "id": "wallet-3",
+      "maxGasPriceGwei": 2.5,
+      "createsPerMinute": 5,
+      "singleCreatePayloadSize": 50000,
+      "singleCreateStringArgumentCount": 0,
+      "singleCreateNumberArgumentCount": 0,
+      "walletNumber": 3,
+      "walletAddress": "0xcF36Bf5d797E68c964689c5d2f8712F91eCD982F",
+      "startBlock": 0,
+      "endBlock": null,
+      "durationSeconds": null,
+      "ttlSeconds": 3600
+    },
+    {
+      "id": "wallet-4",
+      "maxGasPriceGwei": 3,
+      "createsPerMinute": 5,
+      "singleCreatePayloadSize": 50000,
+      "singleCreateStringArgumentCount": 0,
+      "singleCreateNumberArgumentCount": 0,
+      "walletNumber": 4,
+      "walletAddress": "0xB73715983FE14431d3112f5303b033D797cb8F61",
+      "startBlock": 0,
+      "endBlock": null,
+      "durationSeconds": null,
+      "ttlSeconds": 3600
+    }
+  ]
+}

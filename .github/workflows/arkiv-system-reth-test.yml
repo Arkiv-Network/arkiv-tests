@@ -749,6 +749,15 @@ jobs:
           git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
 
           cd arkiv-chain-indexer
+
+          # Seed the initial Baseload worker config. docker-compose mounts
+          # ./baseload-config read-only at /app/baseload-config, and the backend
+          # loads BASELOAD_INITIAL_CONFIG_PATH once during `bun run serve`
+          # startup, then starts the workers (BASELOAD_RPC_NODE is set below).
+          mkdir -p baseload-config
+          cp "$GITHUB_WORKSPACE/baseload-workers.json" baseload-config/config.json
+          echo "Seeded initial Baseload config:" && cat baseload-config/config.json
+
           docker compose up --build -d
           docker compose ps
           docker compose logs --tail=100
@@ -761,6 +770,7 @@ jobs:
           BASELOAD_MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
           BASELOAD_RPC_NODE: http://host.docker.internal:18645
           BASELOAD_ADMIN_BEARER_TOKEN: av4f2222
+          BASELOAD_INITIAL_CONFIG_PATH: /app/baseload-config/config.json
           SCANNER_OLDEST_BACKFILL_BLOCK: 1
           SAVE_TRANSACTION_DATA: true
           BATCHER_COLLECTOR_URL: http://host.docker.internal:28881
