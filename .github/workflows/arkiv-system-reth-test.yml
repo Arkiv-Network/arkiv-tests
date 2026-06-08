@@ -764,6 +764,7 @@ jobs:
           SCANNER_OLDEST_BACKFILL_BLOCK: 1
           SAVE_TRANSACTION_DATA: true
           BATCHER_COLLECTOR_URL: http://host.docker.internal:28881
+          ARKIV_JS_SDK: ${{ inputs.arkiv-sdk-js }}
 
       - name: Run js-sdk library tests
         if: false
