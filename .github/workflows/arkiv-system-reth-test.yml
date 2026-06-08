@@ -15,26 +15,6 @@ on:
         description: "Arkiv op-reth version used for tests"
         required: true
         default: "v0.1.0-int-26"
-      arkiv-op-node:
-        description: "Arkiv op node tag/commit used for tests"
-        required: true
-        default: "v0.0.0-arkiv-08"
-      arkiv-op-da-server:
-        description: "Arkiv da server tag/commit used for tests"
-        required: true
-        default: "v0.0.0-arkiv-08"
-      arkiv-op-deployer:
-        description: "Arkiv op deployer tag/commit used for tests"
-        required: true
-        default: "v0.0.0-arkiv-08"
-      arkiv-op-batcher:
-        description: "Arkiv op batcher tag/commit used for tests"
-        required: true
-        default: "v0.0.0-arkiv-08"
-      arkiv-op-proposer:
-        description: "Arkiv op proposer tag/commit used for tests"
-        required: true
-        default: "v0.0.0-arkiv-08"
       arkiv-op-batcher-collector:
         description: "Arkiv op batcher collector tag used for tests"
         required: true
@@ -111,6 +91,16 @@ on:
 permissions:
   contents: read
 
+# Hardcoded here instead of as workflow_dispatch inputs: GitHub limits the
+# number of dispatch inputs, so these optimism component versions live as
+# workflow-level env vars. Bump them together (see "Bump optimism version").
+env:
+  ARKIV_OP_NODE: "v0.0.0-arkiv-08"
+  ARKIV_OP_DA_SERVER: "v0.0.0-arkiv-08"
+  ARKIV_OP_DEPLOYER: "v0.0.0-arkiv-08"
+  ARKIV_OP_BATCHER: "v0.0.0-arkiv-08"
+  ARKIV_OP_PROPOSER: "v0.0.0-arkiv-08"
+
 jobs:
   arkiv-system-testing:
     name: Test Arkiv System Op-Reth
@@ -163,12 +153,12 @@ jobs:
               blockEveryL1=${{ inputs.block-every-l1 }} \
               blockEveryL2=${{ inputs.block-every-l2 }} \
                rethVersion=${{ inputs.arkiv-op-reth }} \
-              arkivOpNode=${{ inputs.arkiv-op-node }} \
-              arkivOpDeployer=${{ inputs.arkiv-op-deployer }} \
-              arkivOpBatcher=${{ inputs.arkiv-op-batcher }} \
-              arkivOpProposer=${{ inputs.arkiv-op-proposer }} \
+              arkivOpNode=${{ env.ARKIV_OP_NODE }} \
+              arkivOpDeployer=${{ env.ARKIV_OP_DEPLOYER }} \
+              arkivOpBatcher=${{ env.ARKIV_OP_BATCHER }} \
+              arkivOpProposer=${{ env.ARKIV_OP_PROPOSER }} \
               arkivOpBatcherCollector=${{ inputs.arkiv-op-batcher-collector }} \
-              arkivOpDaServer=${{ inputs.arkiv-op-da-server }} \
+              arkivOpDaServer=${{ env.ARKIV_OP_DA_SERVER }} \
               blockLimit=${{ inputs.block-limit }} \
               dcWriteOnlyPayloadSize=${{ inputs.dc-write-only-payload-size }} \
               testScenario=${{ inputs.test-scenario }} \
@@ -221,11 +211,11 @@ jobs:
           BIN_PATH=${{ github.workspace }}/bin
 
           OP_RETH_TAG=${{ inputs.arkiv-op-reth }}
-          OP_NODE_TAG=${{ inputs.arkiv-op-node }}
-          OP_BATCHER_TAG=${{ inputs.arkiv-op-batcher }}
-          OP_DEPLOYER_TAG=${{ inputs.arkiv-op-deployer }}
-          OP_PROPOSER_TAG=${{ inputs.arkiv-op-proposer }}
-          OP_DA_SERVER_TAG=${{ inputs.arkiv-op-da-server }}
+          OP_NODE_TAG=${{ env.ARKIV_OP_NODE }}
+          OP_BATCHER_TAG=${{ env.ARKIV_OP_BATCHER }}
+          OP_DEPLOYER_TAG=${{ env.ARKIV_OP_DEPLOYER }}
+          OP_PROPOSER_TAG=${{ env.ARKIV_OP_PROPOSER }}
+          OP_DA_SERVER_TAG=${{ env.ARKIV_OP_DA_SERVER }}
           OP_BATCHER_COLLECTOR_TAG=${{ inputs.arkiv-op-batcher-collector }}
           curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
             && mv forge cast anvil chisel $BIN_PATH/ \
