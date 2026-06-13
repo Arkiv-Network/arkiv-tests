@@ -14,7 +14,7 @@ on:
       arkiv-op-reth:
         description: "Arkiv op-reth version used for tests"
         required: true
-        default: "v0.1.0-int-26"
+        default: "v0.1.0-int-28"
       arkiv-op-batcher-collector:
         description: "Arkiv op batcher collector tag used for tests"
         required: true
