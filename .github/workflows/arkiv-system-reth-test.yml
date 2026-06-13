@@ -34,11 +34,11 @@ on:
       block-limit:
         description: "Block gas limit"
         required: true
-        default: "60000000"
+        default: "30000000"
       altda-limit:
         description: "Alt-da limit"
         required: true
-        default: "100000"
+        default: "1000000"
       altda-max-concurrent-da-requests:
         description: "Max concurrent batcher->DA-server requests (raise >1 for higher batcher throughput)"
         required: true
