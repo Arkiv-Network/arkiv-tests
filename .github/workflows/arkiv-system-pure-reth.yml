@@ -1,0 +1,978 @@
+name: Arkiv System Op-Reth No Op Stack Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout-minutes:
+        description: "Timeout for jobs"
+        required: true
+        default: "7000"
+      worker:
+        description: "Workers"
+        required: false
+        default: "bare-metal"
+      arkiv-op-reth:
+        description: "Arkiv op-reth version used for tests"
+        required: true
+        default: "v0.1.0-int-28"
+      arkiv-op-batcher-collector:
+        description: "Arkiv op batcher collector tag used for tests"
+        required: true
+        default: "v1.3.0"
+      test-length:
+        description: "Test length in seconds"
+        required: true
+        default: "36000"
+      block-every-l1:
+        description: "Block time in seconds L1"
+        required: true
+        default: "12"
+      block-every-l2:
+        description: "Block time in seconds L2"
+        required: true
+        default: "2"
+      block-limit:
+        description: "Block gas limit"
+        required: true
+        default: "30000000"
+      altda-limit:
+        description: "Alt-da limit"
+        required: true
+        default: "1000000"
+      altda-max-concurrent-da-requests:
+        description: "Max concurrent batcher->DA-server requests (raise >1 for higher batcher throughput)"
+        required: true
+        default: "5"
+      batcher-max-pending-tx:
+        description: "Max concurrent pending L1 batch txs (0 = no limit). Raise alongside altda concurrency."
+        required: true
+        default: "5"
+      min-unsafe-limit:
+        description: "Min threshold for unsafe da bytes to trigger throttling"
+        required: true
+        default: "10000000"
+      max-unsafe-limit:
+        description: "Max threshold when throttling 100%"
+        required: true
+        default: "50000000"
+      test-scenario:
+        description: "Test scenario to run"
+        required: true
+        default: "LocustWriteOnly"
+      run-locust:
+        description: "Whether to run locust stress test (disabled by default — task waits indefinitely if false)"
+        required: true
+        default: "false"
+      test-users:
+        description: "Number of users to run"
+        required: true
+        default: "10"
+      dc-write-only-payload-size:
+        description: "Payload size for dc write only test"
+        required: true
+        default: "3000"
+      arkiv-sdk-js:
+        description: "Arkiv SDK Tag/commit used for tests"
+        required: true
+        default: "codex/fix-byte-aligned-numeric-attributes"
+      is-external:
+        description: "Whether test already deployed network"
+        required: true
+        default: "false"
+      use-celestia:
+        description: "Whether to use Celestia for data availability instead of the da-server"
+        required: true
+        default: "false"
+      external-rpc-url:
+        description: "RPC URL of external network, if is-external is true"
+        required: false
+        default: "https://v2test.hoodi.arkiv.network/rpc"
+
+permissions:
+  contents: read
+
+# Hardcoded here instead of as workflow_dispatch inputs: GitHub limits the
+# number of dispatch inputs, so these optimism component versions live as
+# workflow-level env vars. Bump them together (see "Bump optimism version").
+env:
+  ARKIV_OP_NODE: "v0.0.0-arkiv-08"
+  ARKIV_OP_DA_SERVER: "v0.0.0-arkiv-08"
+  ARKIV_OP_DEPLOYER: "v0.0.0-arkiv-08"
+  ARKIV_OP_BATCHER: "v0.0.0-arkiv-08"
+  ARKIV_OP_PROPOSER: "v0.0.0-arkiv-08"
+
+jobs:
+  arkiv-system-testing:
+    name: Test Arkiv System Op-Reth
+    timeout-minutes: ${{ fromJSON(inputs.timeout-minutes) }}
+    # Use the matrix variable here
+    runs-on: ${{ inputs.worker }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reset Docker state
+        run: |
+          set -euxo pipefail
+          
+          # 1. Forcibly remove all containers (this makes all images, networks, and volumes "unused")
+          CONTAINERS=$(docker ps -aq)
+          if [ -n "$CONTAINERS" ]; then
+            docker rm -f $CONTAINERS
+          fi
+          
+          # 2. Wipe all unused images, networks, and volumes in one command
+          docker system prune --all --force --volumes
+          
+          # 3. Wipe the build cache (used by Docker BuildKit)
+          docker builder prune --all --force
+          
+          # 4. Failsafe: Explicitly destroy any lingering volumes just in case
+          VOLUMES=$(docker volume ls -q)
+            if [ -n "$VOLUMES" ]; then
+            docker volume rm $VOLUMES
+          fi
+
+      - name: Cleanup after previous runs
+        run: |
+          # cleanup op-deployer caches
+          rm -rf $HOME/.op-deployer
+          # clean up anvil data and logs
+          rm -rf $HOME/.foundry
+
+      - name: Set test name
+        id: test-name
+        run: |
+          # hostname
+          WORKER_NAME=$(hostname)
+          python notify-test-start.py \
+            --parameters \
+              testLength=${{ fromJSON(inputs.test-length) }} \
+              runsOn=$WORKER_NAME \
+              blockEveryL1=${{ inputs.block-every-l1 }} \
+              blockEveryL2=${{ inputs.block-every-l2 }} \
+               rethVersion=${{ inputs.arkiv-op-reth }} \
+              arkivOpNode=${{ env.ARKIV_OP_NODE }} \
+              arkivOpDeployer=${{ env.ARKIV_OP_DEPLOYER }} \
+              arkivOpBatcher=${{ env.ARKIV_OP_BATCHER }} \
+              arkivOpProposer=${{ env.ARKIV_OP_PROPOSER }} \
+              arkivOpBatcherCollector=${{ inputs.arkiv-op-batcher-collector }} \
+              arkivOpDaServer=${{ env.ARKIV_OP_DA_SERVER }} \
+              blockLimit=${{ inputs.block-limit }} \
+              dcWriteOnlyPayloadSize=${{ inputs.dc-write-only-payload-size }} \
+              testScenario=${{ inputs.test-scenario }} \
+              testUsers=${{ inputs.test-users }} \
+              isExternal=${{ inputs.is-external }} \
+              githubRunId=${{ github.run_id }} \
+              gitref=${{ github.ref }} \
+              altDaLimit=${{ inputs.altda-limit }} \
+              arkiv-sdk-js=${{ inputs.arkiv-sdk-js }} \
+              minUnsafeLimit=${{ inputs.min-unsafe-limit }} \
+              maxUnsafeLimit=${{ inputs.max-unsafe-limit }} 
+          
+          TEST_NAME=$(cat test-name.txt)
+          echo "val=$TEST_NAME" >> $GITHUB_OUTPUT
+          echo "worker=$WORKER_NAME" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.test-scenario }}" = "LocustWriteOnly" ]; then
+            echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.test-scenario }}" = "OptimismBuild" ]; then
+            echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.test-scenario }}" = "OpGethBuild" ]; then
+            echo "scenario=LocustWriteOnly" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.test-scenario }}" = "Empty" ]; then
+            echo "scenario=empty" >> $GITHUB_OUTPUT
+          else
+            # Error
+            echo "Error: Unknown test scenario ${{ inputs.test-scenario }}"
+            exit 1
+          fi
+          echo "$TEST_NAME"
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+      # Already installed on custom runners
+      #- name: Install bun
+      #  uses: oven-sh/setup-bun@v2
+
+      - name: Register binary folders in PATH
+        run: |
+          mkdir "${{ github.workspace }}/bin"
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+          
+          mkdir -p $HOME/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Get op-reth, op-node and op-deployer binaries
+        if: ${{ inputs.is-external == 'false' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          BIN_PATH=${{ github.workspace }}/bin
+
+          OP_RETH_TAG=${{ inputs.arkiv-op-reth }}
+          OP_NODE_TAG=${{ env.ARKIV_OP_NODE }}
+          OP_BATCHER_TAG=${{ env.ARKIV_OP_BATCHER }}
+          OP_DEPLOYER_TAG=${{ env.ARKIV_OP_DEPLOYER }}
+          OP_PROPOSER_TAG=${{ env.ARKIV_OP_PROPOSER }}
+          OP_DA_SERVER_TAG=${{ env.ARKIV_OP_DA_SERVER }}
+          OP_BATCHER_COLLECTOR_TAG=${{ inputs.arkiv-op-batcher-collector }}
+          curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
+            && mv forge cast anvil chisel $BIN_PATH/ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_NODE_TAG}/arkiv-op-node-${OP_NODE_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-node $BIN_PATH/ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_BATCHER_TAG}/arkiv-op-batcher-${OP_BATCHER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-batcher $BIN_PATH/ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_PROPOSER_TAG}/arkiv-op-proposer-${OP_PROPOSER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-proposer $BIN_PATH/ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DEPLOYER_TAG}/arkiv-op-deployer-${OP_DEPLOYER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-deployer $BIN_PATH/ \
+            && curl -sL https://github.com/arkiv-network/optimism/releases/download/${OP_DA_SERVER_TAG}/arkiv-da-server-${OP_DA_SERVER_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv da-server $BIN_PATH/ \
+            && curl -sL https://github.com/Arkiv-Network/op-batcher-collector/releases/download/${OP_BATCHER_COLLECTOR_TAG}/op-batcher-collector-${OP_BATCHER_COLLECTOR_TAG}-linux-amd64.tar.xz | tar -xJ \
+            && mv op-batcher-collector $BIN_PATH/
+
+
+          # Prefer the .tar.xz release if it exists and contains the executable; otherwise fall back
+          OP_RETH_XZ_URL="https://github.com/arkiv-network/arkiv-op-reth/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-linux-amd64.tar.xz"
+          OP_RETH_TGZ_URL="https://github.com/arkiv-network/arkiv-op-reth/releases/download/${OP_RETH_TAG}/arkiv-op-reth-${OP_RETH_TAG}-integration-tests.tar.gz"
+          TMP_XZ="op-reth.tar.xz"
+          TMP_TGZ="op-reth.tar.gz"
+
+          if curl -fSL -o "$TMP_XZ" "$OP_RETH_XZ_URL"; then
+            tar -xJf "$TMP_XZ"
+            mv arkiv-node "$BIN_PATH"
+            mv arkiv-cli "$BIN_PATH"
+          else
+            echo ".tar.xz not available, trying fallback tar.gz"
+            curl -sL -o "$TMP_TGZ" "$OP_RETH_TGZ_URL"
+            tar -xzf "$TMP_TGZ"
+            mv arkiv-node "$BIN_PATH"
+            mv arkiv-cli "$BIN_PATH"
+            rm -f "$TMP_TGZ"
+          fi
+          rm -f "$TMP_XZ" || true
+
+
+          # The same binary has two names to easy distinguish logs and processes for sequencer vs validator
+          cp $BIN_PATH/arkiv-node $BIN_PATH/arkiv-node-seq
+          cp $BIN_PATH/arkiv-node $BIN_PATH/arkiv-node-val
+
+          cp $BIN_PATH/op-node $BIN_PATH/op-node-seq
+          cp $BIN_PATH/op-node $BIN_PATH/op-node-val
+
+          op-node --version
+          op-deployer --version
+          arkiv-node --version
+          op-batcher --version
+          op-proposer --version
+          da-server --version
+          op-batcher-collector --version || true
+
+      - name: Get celestia-appd and celestia-alt-da binary
+        if: ${{ inputs.use-celestia == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          BIN_PATH=${{ github.workspace }}/bin
+          
+          curl -sL https://github.com/celestiaorg/celestia-app/releases/download/v6.4.10/celestia-app_Linux_x86_64.tar.gz | tar -xz \
+            && mv celestia-appd $BIN_PATH/
+          curl -sL https://github.com/celestiaorg/op-alt-da/releases/download/v0.13.0-mocha/op-alt-da_0.13.0-mocha_linux_amd64.tar.gz | tar -xz \
+            && mv op-alt-da $BIN_PATH/celestia-alt-da
+          
+          celestia-appd version
+          celestia-alt-da --version
+
+      - name: Recover Celestia keyring
+        if: ${{ inputs.use-celestia == 'true' }}
+        env:
+          MNEMONIC: ${{ secrets.CELESTIA_SCX_MNEMONIC  }}
+          CELESTIA_QUICKNODE_AUTH_TOKEN: ${{ secrets.CELESTIA_QUICKNODE_AUTH_TOKEN }}
+        run: |
+          set -x
+          echo "::add-mask::$CELESTIA_QUICKNODE_AUTH_TOKEN"
+          mkdir -p keyring/keyring-home
+          celestia-appd keys add my_celes_key --keyring-backend test --home keyring/keyring-home --recover <<< "$MNEMONIC"
+          
+          # Extract the address and add it to the GitHub environment
+          CELESTIA_ADDRESS=$(celestia-appd keys show my_celes_key -a --keyring-backend test --home keyring/keyring-home)
+          CELESTIA_RPC_ADDR="https://wiser-proportionate-bird.celestia-mainnet.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN"
+          echo "Recovered Celestia address: $CELESTIA_ADDRESS"
+          echo "CELESTIA_ADDRESS=$CELESTIA_ADDRESS" >> $GITHUB_ENV
+          echo "CELESTIA_RPC_ADDR=$CELESTIA_RPC_ADDR" >> $GITHUB_ENV
+
+          mv keyring/keyring-home/keyring-test keyring/keyring-test
+          rm -r keyring/keyring-home
+          
+          ls -la keyring/keyring-test/
+          # make sure there is exactly one key in the keyring
+          FILE_COUNT=$(ls -1 keyring/keyring-test/ | wc -l)
+          if [ "$FILE_COUNT" -ne 2 ]; then
+              echo "Error: Expected exactly two files in the keyring, but found $FILE_COUNT"
+              exit 1
+          fi
+
+      - name: Download arkiv-sdk-js and build package
+        run: |
+          git clone https://github.com/Arkiv-Network/arkiv-sdk-js
+          # Prepare package as a tarball
+          (
+            cd arkiv-sdk-js
+            git checkout ${{ inputs.arkiv-sdk-js }}
+            bun install
+            bun run package:test
+            ls -lha arkiv-network-sdk-latest.tgz
+          )
+          
+          # Build deps for library tests
+          (cd arkiv-sdk-js/test && bun install)
+          
+          # Build deps for root tests
+          bun install
+
+      - name: Setup python dependencies
+        id: poetry
+        run: |
+          poetry install
+          VENV_PATH=$(poetry env info --path)
+          VENV_PYTHON="$VENV_PATH/bin/python"
+          echo "python=$VENV_PYTHON" >> $GITHUB_OUTPUT
+
+      - name: Run anvil
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # Get current timestamp in hex
+          NOW_HEX=$(printf "0x%x" $(date +%s))
+          # Replace timestamp in anvil-chain.json (requires jq)
+          jq --arg t "$NOW_HEX" '.timestamp = $t' anvil-chain.json > anvil-chain.tmp && mv anvil-chain.tmp anvil-chain.json
+          echo "Updated Genesis timestamp to: $NOW_HEX"
+          
+          anvil --init anvil-chain.json -p 15900 --gas-limit 1000000000 --block-time ${{inputs.block-every-l1}} > anvil.log 2>&1 & echo $! > anvil.pid
+
+      - name: Setup and initialize L2 node
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # Initialize the deployment intent
+          set -x
+          op-deployer init --l1-chain-id 31337 --l2-chain-ids 42069 --workdir deploy-config --intent-type custom
+          L2_BLOCK_TIME=${{inputs.block-every-l2}} L2_GAS_LIMIT=${{inputs.block-limit}} $PYTHON_BIN generate-intent-arkiv.py
+          echo "Contents of deploy-config/intent.toml:\n" && cat deploy-config/intent.toml
+          op-deployer apply --l1-rpc-url http://localhost:15900 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --workdir deploy-config
+          op-deployer inspect genesis --workdir deploy-config 42069 > genesis.json
+          op-deployer inspect rollup --workdir deploy-config 42069 > rollup.json
+          
+          $PYTHON_BIN patch-genesis.py
+          
+          
+          arkiv-cli inject-predeploy genesis.json
+          arkiv-node init --datadir ./sequencer-data --chain genesis.json > init_sequencer_genesis.log 2>&1
+          arkiv-node init --datadir ./validator-data --chain genesis.json > init_validator_genesis.log 2>&1
+          
+          # 3. Use 'console' mode to query the database for the exact block hash
+          echo "Querying database for full hash..."
+          FULL_HASH=$(grep "Genesis block written" init_sequencer_genesis.log | grep -oE "0x[0-9a-fA-F]{64}")
+          
+          # Validate the hash length (should be 66 characters: 0x + 64 hex chars)
+          if [[ ${#FULL_HASH} -ne 66 ]]; then
+            echo "Error: Retrieved invalid hash: $FULL_HASH"
+            exit 1
+          fi
+          echo "Detected Full Genesis Hash: $FULL_HASH"
+
+          # echo "Querying database for enode path..."
+          # GETH_SEQUENCER_ENODE=$(op-geth --datadir sequencer-data --verbosity 0 console --exec "admin.nodeInfo.enode")
+          # echo "Retrieved Geth Sequencer Enode: ${GETH_SEQUENCER_ENODE}"
+          # echo ["${GETH_SEQUENCER_ENODE}"] > ./validator-data/geth/static-nodes.json
+          # echo "Added to validator static-nodes.json"
+          # cat ./validator-data/geth/static-nodes.json
+          
+          # 4. Update rollup.json
+          # - Sets .genesis.l2.hash to the new hash
+          # - Deletes the invalid .l2_genesis block at the bottom
+          echo "Patching rollup.json..."
+          jq --arg hash "$FULL_HASH" '
+            .genesis.l2.hash = $hash |
+            del(.l2_genesis)
+            ' "rollup.json" > "rollup.json.tmp" && mv "rollup.json.tmp" "rollup.json"
+        
+          # 5. Cleanup
+          rm -rf "$TEMP_DATADIR"
+          
+          echo "Success! rollup.json has been synced."
+        
+          openssl rand -hex 32 > jwt-sequencer.txt
+          openssl rand -hex 32 > jwt-validator.txt
+          
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST -F "file=@genesis.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@rollup.json" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+          PYTHON_BIN: ${{ steps.poetry.outputs.python }}
+
+      - name: Start da-server
+        if: ${{ inputs.is-external == 'false' && inputs.use-celestia == 'false' }}
+        run: |
+          echo "Starting da-server..."
+          mkdir da-data
+          da-server \
+            --log.level=debug \
+            --addr 127.0.0.1 \
+            --port 3100 \
+            --file.path ./da-data \
+            --generic-commitment \
+            > da-server.log 2>&1 & echo $! > da-server.pid
+
+      - name: Start Celestia da-server
+        if: ${{ inputs.is-external == 'false' && inputs.use-celestia == 'true' }}
+        run: |
+          echo "Starting Celestia da-server..."
+          echo "::add-mask::$CELESTIA_QUICKNODE_AUTH_TOKEN"
+          CELESTIA_SERVER_URL="https://wiser-proportionate-bird.celestia-mainnet.quiknode.pro/$CELESTIA_QUICKNODE_AUTH_TOKEN"
+          
+          # Unused but leave to not break metrics scripts
+          mkdir da-data
+          
+          celestia-alt-da \
+            --log.level=debug \
+            --addr 127.0.0.1 \
+            --port 3100 \
+            --celestia.namespace=000000000000000000000000000000000000007323c069f0a07b3e8e12 \
+            --celestia.compact-blobid \
+            --celestia.server="$CELESTIA_SERVER_URL" \
+            --celestia.tx-client.keyring-path=keyring \
+            --celestia.tx-client.key-name=my_celes_key \
+            --celestia.tx-client.p2p-network=celestia \
+            --celestia.tx-client.core-grpc.addr=wiser-proportionate-bird.celestia-mainnet.quiknode.pro:9090 \
+            --celestia.tx-client.core-grpc.tls-enabled \
+            --celestia.tx-client.core-grpc.auth-token="$CELESTIA_QUICKNODE_AUTH_TOKEN" \
+            --metrics.enabled=true \
+            --metrics.port=7385 \
+            > da-server.log 2>&1 & echo $! > da-server.pid
+        env:
+          CELESTIA_QUICKNODE_AUTH_TOKEN: ${{ secrets.CELESTIA_QUICKNODE_AUTH_TOKEN }}
+
+      - name: Start sequencer node
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          echo "Starting L2 sequencer node arkiv-node..."
+
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
+
+          arkiv-node-seq node \
+            --chain=genesis.json \
+            --datadir=./sequencer-data \
+            --http \
+            --http.port=18645 \
+            --http.addr=0.0.0.0 \
+            --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
+            --ws \
+            --ws.addr=127.0.0.1 \
+            --ws.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
+            --ws.origins="*" \
+            --ws.port=8646 \
+            --authrpc.addr=127.0.0.1 \
+            --authrpc.port=8651 \
+            --authrpc.jwtsecret jwt-sequencer.txt \
+            --disable-discovery \
+            --port=30505 \
+            --metrics 127.0.0.1:6160 \
+            > arkiv-node-seq.log 2>&1 & echo $! > arkiv-node-seq.pid
+
+          echo "Starting sequencer op-node..."
+          
+          # --- 1. Identity Key (Defines Peer ID) ---
+          op-node p2p genkey > op-node-identity.key
+          op-node p2p priv2id < op-node-identity.key > op-node-peer-id.txt
+          
+          # --- 2. Sequencer Key (Signs the blocks) ---
+          # Read the batcher private key generated by generate-intent-arkiv.py
+          SEQUENCER_PRIVATE_KEY=$(grep SEQUENCER_PRIVATE_KEY deploy-config/keys.txt | cut -d'=' -f2)
+          if [ -z "$SEQUENCER_PRIVATE_KEY" ]; then
+            echo "❌ Failed to extract SEQUENCER_PRIVATE_KEY from deploy-config/keys.txt"
+            exit 1
+          fi
+          SEQUENCER_ADDRESS=$(cast wallet address "$SEQUENCER_PRIVATE_KEY")
+          echo "Sequencer address: $SEQUENCER_ADDRESS"
+          
+          op-node-seq \
+            --log.level=debug \
+            --altda.enabled=true \
+            --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --altda.verify-on-read=true \
+            --altda.max-concurrent-da-requests=1 \
+            --l2=http://localhost:8651 \
+            --l2.jwt-secret=jwt-sequencer.txt \
+            --l2.enginekind=reth \
+            --sequencer.enabled \
+            --sequencer.l1-confs=0 \
+            --verifier.l1-confs=0 \
+            --rpc.addr=127.0.0.1 \
+            --rpc.port=8647 \
+            --l1=http://localhost:15900 \
+            --l1.beacon.ignore \
+            --l1.trustrpc \
+            --l1.rpckind=basic \
+            --rollup.config=rollup.json \
+            --rollup.l1-chain-config anvil-chain.json \
+            --p2p.no-discovery \
+            --p2p.priv.path=./op-node-identity.key \
+            --p2p.sequencer.key=${SEQUENCER_PRIVATE_KEY} \
+            --p2p.listen.ip=127.0.0.1 \
+            --p2p.listen.tcp=9442 \
+            --p2p.listen.udp=9442 \
+            > op-node-seq.log 2>&1 & echo $! > op-node-seq.pid
+          
+          # Read the batcher private key generated by generate-intent-arkiv.py
+          BATCHER_PRIVATE_KEY=$(grep BATCHER_PRIVATE_KEY deploy-config/keys.txt | cut -d'=' -f2)
+          if [ -z "$BATCHER_PRIVATE_KEY" ]; then
+            echo "❌ Failed to extract BATCHER_PRIVATE_KEY from deploy-config/keys.txt"
+            exit 1
+          fi
+          BATCHER_ADDRESS=$(cast wallet address "$BATCHER_PRIVATE_KEY")
+          echo "Batcher address: $BATCHER_ADDRESS"
+          echo "OP_BATCHER_L1_ADDRESS=$BATCHER_ADDRESS" >> "$GITHUB_ENV"
+
+          # Fund the batcher address on L1 (anvil) so it can pay for batch submission txs
+          cast send --rpc-url http://localhost:15900 \
+            --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            --value 100ether \
+            "$BATCHER_ADDRESS"
+
+          echo "Starting op-batcher..."
+          mkdir pprof-data
+
+          # --throttle.unsafe-da-bytes-lower-threshold=40000000 
+          # --throttle.unsafe-da-bytes-upper-threshold=80000000 
+          # --max-l1-tx-size-bytes=1000001 
+          op-batcher \
+            --throttle.block-size-upper-limit=${{inputs.altda-limit}} \
+            --altda.enabled=true \
+            --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --altda.max-concurrent-da-requests=${{inputs.altda-max-concurrent-da-requests}} \
+            --max-pending-tx=${{inputs.batcher-max-pending-tx}} \
+            --max-l1-tx-size-bytes=${{inputs.altda-limit}} \
+            --throttle.unsafe-da-bytes-lower-threshold=${{inputs.min-unsafe-limit}} \
+            --throttle.unsafe-da-bytes-upper-threshold=${{inputs.max-unsafe-limit}} \
+            --log.level=debug \
+            --l1-eth-rpc=http://localhost:15900 \
+            --l2-eth-rpc=http://localhost:18645 \
+            --rollup-rpc=http://localhost:8647 \
+            --private-key="$BATCHER_PRIVATE_KEY" \
+            --poll-interval=10s \
+            --check-recent-txs-depth=4 \
+            --sub-safety-margin=20 \
+            --num-confirmations=1 \
+            --safe-abort-nonce-too-low-count=3 \
+            --resubmission-timeout=30s \
+            --rpc.addr=127.0.0.1 \
+            --rpc.port=8548 \
+            --rpc.enable-admin \
+            --max-channel-duration=300 \
+            --batch-type=1 \
+            --data-availability-type=calldata \
+            --metrics.enabled=true \
+            --metrics.addr=127.0.0.1 \
+            --metrics.port=7365 \
+            --pprof.enabled \
+            --pprof.addr 127.0.0.1 \
+            --pprof.path pprof-data \
+            --pprof.port 6727 \
+            > op-batcher.log 2>&1 & echo $! > op-batcher.pid
+
+          echo "Starting op-batcher-collector..."
+          BATCHER_RPC_URL=http://127.0.0.1:8548 \
+          COLLECTOR_LISTEN_HOST=0.0.0.0 \
+          COLLECTOR_LISTEN_PORT=28881 \
+          HISTORY_SIZE=5000 \
+            op-batcher-collector > op-batcher-collector.log 2>&1 & echo $! > op-batcher-collector.pid
+
+          # Read the proposer private key generated by generate-intent-arkiv.py
+          PROPOSER_PRIVATE_KEY=$(grep PROPOSER_PRIVATE_KEY deploy-config/keys.txt | cut -d'=' -f2)
+          if [ -z "$PROPOSER_PRIVATE_KEY" ]; then
+            echo "❌ Failed to extract PROPOSER_PRIVATE_KEY from deploy-config/keys.txt"
+            exit 1
+          fi
+          PROPOSER_ADDRESS=$(cast wallet address "$PROPOSER_PRIVATE_KEY")
+          echo "Proposer address: $PROPOSER_ADDRESS"
+          echo "OP_PROPOSER_L1_ADDRESS=$PROPOSER_ADDRESS" >> "$GITHUB_ENV"
+
+          # Fund the proposer address on L1 (anvil)
+          cast send --rpc-url http://localhost:15900 \
+            --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            --value 100ether \
+            "$PROPOSER_ADDRESS"
+
+          # Extract the DisputeGameFactory proxy address from the deployment state
+          DGF_ADDRESS=$(op-deployer inspect l1 --workdir deploy-config 42069 | jq -r '.DisputeGameFactoryProxy')
+          if [ -z "$DGF_ADDRESS" ] || [ "$DGF_ADDRESS" = "null" ]; then
+            echo "❌ Failed to extract DisputeGameFactoryProxy address from deployment state"
+            exit 1
+          fi
+          echo "DisputeGameFactory address: $DGF_ADDRESS"
+
+          echo "Starting op-proposer..."
+          op-proposer \
+            --log.level=debug \
+            --poll-interval=12s \
+            --rpc.port=8549 \
+            --l1-eth-rpc=http://localhost:15900 \
+            --rollup-rpc=http://localhost:8647 \
+            --private-key="$PROPOSER_PRIVATE_KEY" \
+            --game-factory-address="$DGF_ADDRESS" \
+            --proposal-interval=1800s \
+            --game-type=1 \
+            --txmgr.fee-limit-threshold=1000 \
+            --fee-limit-multiplier=25 \
+            --txmgr.min-basefee=1 \
+            --txmgr.min-tip-cap=1 \
+            --wait-node-sync=true \
+            --rpc.addr=127.0.0.1 \
+            --metrics.enabled=true \
+            --metrics.addr=127.0.0.1 \
+            --metrics.port=7375 \
+            > op-proposer.log 2>&1 & echo $! > op-proposer.pid
+
+          cat arkiv-node-seq.log
+          
+          # Wait up to 60 seconds for sequencer to produce blocks
+          python -u wait-for-blocks.py \
+            --l2-url http://localhost:18645 \
+            --l1-url http://localhost:15900 \
+            --timeout 60 \
+            --blocks 3
+
+      - name: Start validator node
+        run: |
+          echo "Starting validator node arkiv-node..."
+
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
+
+          echo "Fetching sequencer enode..."
+          SEQUENCER_ENODE=$(cast rpc --rpc-url http://localhost:18645 admin_nodeInfo | jq -r '.enode')
+          if [ -z "$SEQUENCER_ENODE" ] || [ "$SEQUENCER_ENODE" = "null" ]; then
+            echo "❌ Failed to fetch sequencer enode"
+            exit 1
+          fi
+          echo "Sequencer enode: $SEQUENCER_ENODE"
+
+          arkiv-node-val node \
+            --chain genesis.json \
+            --datadir=./validator-data \
+            --http \
+            --http.port=18545 \
+            --http.addr=0.0.0.0 \
+            --http.api="admin,debug,eth,txpool,net,web3,rpc,reth,miner" \
+            --authrpc.addr=127.0.0.1 \
+            --authrpc.port=8551 \
+            --authrpc.jwtsecret=jwt-validator.txt \
+            --disable-discovery \
+            --trusted-peers="$SEQUENCER_ENODE" \
+            --trusted-only \
+            --port=30405 \
+            --metrics 127.0.0.1:6060 \
+            > arkiv-node-val.log 2>&1 & echo $! > arkiv-node-val.pid
+
+          OP_NODE_PEER_ID=$(cat op-node-peer-id.txt)
+
+          echo "Starting validator op-node..."
+          op-node-val \
+            --log.level=debug \
+            --altda.enabled=true \
+            --altda.da-server=http://localhost:3100 \
+            --altda.da-service=true \
+            --altda.verify-on-read=true \
+            --altda.max-concurrent-da-requests=1 \
+            --l2=http://localhost:8551 \
+            --l2.jwt-secret=jwt-validator.txt \
+            --l2.enginekind=reth \
+            --verifier.l1-confs=0 \
+            --rpc.addr=127.0.0.1 \
+            --rpc.port=8547 \
+            --p2p.static=/ip4/127.0.0.1/tcp/9442/p2p/${OP_NODE_PEER_ID} \
+            --p2p.sync.req-resp=true \
+            --p2p.listen.ip=127.0.0.1 \
+            --p2p.listen.tcp=9342 \
+            --p2p.listen.udp=9342 \
+            --p2p.no-discovery=true \
+            --p2p.discovery.path=opnode_validator_db \
+            --p2p.peerstore.path=opnode_peerstore_validator_db \
+            --l1=http://localhost:15900 \
+            --l1.rpckind=basic \
+            --l1.beacon.ignore \
+            --l1.trustrpc \
+            --syncmode=consensus-layer \
+            --rollup.config=rollup.json \
+            --rollup.l1-chain-config anvil-chain.json \
+            > op-node-val.log 2>&1 & echo $! > op-node-val.pid
+          
+          # Wait up to 60 seconds for validator to produce blocks
+          python -u wait-for-blocks.py \
+            --l2-url http://localhost:18545 \
+            --l1-url http://localhost:15900 \
+            --timeout 60 \
+            --blocks 3
+
+      - name: Start Arkiv chain indexer
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          set -euxo pipefail
+
+          rm -rf arkiv-chain-indexer
+          git clone https://github.com/Arkiv-Network/arkiv-chain-indexer.git
+
+          cd arkiv-chain-indexer
+
+          # Seed the initial Baseload worker config. docker-compose mounts
+          # ./baseload-config read-only at /app/baseload-config, and the backend
+          # loads BASELOAD_INITIAL_CONFIG_PATH once during `bun run serve`
+          # startup, then starts the workers (BASELOAD_RPC_NODE is set below).
+          mkdir -p baseload-config
+          cp "$GITHUB_WORKSPACE/baseload-workers.json" baseload-config/config.json
+          echo "Seeded initial Baseload config:" && cat baseload-config/config.json
+
+          cat > .env <<EOF
+          # Generated by arkiv-system-reth-test.yml for manual SSH restarts.
+          SCANNER_RPC_FULL_NODE=${SCANNER_RPC_FULL_NODE}
+          HOST_GATEWAY_IP=${HOST_GATEWAY_IP}
+          SCANNER_FROM_BLOCK=${SCANNER_FROM_BLOCK}
+          FRONTEND_HOST=${FRONTEND_HOST}
+          BACKEND_HOST=${BACKEND_HOST}
+          BASELOAD_MNEMONIC="${BASELOAD_MNEMONIC}"
+          BASELOAD_RPC_NODE=${BASELOAD_RPC_NODE}
+          BASELOAD_ADMIN_BEARER_TOKEN=${BASELOAD_ADMIN_BEARER_TOKEN}
+          BASELOAD_INITIAL_CONFIG_PATH=${BASELOAD_INITIAL_CONFIG_PATH}
+          BASELOAD_CONFIG_DIR=./baseload-config
+          SCANNER_OLDEST_BACKFILL_BLOCK=${SCANNER_OLDEST_BACKFILL_BLOCK}
+          SAVE_TRANSACTION_DATA=${SAVE_TRANSACTION_DATA}
+          BATCHER_COLLECTOR_URL=${BATCHER_COLLECTOR_URL}
+          ARKIV_JS_SDK=${ARKIV_JS_SDK}
+          EOF
+          chmod 600 .env
+          echo "Generated arkiv-chain-indexer/.env for manual SSH restarts."
+
+          docker compose up --build -d
+          docker compose ps
+          docker compose logs --tail=100
+        env:
+          SCANNER_RPC_FULL_NODE: http://host.docker.internal:18545
+          HOST_GATEWAY_IP: host-gateway
+          SCANNER_FROM_BLOCK: 1
+          FRONTEND_HOST: 0.0.0.0
+          BACKEND_HOST: 0.0.0.0
+          BASELOAD_MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+          BASELOAD_RPC_NODE: http://host.docker.internal:18645
+          BASELOAD_ADMIN_BEARER_TOKEN: av4f2222
+          BASELOAD_INITIAL_CONFIG_PATH: /app/baseload-config/config.json
+          SCANNER_OLDEST_BACKFILL_BLOCK: 1
+          SAVE_TRANSACTION_DATA: true
+          BATCHER_COLLECTOR_URL: http://host.docker.internal:28881
+          ARKIV_JS_SDK: ${{ inputs.arkiv-sdk-js }}
+
+      - name: Run js-sdk library tests
+        if: false
+        continue-on-error: true
+        run: |
+          (cd arkiv-sdk-js/test && bun run test:component)
+        env:
+          ARKIV_SDK_TEST_RPC_URL: http://localhost:18645
+          ARKIV_SDK_TEST_WS_URL: ws://localhost:8646
+          ARKIV_SDK_TEST_CHAIN_ID: 42069
+          ARKIV_SDK_TEST_CRUD_TIMEOUT: 30000
+          PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
+
+      - name: Gather metrics
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # Start gathering metrics in the background
+          export JOB_NAME=${{ steps.test-name.outputs.val }}
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
+
+          export INSTANCE_NAME=$WORKER_NAME
+          python -u gather-metrics.py > gather-metrics.log 2>&1 & echo $! > gather-metrics.pid
+        env:
+          INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+          INFLUXDB_TOKEN: my-super-secret-auth-token
+          INFLUXDB_ORG: arkiv-network
+          INFLUXDB_BUCKET: arkiv-tests
+          OP_NODE_L1_RPC_URL: http://127.0.0.1:15900
+          OP_BATCHER_L1_ADDRESS: ${{ env.OP_BATCHER_L1_ADDRESS }}
+          OP_PROPOSER_L1_ADDRESS: ${{ env.OP_PROPOSER_L1_ADDRESS }}
+          OP_BATCHER_METRICS_URL: http://127.0.0.1:7365/metrics
+          OP_PROPOSER_METRICS_URL: http://127.0.0.1:7375/metrics
+
+      - name: Scrape reth metrics to InfluxDB
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # arkiv-node has no native InfluxDB exporter (unlike op-geth), so we
+          # poll its Prometheus endpoints for both sequencer and validator
+          # every few seconds and forward the samples to InfluxDB.
+          export JOB_NAME=${{ steps.test-name.outputs.val }}
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
+          export INSTANCE_NAME=$WORKER_NAME
+          python -u scrape-reth-metrics.py > scrape-reth-metrics.log 2>&1 & echo $! > scrape-reth-metrics.pid
+        env:
+          INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+          INFLUXDB_TOKEN: my-super-secret-auth-token
+          INFLUXDB_ORG: arkiv-network
+          INFLUXDB_BUCKET: arkiv-tests
+          RETH_SCRAPE_INTERVAL_SECONDS: "5"
+          RETH_SEQUENCER_METRICS_URL: http://127.0.0.1:6160/debug/metrics/prometheus
+          RETH_VALIDATOR_METRICS_URL: http://127.0.0.1:6060/debug/metrics/prometheus
+
+      - name: Notify that the test is starting
+        run: |
+          # notify the test server
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST ${TRACKER_BACKEND_URL}/test/start -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Show balances of main accounts
+        run: |
+          poetry run python show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:18645' }} --save-to-compare account-values.json
+        env:
+          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+
+      - name: Simple entity test
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          # Uncomment to debug entity creation test
+          # export DEBUG=arkiv:*
+          bun src/create_entity.ts
+        env:
+          RPC_URL: http://localhost:18645
+          PRIVATE_KEY: "0x6df676dadffad9321e02bd00209e3cce4546a314c37e85f744b40dc25113f200"
+
+      - name: Start snapshot loop
+        run: |
+          (
+            INTERVAL=60
+            START_TIME=$(date +%s)
+            TARGET_TIME=$START_TIME
+            ITERATION_NUMBER=1
+          
+            while true; do
+              # 1. Advance the absolute target time by exactly 60 seconds
+              TARGET_TIME=$(( TARGET_TIME + INTERVAL ))
+              
+              # 2. Calculate remaining time to sleep to hit the exact target
+              CURRENT_TIME=$(date +%s)
+              SLEEP_TIME=$(( TARGET_TIME - CURRENT_TIME ))
+              
+              # Sleep only if we haven't passed the target time (e.g. if scripts took > 60s)
+              if [ "$SLEEP_TIME" -gt 0 ]; then
+                sleep "$SLEEP_TIME"
+              fi
+              
+              # 3. Calculate exact interval string (60, 120, 180...) for the filenames
+              RELATIVE_TIME=$(( ITERATION_NUMBER * INTERVAL ))
+              
+              # 4. Run your commands using RELATIVE_TIME
+              $PYTHON_BIN query-arkiv.py --test_name ${{ steps.test-name.outputs.val }} --save "results-$RELATIVE_TIME.json" >> query-arkiv-loop.log 2>&1 || true
+              $PYTHON_BIN show-account-values.py --rpc-url ${{ inputs.is-external == 'true' && inputs.external-rpc-url || 'http://localhost:18645' }} --save "results-$RELATIVE_TIME.json" --compare account-values.json >> show-accounts-arkiv-loop.log 2>&1 || true
+              TEST_NAME=${{ steps.test-name.outputs.val }}
+              $PYTHON_BIN push-results.py --test-name $TEST_NAME --file "results-$RELATIVE_TIME.json" --seconds $RELATIVE_TIME >> push-results-loop.log 2>&1 || true
+              
+              # 5. Increment iteration for the next loop
+              ITERATION_NUMBER=$(( ITERATION_NUMBER + 1 ))
+            done
+          ) >> snapshot-loop.log 2>&1 &
+        env:
+          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+          INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+          INFLUXDB_TOKEN: my-super-secret-auth-token
+          INFLUXDB_ORG: arkiv-network
+          INFLUXDB_BUCKET: arkiv-tests
+          IS_EXTERNAL: ${{ inputs.is-external }}
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+          PYTHON_BIN: ${{ steps.poetry.outputs.python }}
+
+      - name: Wait indefinitely
+        if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' && inputs.run-locust == 'false' }}
+        run: |
+          sleep infinity
+
+      - name: Start locust write only test
+        if: ${{ steps.test-name.outputs.scenario == 'LocustWriteOnly' && inputs.run-locust == 'true' }}
+        run: |
+          # Todo fix test returning error
+          if [ "${{ inputs.is-external }}" = "true" ]; then
+            export LOCUST_HOST=${{ inputs.external-rpc-url }}
+          else
+            export LOCUST_HOST=http://localhost:18645
+          fi
+          set -x
+          LOCUST_TEST_NAME=dc_write_only
+          poetry run locust -f stress/l3/$LOCUST_TEST_NAME.py \
+            --csv=$LOCUST_TEST_NAME \
+            --headless \
+            -u=${{ inputs.test-users }} \
+            -r=100 \
+            -t=${{ inputs.test-length }} \
+            --print-stats \
+            --html "locust.html" > locust.log 2>&1 || true
+        env:
+          DC_WRITE_ONLY_PAYLOAD_SIZE: ${{ inputs.dc-write-only-payload-size }}
+          MNEMONIC: "parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut"
+
+      - name: Stop services
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          kill $(cat scrape-reth-metrics.pid)
+          kill $(cat gather-metrics.pid)
+          kill $(cat arkiv-node-val.pid)
+          kill $(cat op-node-val.pid)
+          kill $(cat op-proposer.pid)
+          kill $(cat op-batcher-collector.pid)
+          kill $(cat op-batcher.pid)
+          kill $(cat arkiv-node-seq.pid)
+          kill $(cat op-node-seq.pid)
+          kill $(cat anvil.pid)
+          if [ -d arkiv-chain-indexer ]; then
+            # Intentionally keep the reth action's compose services running longer.
+            # Do not re-enable this teardown without confirming the service should stop here.
+            # (cd arkiv-chain-indexer && docker compose down --volumes --remove-orphans) || true
+          fi
+
+      - name: Cleanup metrics gateway
+        if: ${{ inputs.is-external == 'false' }}
+        run: |
+          WORKER_NAME=${{ steps.test-name.outputs.worker }}
+          curl -sS -X DELETE https://l2.arkiv-global.net/eKUSzE1KvC/metrics/job/${{ steps.test-name.outputs.val }}/instance/$WORKER_NAME
+
+      - name: Notify test server about test finish
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST ${TRACKER_BACKEND_URL}/test/finish -H "Content-Type: application/json" -d '{"name":"'"$TEST_NAME"'"}'
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Upload test report
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST -F "file=@locust.html" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+          curl -sS -X POST -F "file=@locust.log" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
+
+      - name: Compress Arkiv logs
+        if: always()
+        run: |
+          tar -cf arkiv-logs.tar.gz *.log *.json
+
+      - name: Upload logs
+        if: always()
+        run: |
+          TEST_NAME=${{ steps.test-name.outputs.val }}
+          curl -sS -X POST -F "file=@arkiv-logs.tar.gz" ${TRACKER_BACKEND_URL}/test/${TEST_NAME}/upload/file
+        env:
+          TRACKER_BACKEND_URL: ${{ secrets.TRACKER_BACKEND_URL }}
