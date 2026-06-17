@@ -1,10 +1,9 @@
-"""Scrape op-reth Prometheus metrics and push them to InfluxDB.
+"""Scrape Arkiv reth Prometheus metrics and push them to InfluxDB.
 
-op-reth does not natively support InfluxDB output (unlike op-geth, which can
-push directly via ``--metrics.influxdbv2``). This script polls each configured
-op-reth Prometheus endpoint on a fixed interval and forwards the samples to
-InfluxDB v2. It mirrors the tagging used by op-geth's native InfluxDB output
-(``test``, ``instance``, ``node``) so dashboards can be reused.
+Arkiv reth does not natively support InfluxDB output. This script polls each
+configured Prometheus endpoint on a fixed interval and forwards the samples to
+InfluxDB v2. It keeps the existing ``test``, ``instance``, and ``node`` tags so
+dashboards can be reused.
 
 Endpoints are taken from environment variables, defaulting to the ports used
 by the sequencer and validator in the Arkiv system test workflow:
@@ -66,7 +65,7 @@ def build_points(node, prometheus_text):
                 .tag("test", JOB_NAME)
                 .tag("instance", INSTANCE_NAME)
                 .tag("node", node)
-                .tag("component", "op-reth")
+                .tag("component", "arkiv-reth")
             )
             for label_key, label_value in sample.labels.items():
                 point = point.tag(label_key, str(label_value))

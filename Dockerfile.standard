@@ -1,14 +1,14 @@
 FROM python:3.14-trixie
 
-RUN curl -sL https://github.com/foundry-rs/foundry/releases/download/v1.5.1/foundry_v1.5.1_linux_amd64.tar.gz | tar -xz \
-    && mv forge cast anvil chisel /usr/local/bin/
+ARG ARKIV_RETH_TAG=v0.1.0-pure-0
 
-RUN curl -sL https://github.com/salad-x-golem/yagna-arkiv-market-matcher/releases/download/v0.0.0/optimism-binaries-2026-01-22.tar.xz | tar -xJ \
-    && mv op-deployer op-geth op-node /usr/local/bin/
+RUN curl -fSL "https://github.com/Arkiv-Network/arkiv-op-reth/releases/download/${ARKIV_RETH_TAG}/arkiv-op-reth-${ARKIV_RETH_TAG}-linux-amd64.tar.xz" | tar -xJ \
+    && mv arkiv-node arkiv-cli /usr/local/bin/
 
 WORKDIR /app
 COPY start.sh .
-COPY generate-intent.py .
-COPY anvil-chain.json .
+COPY generate-pure-reth-genesis.py .
+COPY test-accounts.txt .
 RUN chmod +x start.sh
+EXPOSE 8545 8546
 ENTRYPOINT ["/bin/bash", "start.sh"]

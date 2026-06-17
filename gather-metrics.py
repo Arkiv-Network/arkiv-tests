@@ -38,14 +38,34 @@ PRICE_API_URL = os.getenv(
 ).strip()
 PRICE_CACHE_SECONDS = 60
 
-SCRAPE_TARGETS = {
-    "op-batcher": os.getenv(
-        "OP_BATCHER_METRICS_URL", "http://127.0.0.1:7365/metrics"
-    ),
-    "op-proposer": os.getenv(
-        "OP_PROPOSER_METRICS_URL", "http://127.0.0.1:7375/metrics"
-    ),
-}
+
+def resolve_scrape_targets():
+    raw_targets = os.getenv("METRICS_SCRAPE_TARGETS")
+    if raw_targets is not None:
+        targets = {}
+        for item in raw_targets.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            name, separator, url = item.partition("=")
+            if not separator:
+                raise ValueError(
+                    "METRICS_SCRAPE_TARGETS entries must use name=url format"
+                )
+            targets[name.strip()] = url.strip()
+        return targets
+
+    return {
+        "op-batcher": os.getenv(
+            "OP_BATCHER_METRICS_URL", "http://127.0.0.1:7365/metrics"
+        ),
+        "op-proposer": os.getenv(
+            "OP_PROPOSER_METRICS_URL", "http://127.0.0.1:7375/metrics"
+        ),
+    }
+
+
+SCRAPE_TARGETS = resolve_scrape_targets()
 
 # InfluxDB v2 specifics
 INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://localhost:8086")

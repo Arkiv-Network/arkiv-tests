@@ -114,7 +114,7 @@ class ScrapeRethMetricsTests(unittest.TestCase):
                 [
                     DummySample(
                         "reth_block_height",
-                        {"chain": "optimism"},
+                        {"chain": "arkiv-pure"},
                         12345.0,
                     ),
                     DummySample(
@@ -141,8 +141,8 @@ class ScrapeRethMetricsTests(unittest.TestCase):
         self.assertEqual(first.tags["test"], "test-job")
         self.assertEqual(first.tags["instance"], "worker-1")
         self.assertEqual(first.tags["node"], "sequencer")
-        self.assertEqual(first.tags["component"], "op-reth")
-        self.assertEqual(first.tags["chain"], "optimism")
+        self.assertEqual(first.tags["component"], "arkiv-reth")
+        self.assertEqual(first.tags["chain"], "arkiv-pure")
         self.assertEqual(first.fields["value"], 12345.0)
 
         second = points[1]

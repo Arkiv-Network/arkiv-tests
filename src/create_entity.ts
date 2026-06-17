@@ -78,8 +78,14 @@ async function main() {
 
   const rpcUrl = process.env.RPC_URL || "http://localhost:8645";
 
+  const chainIdRaw = process.env.CHAIN_ID || "42069";
+  const chainId = Number.parseInt(chainIdRaw, 10);
+  if (Number.isNaN(chainId) || chainId <= 0) {
+    throw new Error(`Invalid CHAIN_ID: ${chainIdRaw}`);
+  }
+
   const l3Testnet = defineChain({
-    id: 42069,
+    id: chainId,
     name: "Arkiv L3 Testnet",
     network: "l3-testnet",
     nativeCurrency: {
