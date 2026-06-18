@@ -85,6 +85,33 @@ docker compose down             # keep chain
 docker compose down -v          # also wipe the chain
 ```
 
+## Surviving a machine reboot
+
+The stack is designed to come back automatically after the host reboots:
+
+- All three services use `restart: unless-stopped`, so Docker restarts them on
+  boot (and on crash), unless you explicitly `docker compose stop`/`down` them.
+- Chain state persists across reboots: the EL/CL databases live in the named
+  volumes `reth-data` / `beacon-data`, and genesis + validator keys + slashing
+  protection are the `output/`, `testnet/`, `validators/` bind mounts. On
+  restart the chain **resumes** — `run-el.sh` skips re-init when the datadir is
+  non-empty, so there is no new genesis.
+
+Two host-level requirements (not expressible in compose):
+
+1. **The Docker daemon must start on boot.** This is the usual reason a stack
+   doesn't come back. On Linux: `sudo systemctl enable --now docker`. (On
+   Windows/Docker Desktop the daemon only runs after a user logs in unless you
+   configure it otherwise — prefer a Linux host for an always-on node.)
+2. **Bring the stack up once** with `docker compose up -d`; thereafter reboots
+   are handled by the restart policy.
+
+Note: `depends_on` only orders startup for `docker compose up`, not for the
+daemon's reboot auto-restart — on reboot the three containers may start in any
+order. That is fine here: the beacon retries its connection to reth's Engine
+API and the validator retries its connection to the beacon, so the stack
+converges on its own.
+
 ## Notes / limitations
 
 - **Single validator = single point of failure.** Fine for a devnet; it holds
