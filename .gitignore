@@ -14,7 +14,7 @@ __pycache__/
 /prod/genesis/
 /prod/.env
 /prod/accounts-private.csv
-/prod-cl/output/
-/prod-cl/testnet/
-/prod-cl/validators/
-/prod-cl/config/values.runtime.env
+/prod/output/
+/prod/testnet/
+/prod/validators/
+/prod/config/values.runtime.env

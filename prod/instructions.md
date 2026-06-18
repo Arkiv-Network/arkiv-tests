@@ -1,92 +1,98 @@
-# Arkiv pure-reth sequencer — operating notes
+# Arkiv prod chain — single-validator PoS (reth + Lighthouse)
 
-A single-node Arkiv reth chain. It runs **execution-only** in reth `--dev` mode:
-there is **no separate consensus client**. `--dev` is reth's built-in single
-sealer — it drives the Engine API itself and mines a block every
-`BLOCK_TIME_SECONDS`. This is the intended "one validator / don't care about
-consensus" setup.
+The prod chain runs **without `--dev`**: execution (arkiv reth) is driven over
+the Engine API by a real consensus layer — a single-validator **Lighthouse**
+beacon node + validator client.
 
-## Why no consensus client
+Forks are active through **Electra / Prague** at genesis. Fulu/Osaka are
+intentionally disabled (set to a far-future epoch); Lighthouse's Fulu-at-genesis
+support was the one risky piece we chose to skip.
 
-The chain is post-merge (Shanghai/Cancun/Prague/Osaka forks are active). On a
-post-merge chain the execution client never mines on its own — block production
-must be driven over the Engine API. `--dev` is that driver, built in. Running
-*without* `--dev` would require an external consensus client (e.g. Lighthouse
-with a single validator); we deliberately don't, because `--dev` already gives a
-real mempool and a real EIP-1559 fee market.
-
-## Forks
-
-All forks are active from genesis, through **Osaka** (the latest in the reth
-2.3.0 binary). This is set in [generate-pure-reth-genesis.py](generate-pure-reth-genesis.py)
-via the `*Time: 0` fields (`shanghaiTime`, `cancunTime`, `pragueTime`,
-`osakaTime`).
-
-## First start / fresh chain
-
-```bash
-./generate_genesis.sh    # writes genesis/genesis.json (all forks)
-./start.sh               # init datadir + start the --dev sequencer
+```
+arkiv reth (EL) ──Engine API :8551 + JWT── lighthouse beacon (CL) ── lighthouse validator (1 key)
 ```
 
-Endpoints:
-- RPC:     http://127.0.0.1:8545
-- WS:      ws://127.0.0.1:8546
-- Metrics: http://127.0.0.1:6160
+## Layout
 
-Check liveness:
+| Path | Purpose | Committed? |
+|---|---|---|
+| `config/values.env` | genesis-generator input (chain id, forks, 1 validator, mnemonic) | yes |
+| `generate.sh` | produces genesis + keys (run before first start / for a fresh chain) | yes |
+| `run-el.sh` | reth entrypoint (init + node, no `--dev`) | yes |
+| `docker-compose.yml` | reth + beacon + validator services | yes |
+| `.env` | host ports / fee recipient / EL knobs (copy from `.env.example`) | no (gitignored) |
+| `output/` | generated EL+CL genesis, JWT (regenerated each `generate.sh`) | no |
+| `testnet/` | Lighthouse testnet-dir (config.yaml, genesis.ssz, ...) | no |
+| `validators/` | the single validator keystore + secret | no |
+
+## Start a fresh chain
+
 ```bash
+cd prod
+cp .env.example .env            # first time only
+./generate.sh                   # stamps genesis at "now", makes keys
+docker compose up -d            # start promptly after generate.sh
+```
+
+`generate.sh` writes a fresh genesis timestamp (`GENESIS_TIMESTAMP=now`,
+`genesis_time = now + GENESIS_DELAY`), so start the stack soon after running it.
+
+Endpoints (default ports):
+- EL RPC:     http://127.0.0.1:8545
+- EL WS:      ws://127.0.0.1:8546
+- EL metrics: http://127.0.0.1:6160
+- Beacon API: http://127.0.0.1:5052
+
+## Verify it's working
+
+```bash
+# EL blocks advancing (~1 per slot = SECONDS_PER_SLOT, default 6s):
 curl -s -X POST http://127.0.0.1:8545 -H 'content-type: application/json' \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+
+# Beacon healthy + finalizing (finality appears after ~2 epochs):
+curl -s http://127.0.0.1:5052/eth/v1/node/syncing
+curl -s http://127.0.0.1:5052/eth/v1/beacon/states/head/finality_checkpoints
 ```
 
-## Configuration knobs
+reth logs show `Received new payload from consensus engine` — that payload now
+comes from Lighthouse, not the built-in `--dev` miner.
 
-Set these in `prod/.env` (see [.env.example](.env.example)). All are read at
-startup — there is **no runtime RPC** to change them (`miner_setGasLimit` /
-`miner_setGasPrice` exist but are no-ops in reth, returning `false`).
+## Tuning
 
-| `.env` variable            | Effect                                              | reth flag                        |
-|----------------------------|-----------------------------------------------------|----------------------------------|
-| `CHAIN_ID`                 | Chain id                                            | genesis `chainId`                |
-| `BLOCK_TIME_SECONDS`       | Seconds between blocks                              | `--dev.block-time`               |
-| `BLOCK_GAS_LIMIT`          | **Block size** (target gas limit)                  | `--builder.gaslimit`             |
-| `TXPOOL_MIN_PRIORITY_FEE`  | Min priority fee (wei) for pool acceptance; optional| `--txpool.minimum-priority-fee`  |
-| `TXPOOL_MIN_PROTOCOL_FEE`  | Min protocol base-fee floor (wei); optional         | `--txpool.minimal-protocol-fee`  |
+| Setting | Where | Apply with |
+|---|---|---|
+| Slot time (block interval) | `SLOT_DURATION_IN_SECONDS` in `config/values.env` | `./generate.sh` + fresh chain |
+| Fork schedule / chain id | `config/values.env` | `./generate.sh` + fresh chain |
+| Block size (`--builder.gaslimit`) | `BLOCK_GAS_LIMIT` in `.env` | `docker compose up -d reth` (chain preserved) |
+| Min fees | `TXPOOL_MIN_PRIORITY_FEE` / `TXPOOL_MIN_PROTOCOL_FEE` in `.env` | `docker compose up -d reth` (chain preserved) |
 
-Notes:
-- Pinning `BLOCK_GAS_LIMIT` also stops the dev-mode gas-limit auto-creep. When
-  you change it, the actual block gas limit walks toward the new target by
-  1/1024 per block (standard EIP-1559-style adjustment), not instantly.
-- Leave the `TXPOOL_*` vars unset/empty to use reth defaults.
-- Values are in **wei**.
-
-## Changing block size or fees during operation
-
-Edit the value in `.env`, then re-create the sequencer. The chain is
-**preserved** (the datadir is not wiped — only a genesis change needs that):
+Note: like the `--dev` setup, block size and fees are reth **startup flags** —
+changing them recreates the reth container (a few seconds; the chain/datadir is
+preserved). Anything baked into genesis (slot time, forks, chain id) requires a
+full regenerate, which is a **new chain**:
 
 ```bash
-docker compose --env-file .env up -d --force-recreate sequencer
-```
-
-This causes a ~2-second block gap, after which the chain continues from the same
-height.
-
-## Changing the genesis (forks, chain id, prefunds)
-
-A genesis change alters the genesis hash, so it starts a **new chain** and the
-old datadir must be wiped:
-
-```bash
-./stop.sh
-rm -rf data/*
-./generate_genesis.sh
-./start.sh
+docker compose down -v          # wipe EL + CL volumes
+./generate.sh
+docker compose up -d
 ```
 
 ## Stop
 
 ```bash
-./stop.sh
+docker compose down             # keep chain
+docker compose down -v          # also wipe the chain
 ```
+
+## Notes / limitations
+
+- **Single validator = single point of failure.** Fine for a devnet; it holds
+  100% of stake so it finalizes every epoch on its own.
+- The validator keystore + mnemonic here are **insecure dev keys** (generated
+  with `eth2-val-tools --insecure`). Never reuse them anywhere real.
+- Prefunded accounts come from the genesis-generator mnemonic
+  (`EL_AND_CL_MNEMONIC` in `config/values.env`). If you need specific accounts
+  funded, add them to the generator config and regenerate.
+- Versions pinned: genesis generator `6.1.0`, Lighthouse `v8.0.0`,
+  reth tag `ARKIV_RETH_TAG` (default `v0.1.0-pure-0`).
