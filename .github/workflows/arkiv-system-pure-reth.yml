@@ -14,7 +14,7 @@ on:
       arkiv-reth:
         description: "Arkiv pure reth version used for tests"
         required: true
-        default: "v0.1.0-pure-0"
+        default: "v0.1.0-pure-1"
       test-length:
         description: "Test length in seconds"
         required: true
