@@ -10,3 +10,5 @@
 /bun.lock
 account-values.json
 __pycache__/
+/prod/data/
+/prod/genesis/
