@@ -11,6 +11,10 @@ WS_PORT="${ARKIV_RETH_WS_PORT:-8546}"
 METRICS_ADDR="${ARKIV_RETH_METRICS_ADDR:-127.0.0.1:6160}"
 BLOCK_TIME_SECONDS="${BLOCK_TIME_SECONDS:-2}"
 BLOCK_GAS_LIMIT="${BLOCK_GAS_LIMIT:-30000000}"
+# Optional fee controls (wei). Leave empty to use reth defaults.
+# Change either, then re-create the sequencer to apply (chain is preserved).
+TXPOOL_MIN_PRIORITY_FEE="${TXPOOL_MIN_PRIORITY_FEE:-}"
+TXPOOL_MIN_PROTOCOL_FEE="${TXPOOL_MIN_PROTOCOL_FEE:-}"
 
 if [ -z "${DEV_MNEMONIC:-}" ]; then
   echo "Missing DEV_MNEMONIC."
@@ -30,12 +34,21 @@ else
   echo "Using existing reth datadir: $DATA_DIR"
 fi
 
+FEE_ARGS=()
+if [ -n "$TXPOOL_MIN_PRIORITY_FEE" ]; then
+  FEE_ARGS+=(--txpool.minimum-priority-fee "$TXPOOL_MIN_PRIORITY_FEE")
+fi
+if [ -n "$TXPOOL_MIN_PROTOCOL_FEE" ]; then
+  FEE_ARGS+=(--txpool.minimal-protocol-fee "$TXPOOL_MIN_PROTOCOL_FEE")
+fi
+
 exec arkiv-node node \
   --dev \
   --dev.block-time="${BLOCK_TIME_SECONDS}s" \
   --dev.mnemonic="$DEV_MNEMONIC" \
   --chain="$GENESIS_PATH" \
   --datadir="$DATA_DIR" \
+  "${FEE_ARGS[@]}" \
   --http \
   --http.addr="$RPC_ADDR" \
   --http.port="$RPC_PORT" \

@@ -99,6 +99,7 @@ def build_genesis(
             "shanghaiTime": 0,
             "cancunTime": 0,
             "pragueTime": 0,
+            "osakaTime": 0,
             "clique": {
                 "period": block_time_seconds,
                 "epoch": 30_000,
