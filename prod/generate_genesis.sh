@@ -6,6 +6,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 GENESIS_DIR="${SCRIPT_DIR}/genesis"
 GENESIS_PATH="${GENESIS_DIR}/genesis.json"
 DATA_DIR="${SCRIPT_DIR}/data"
+COMPOSE_ENV_ARGS=()
+
+if [ -f "${SCRIPT_DIR}/.env" ]; then
+  COMPOSE_ENV_ARGS=(--env-file "${SCRIPT_DIR}/.env")
+fi
 
 if [ -f "$GENESIS_PATH" ]; then
   echo "Genesis already exists: $GENESIS_PATH"
@@ -21,7 +26,7 @@ fi
 
 mkdir -p "$GENESIS_DIR" "$DATA_DIR"
 
-docker compose -f "${SCRIPT_DIR}/docker-compose.yml" build sequencer
-docker compose -f "${SCRIPT_DIR}/docker-compose.yml" run --rm genesis-generator
+docker compose "${COMPOSE_ENV_ARGS[@]}" -f "${SCRIPT_DIR}/docker-compose.yml" build sequencer
+docker compose "${COMPOSE_ENV_ARGS[@]}" -f "${SCRIPT_DIR}/docker-compose.yml" run --rm genesis-generator
 
 echo "Generated genesis: $GENESIS_PATH"

@@ -14,7 +14,7 @@ services:
       CHAIN_ID: ${CHAIN_ID:-42069}
       BLOCK_TIME_SECONDS: ${BLOCK_TIME_SECONDS:-2}
       BLOCK_GAS_LIMIT: ${BLOCK_GAS_LIMIT:-30000000}
-      DEV_MNEMONIC: ${DEV_MNEMONIC:-parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut}
+      DEV_MNEMONIC: ${DEV_MNEMONIC:?Set DEV_MNEMONIC in prod/.env before starting the sequencer}
       ARKIV_RETH_DATA_DIR: /var/lib/arkiv-reth
       ARKIV_RETH_RPC_ADDR: 0.0.0.0
       ARKIV_RETH_RPC_PORT: 8545
@@ -55,6 +55,8 @@ services:
       PURE_RETH_CHAIN_ID: ${CHAIN_ID:-42069}
       PURE_RETH_BLOCK_TIME_SECONDS: ${BLOCK_TIME_SECONDS:-2}
       PURE_RETH_GAS_LIMIT: ${BLOCK_GAS_LIMIT:-30000000}
+      PURE_RETH_PREFUND_ETH: ${PURE_RETH_PREFUND_ETH:-10000000}
+      PURE_RETH_SIGNER_ADDRESS: ${PURE_RETH_SIGNER_ADDRESS:-0x484ff82f1665C4C1BF3ce595F2925A105ec5BBa8}
       PURE_RETH_GENESIS_PATH: /genesis/genesis.json
     volumes:
       - ./genesis:/genesis

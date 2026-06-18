@@ -11,11 +11,16 @@ WS_PORT="${ARKIV_RETH_WS_PORT:-8546}"
 METRICS_ADDR="${ARKIV_RETH_METRICS_ADDR:-127.0.0.1:6160}"
 BLOCK_TIME_SECONDS="${BLOCK_TIME_SECONDS:-2}"
 BLOCK_GAS_LIMIT="${BLOCK_GAS_LIMIT:-30000000}"
-DEV_MNEMONIC="${DEV_MNEMONIC:-parent picture garment parrot churn record stadium pill rocket craft fish fiscal clip virus view diary replace wealth extra kitten door enforce piece nut}"
+
+if [ -z "${DEV_MNEMONIC:-}" ]; then
+  echo "Missing DEV_MNEMONIC."
+  echo "Set DEV_MNEMONIC in prod/.env before starting the sequencer."
+  exit 1
+fi
 
 if [ ! -f "$GENESIS_PATH" ]; then
   echo "Missing genesis file: $GENESIS_PATH"
-  echo "Run 02_generate_genesis.sh before start.sh."
+  echo "Run generate_genesis.sh before start.sh."
   exit 1
 fi
 

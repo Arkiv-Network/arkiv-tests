@@ -12,3 +12,5 @@ account-values.json
 __pycache__/
 /prod/data/
 /prod/genesis/
+/prod/.env
+/prod/accounts-private.csv
