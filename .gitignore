@@ -6,7 +6,6 @@
 /keys.json
 /genesis.json
 /node_modules/
-/arkiv-sdk-js/
 /package-lock.json
 /bun.lock
 account-values.json

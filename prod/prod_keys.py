@@ -118,7 +118,6 @@ def generate_env(path: Path) -> None:
         "WS_PORT=8546",
         "METRICS_PORT=6160",
         "BEACON_HTTP_PORT=5052",
-        "ARKIV_SDK_JS_REF=main",
         f'TEST_ACCOUNTS_MNEMONIC="{TEST_ACCOUNTS_MNEMONIC}"',
         f"OPERATOR_PRIVATE_KEY={operator_private_key}",
         f"OPERATOR_ADDRESS={operator_address}",
