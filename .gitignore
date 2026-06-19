@@ -17,4 +17,5 @@ __pycache__/
 /prod/output/
 /prod/testnet/
 /prod/validators/
+/prod/config/additional-validators.txt
 /prod/config/values.runtime.env

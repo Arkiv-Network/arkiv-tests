@@ -54,7 +54,7 @@ services:
       - --subscribe-all-subnets
       - --allow-insecure-genesis-sync
       - --disable-optimistic-finalized-sync
-      - --suggested-fee-recipient=${FEE_RECIPIENT:-0x484ff82f1665C4C1BF3ce595F2925A105ec5BBa8}
+      - --suggested-fee-recipient=${OPERATOR_ADDRESS:?OPERATOR_ADDRESS must be set in .env}
     volumes:
       - ./testnet:/testnet:ro
       - ./output/jwt/jwtsecret:/jwt/jwtsecret:ro
@@ -75,7 +75,7 @@ services:
       - --validators-dir=/keys
       - --secrets-dir=/secrets
       - --init-slashing-protection
-      - --suggested-fee-recipient=${FEE_RECIPIENT:-0x484ff82f1665C4C1BF3ce595F2925A105ec5BBa8}
+      - --suggested-fee-recipient=${OPERATOR_ADDRESS:?OPERATOR_ADDRESS must be set in .env}
     volumes:
       - ./testnet:/testnet:ro
       # Lighthouse writes validator_definitions.yaml + slashing protection here,

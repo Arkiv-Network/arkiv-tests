@@ -16,11 +16,12 @@ arkiv reth (EL) ──Engine API :8551 + JWT── lighthouse beacon (CL) ──
 
 | Path | Purpose | Committed? |
 |---|---|---|
-| `config/values.env` | genesis-generator input (chain id, forks, 1 validator, mnemonic) | yes |
-| `generate.sh` | produces genesis + keys (run before first start / for a fresh chain) | yes |
+| `config/values.env` | genesis-generator input (chain id, forks, prefunded-account mnemonic) | yes |
+| `generate-env.sh` | writes `.env` with separate operator EVM key and validator BLS key | yes |
+| `generate.sh` | produces genesis + validator keystore from explicit keys | yes |
 | `run-el.sh` | reth entrypoint (init + node, no `--dev`) | yes |
 | `docker-compose.yml` | reth + beacon + validator services | yes |
-| `.env` | host ports / fee recipient / EL knobs (copy from `.env.example`) | no (gitignored) |
+| `.env` | host ports / test account words / operator key / validator key / EL knobs | no (gitignored) |
 | `output/` | generated EL+CL genesis, JWT (regenerated each `generate.sh`) | no |
 | `testnet/` | Lighthouse testnet-dir (config.yaml, genesis.ssz, ...) | no |
 | `validators/` | the single validator keystore + secret | no |
@@ -29,7 +30,7 @@ arkiv reth (EL) ──Engine API :8551 + JWT── lighthouse beacon (CL) ──
 
 ```bash
 cd prod
-cp .env.example .env            # first time only
+./generate-env.sh               # first time only, or provide your own .env
 ./generate.sh                   # stamps genesis at "now", makes keys
 docker compose up -d            # start promptly after generate.sh
 ```
@@ -64,6 +65,9 @@ comes from Lighthouse, not the built-in `--dev` miner.
 |---|---|---|
 | Slot time (block interval) | `SLOT_DURATION_IN_SECONDS` in `config/values.env` | `./generate.sh` + fresh chain |
 | Fork schedule / chain id | `config/values.env` | `./generate.sh` + fresh chain |
+| Prefunded test accounts | `TEST_ACCOUNTS_MNEMONIC` in `.env` | `./generate.sh` + fresh chain |
+| Operator / fee recipient | `OPERATOR_PRIVATE_KEY` + `OPERATOR_ADDRESS` in `.env` | `docker compose up -d beacon validator` |
+| Validator key | `VALIDATOR_PRIVATE_KEY` + `VALIDATOR_ADDRESS` in `.env` | `./generate.sh` + fresh chain |
 | Block size (`--builder.gaslimit`) | `BLOCK_GAS_LIMIT` in `.env` | `docker compose up -d reth` (chain preserved) |
 | Min fees | `TXPOOL_MIN_PRIORITY_FEE` / `TXPOOL_MIN_PROTOCOL_FEE` in `.env` | `docker compose up -d reth` (chain preserved) |
 
@@ -116,10 +120,17 @@ converges on its own.
 
 - **Single validator = single point of failure.** Fine for a devnet; it holds
   100% of stake so it finalizes every epoch on its own.
-- The validator keystore + mnemonic here are **insecure dev keys** (generated
-  with `eth2-val-tools --insecure`). Never reuse them anywhere real.
-- Prefunded accounts come from the genesis-generator mnemonic
-  (`EL_AND_CL_MNEMONIC` in `config/values.env`). If you need specific accounts
-  funded, add them to the generator config and regenerate.
+- `generate-env.sh` creates fresh private keys for convenience. For production,
+  you can provide your own `.env` instead. `OPERATOR_ADDRESS` must match
+  `OPERATOR_PRIVATE_KEY`; `VALIDATOR_ADDRESS` is the BLS public key derived
+  from `VALIDATOR_PRIVATE_KEY`.
+- Prefunded execution-layer accounts come from `TEST_ACCOUNTS_MNEMONIC` in
+  `.env`, which overrides the generator's `EL_AND_CL_MNEMONIC` at generation
+  time.
+- The operator is the block proposer fee recipient (`OPERATOR_ADDRESS` in
+  `.env`). The validator is injected into genesis via
+  `config/additional-validators.txt`, generated from `VALIDATOR_ADDRESS`.
+  Neither is derived from the prefunded account mnemonic. If you need specific
+  accounts funded, add them to the generator config and regenerate.
 - Versions pinned: genesis generator `6.1.0`, Lighthouse `v8.0.0`,
   reth tag `ARKIV_RETH_TAG` (default `v0.1.0-pure-0`).
