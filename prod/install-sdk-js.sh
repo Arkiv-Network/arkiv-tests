@@ -12,7 +12,7 @@ if [ -f .env ]; then
   set +a
 fi
 
-ARKIV_SDK_JS_REF="${ARKIV_SDK_JS_REF:-main}"
+ARKIV_SDK_JS_REF="${ARKIV_SDK_JS_REF:-codex/fix-byte-aligned-numeric-attributes}"
 SDK_DIR="${REPO_DIR}/arkiv-sdk-js"
 
 rm -rf "$SDK_DIR"
