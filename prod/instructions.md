@@ -18,6 +18,7 @@ arkiv reth (EL) ──Engine API :8551 + JWT── lighthouse beacon (CL) ──
 |---|---|---|
 | `config/values.env` | genesis-generator input (chain id, forks, prefunded-account mnemonic) | yes |
 | `generate-env.sh` | writes `.env` with separate operator EVM key and validator BLS key | yes |
+| `install-sdk-js.sh` | builds `arkiv-sdk-js` from `ARKIV_SDK_JS_REF` and installs the tarball | yes |
 | `generate.sh` | produces genesis + validator keystore from explicit keys | yes |
 | `run-el.sh` | reth entrypoint (init + node, no `--dev`) | yes |
 | `docker-compose.yml` | reth + beacon + validator services | yes |
@@ -31,6 +32,7 @@ arkiv reth (EL) ──Engine API :8551 + JWT── lighthouse beacon (CL) ──
 ```bash
 cd prod
 ./generate-env.sh               # first time only, or provide your own .env
+./install-sdk-js.sh             # builds the requested Arkiv JS SDK branch/ref
 ./generate.sh                   # stamps genesis at "now", makes keys
 docker compose up -d            # start promptly after generate.sh
 ```
@@ -65,6 +67,7 @@ comes from Lighthouse, not the built-in `--dev` miner.
 |---|---|---|
 | Slot time (block interval) | `SLOT_DURATION_IN_SECONDS` in `config/values.env` | `./generate.sh` + fresh chain |
 | Fork schedule / chain id | `config/values.env` | `./generate.sh` + fresh chain |
+| Arkiv JS SDK branch/ref | `ARKIV_SDK_JS_REF` in `.env` | `./install-sdk-js.sh` |
 | Prefunded test accounts | `TEST_ACCOUNTS_MNEMONIC` in `.env` | `./generate.sh` + fresh chain |
 | Operator / fee recipient | `OPERATOR_PRIVATE_KEY` + `OPERATOR_ADDRESS` in `.env` | `docker compose up -d beacon validator` |
 | Validator key | `VALIDATOR_PRIVATE_KEY` + `VALIDATOR_ADDRESS` in `.env` | `./generate.sh` + fresh chain |
