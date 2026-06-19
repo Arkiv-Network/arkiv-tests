@@ -118,12 +118,16 @@ def generate_env(path: Path) -> None:
         "WS_PORT=8546",
         "METRICS_PORT=6160",
         "BEACON_HTTP_PORT=5052",
+        "PROTOCOL_SCHEDULE_PORT=8080",
         f'TEST_ACCOUNTS_MNEMONIC="{TEST_ACCOUNTS_MNEMONIC}"',
         f"OPERATOR_PRIVATE_KEY={operator_private_key}",
         f"OPERATOR_ADDRESS={operator_address}",
         f"VALIDATOR_PRIVATE_KEY={validator_private_key}",
         f"VALIDATOR_ADDRESS={validator_address}",
         "BLOCK_GAS_LIMIT=30000000",
+        "ARKIV_PROTOCOL_SCHEDULE_URL=http://protocol-schedule:8080/arkiv-protocol-schedule.json",
+        "ARKIV_PROTOCOL_SCHEDULE_PATH=/data/arkiv-protocol-schedule.json",
+        "ARKIV_PROTOCOL_SCHEDULE_POLL_SECONDS=60",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     path.chmod(0o600)

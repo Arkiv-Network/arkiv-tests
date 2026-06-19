@@ -5,6 +5,24 @@ name: arkiv-pos-devnet
 # Run ./generate.sh first to produce ./output, ./testnet and ./validators.
 
 services:
+  protocol-schedule:
+    image: python:3.12-alpine
+    container_name: arkiv-pos-protocol-schedule
+    restart: unless-stopped
+    command:
+      - python
+      - -m
+      - http.server
+      - "8080"
+      - --bind
+      - 0.0.0.0
+      - --directory
+      - /schedule
+    volumes:
+      - ./config/arkiv-protocol-schedule.json:/schedule/arkiv-protocol-schedule.json:ro
+    ports:
+      - "${PROTOCOL_SCHEDULE_PORT:-8080}:8080"
+
   reth:
     build:
       context: .
@@ -14,11 +32,15 @@ services:
     image: arkiv-pure-reth-sequencer:${ARKIV_RETH_TAG:-v0.1.0-pure-0}
     container_name: arkiv-pos-reth
     restart: unless-stopped
+    depends_on: [protocol-schedule]
     entrypoint: ["/bin/bash", "/run-el.sh"]
     environment:
       BLOCK_GAS_LIMIT: ${BLOCK_GAS_LIMIT:-30000000}
       TXPOOL_MIN_PRIORITY_FEE: ${TXPOOL_MIN_PRIORITY_FEE:-}
       TXPOOL_MIN_PROTOCOL_FEE: ${TXPOOL_MIN_PROTOCOL_FEE:-}
+      ARKIV_PROTOCOL_SCHEDULE_URL: ${ARKIV_PROTOCOL_SCHEDULE_URL:-http://protocol-schedule:8080/arkiv-protocol-schedule.json}
+      ARKIV_PROTOCOL_SCHEDULE_PATH: ${ARKIV_PROTOCOL_SCHEDULE_PATH:-/data/arkiv-protocol-schedule.json}
+      ARKIV_PROTOCOL_SCHEDULE_POLL_SECONDS: ${ARKIV_PROTOCOL_SCHEDULE_POLL_SECONDS:-60}
     volumes:
       - ./run-el.sh:/run-el.sh:ro
       - ./output/metadata/genesis.json:/genesis/genesis.json:ro
