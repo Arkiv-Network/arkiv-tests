@@ -46,7 +46,7 @@ on:
       arkiv-sdk-js:
         description: "Arkiv SDK Tag/commit used for tests"
         required: true
-        default: "codex/fix-byte-aligned-numeric-attributes"
+        default: "atlas"
       is-external:
         description: "Whether test already deployed network"
         required: true
