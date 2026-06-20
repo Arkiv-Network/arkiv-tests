@@ -52,7 +52,11 @@ fi
 
 "$PYTHON_BIN" prod_keys.py genesis-validator --out config/additional-validators.txt
 
-WIN_DIR="$(pwd -W)"
+if WIN_DIR="$(pwd -W 2>/dev/null)"; then
+  :
+else
+  WIN_DIR="$(pwd)"
+fi
 
 # 1) EL + CL genesis, JWT.
 rm -rf output && mkdir -p output

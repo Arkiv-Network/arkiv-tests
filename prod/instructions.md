@@ -21,7 +21,7 @@ arkiv reth (EL) ──Engine API :8551 + JWT── lighthouse beacon (CL) ──
 | `generate.sh` | produces genesis + validator keystore from explicit keys | yes |
 | `run-el.sh` | reth entrypoint (init + node, no `--dev`) | yes |
 | `docker-compose.yml` | reth + beacon + validator services | yes |
-| `config/arkiv-protocol-schedule.json` | legacy static schedule seed; Atlas uses the planner service | yes |
+| `config/arkiv-protocol-schedule.json` | Arkiv protocol schedule served to reth by compose | yes |
 | `.env` | host ports / test account words / operator key / validator key / EL knobs | no (gitignored) |
 | `output/` | generated EL+CL genesis, JWT (regenerated each `generate.sh`) | no |
 | `testnet/` | Lighthouse testnet-dir (config.yaml, genesis.ssz, ...) | no |
@@ -33,7 +33,7 @@ arkiv reth (EL) ──Engine API :8551 + JWT── lighthouse beacon (CL) ──
 cd prod
 ./generate-env.sh               # first time only, or provide your own .env
 ./generate.sh                   # stamps genesis at "now", makes keys
-docker compose up -d            # start promptly after generate.sh; requires planner on atlas network
+docker compose up -d            # start promptly after generate.sh
 ```
 
 `generate.sh` writes a fresh genesis timestamp (`GENESIS_TIMESTAMP=now`,
@@ -72,7 +72,7 @@ comes from Lighthouse, not the built-in `--dev` miner.
 | Validator key | `VALIDATOR_PRIVATE_KEY` + `VALIDATOR_ADDRESS` in `.env` | `./generate.sh` + fresh chain |
 | Block size (`--builder.gaslimit`) | `BLOCK_GAS_LIMIT` in `.env` | `docker compose up -d reth` (chain preserved) |
 | Min fees | `TXPOOL_MIN_PRIORITY_FEE` / `TXPOOL_MIN_PROTOCOL_FEE` in `.env` | `docker compose up -d reth` (chain preserved) |
-| Protocol schedule | `ARKIV_PROTOCOL_SCHEDULE_URL` in `.env` | restart the planner, then `docker compose up -d reth` |
+| Protocol schedule | `config/arkiv-protocol-schedule.json` or `ARKIV_PROTOCOL_SCHEDULE_URL` in `.env` | `docker compose up -d protocol-schedule reth` |
 
 Note: like the `--dev` setup, block size and fees are reth **startup flags** —
 changing them recreates the reth container (a few seconds; the chain/datadir is
@@ -87,10 +87,10 @@ docker compose up -d
 
 ## Protocol schedule
 
-Atlas serves the schedule from the hardfork planner stack:
+The default compose setup serves the schedule file from:
 
 ```text
-arkiv-hardfork-planner/docker-compose.yml
+config/arkiv-protocol-schedule.json
 ```
 
 Inside the Docker network, reth polls:
@@ -107,8 +107,9 @@ http://127.0.0.1:28882/arkiv-protocol-schedule.json
 
 reth persists the last accepted copy at
 `/data/arkiv-protocol-schedule.json` inside the `reth-data` volume. To use a
-different schedule service, set `ARKIV_PROTOCOL_SCHEDULE_URL` in `.env` to its
-URL and recreate the `reth` container.
+central schedule service instead of the local sidecar, set
+`ARKIV_PROTOCOL_SCHEDULE_URL` in `.env` to the external HTTPS URL and recreate
+the `reth` container.
 
 ## Stop
 
