@@ -13,7 +13,7 @@ services:
       - python
       - -m
       - http.server
-      - "8080"
+      - "28882"
       - --bind
       - 0.0.0.0
       - --directory
@@ -21,7 +21,7 @@ services:
     volumes:
       - ./config/arkiv-protocol-schedule.json:/schedule/arkiv-protocol-schedule.json:ro
     ports:
-      - "${PROTOCOL_SCHEDULE_PORT:-8080}:8080"
+      - "${PROTOCOL_SCHEDULE_PORT:-28882}:28882"
 
   reth:
     build:
@@ -38,7 +38,7 @@ services:
       BLOCK_GAS_LIMIT: ${BLOCK_GAS_LIMIT:-30000000}
       TXPOOL_MIN_PRIORITY_FEE: ${TXPOOL_MIN_PRIORITY_FEE:-}
       TXPOOL_MIN_PROTOCOL_FEE: ${TXPOOL_MIN_PROTOCOL_FEE:-}
-      ARKIV_PROTOCOL_SCHEDULE_URL: ${ARKIV_PROTOCOL_SCHEDULE_URL:-http://protocol-schedule:8080/arkiv-protocol-schedule.json}
+      ARKIV_PROTOCOL_SCHEDULE_URL: ${ARKIV_PROTOCOL_SCHEDULE_URL:-http://protocol-schedule:28882/arkiv-protocol-schedule.json}
       ARKIV_PROTOCOL_SCHEDULE_PATH: ${ARKIV_PROTOCOL_SCHEDULE_PATH:-/data/arkiv-protocol-schedule.json}
       ARKIV_PROTOCOL_SCHEDULE_POLL_SECONDS: ${ARKIV_PROTOCOL_SCHEDULE_POLL_SECONDS:-60}
     volumes:

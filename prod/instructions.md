@@ -44,7 +44,7 @@ Endpoints (default ports):
 - EL WS:      ws://127.0.0.1:8546
 - EL metrics: http://127.0.0.1:6160
 - Beacon API: http://127.0.0.1:5052
-- Protocol schedule: http://127.0.0.1:8080/arkiv-protocol-schedule.json
+- Protocol schedule: http://127.0.0.1:28882/arkiv-protocol-schedule.json
 
 ## Verify it's working
 
@@ -96,13 +96,13 @@ config/arkiv-protocol-schedule.json
 Inside the Docker network, reth polls:
 
 ```text
-http://protocol-schedule:8080/arkiv-protocol-schedule.json
+http://protocol-schedule:28882/arkiv-protocol-schedule.json
 ```
 
 From the host, the same JSON is exposed at:
 
 ```text
-http://127.0.0.1:8080/arkiv-protocol-schedule.json
+http://127.0.0.1:28882/arkiv-protocol-schedule.json
 ```
 
 reth persists the last accepted copy at
