@@ -8,8 +8,7 @@ import sys
 import uuid
 from pathlib import Path
 
-from Crypto.Cipher import AES
-from Crypto.Protocol.KDF import scrypt
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from eth_account import Account
 from eth_utils import to_checksum_address
 
@@ -64,9 +63,9 @@ def write_lighthouse_keystore(private_key: str, validator_address: str, out_dir:
     password = secrets.token_hex(16)
     salt = secrets.token_bytes(32)
     iv = secrets.token_bytes(16)
-    derived = scrypt(password.encode(), salt, key_len=32, N=262144, r=8, p=1)
-    cipher = AES.new(derived[:16], AES.MODE_CTR, nonce=b"", initial_value=int.from_bytes(iv, "big"))
-    ciphertext = cipher.encrypt(bytes.fromhex(secret[2:]))
+    derived = hashlib.scrypt(password.encode(), salt=salt, n=262144, r=8, p=1, dklen=32, maxmem=512 * 1024 * 1024)
+    encryptor = Cipher(algorithms.AES(derived[:16]), modes.CTR(iv)).encryptor()
+    ciphertext = encryptor.update(bytes.fromhex(secret[2:])) + encryptor.finalize()
     checksum = hashlib.sha256(derived[16:32] + ciphertext).hexdigest()
 
     keystore = {
